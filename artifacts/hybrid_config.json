@@ -1,0 +1,1505 @@
+{
+  "profile_multipliers": {
+    "gpu": 1.0,
+    "cpu": 1.0,
+    "ram": 1.0,
+    "mb": 1.0,
+    "psu": 1.0,
+    "storage": 1.0
+  },
+  "db_summary": {
+    "loaded": true,
+    "components": 124,
+    "prices": 143,
+    "benchmarks": 144,
+    "by_type": {
+      "CPU": 22,
+      "GPU": 72,
+      "MB": 2,
+      "PSU": 8,
+      "RAM": 12,
+      "STORAGE": 8
+    }
+  },
+  "benchmark_summary": {
+    "loaded": true,
+    "by_game": {
+      "average_games": {
+        "count": 144,
+        "avg_fps": 76.77,
+        "low1_fps": null
+      }
+    },
+    "by_resolution": {
+      "1080": {
+        "count": 48,
+        "avg_fps": 109.82,
+        "low1_fps": null
+      },
+      "1440": {
+        "count": 48,
+        "avg_fps": 78.48,
+        "low1_fps": null
+      },
+      "2160": {
+        "count": 48,
+        "avg_fps": 42.01,
+        "low1_fps": null
+      }
+    },
+    "by_component_type": {
+      "gpu": {
+        "count": 144,
+        "avg_fps": 76.77,
+        "low1_fps": null
+      }
+    },
+    "samples": [
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 5090",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 203.8,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 5090",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 167.3,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 5090",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 110.8,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 4090",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 183.6,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 4090",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 143.4,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 4090",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 89.1,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 5080",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 166.9,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 5080",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 128.3,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 5080",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 77.4,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 7900 XTX",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 161.5,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 7900 XTX",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 122.3,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 7900 XTX",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 70.6,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 4080 Super",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 158.9,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 4080 Super",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 118.6,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 4080 Super",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 69.4,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 4080",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 157.3,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 4080",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 117.5,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 4080",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 67.5,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 5070 Ti",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 155.4,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 5070 Ti",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 116.8,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 5070 Ti",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 68.6,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Radeon RX 9070 XT",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 156.6,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Radeon RX 9070 XT",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 116.5,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Radeon RX 9070 XT",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 65.8,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 7900 XT",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 145.4,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 7900 XT",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 108.0,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 7900 XT",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 59.8,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 4070 Ti Super",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 141.2,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 4070 Ti Super",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 104.0,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 4070 Ti Super",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 58.5,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Radeon RX 9070",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 140.9,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Radeon RX 9070",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 104.0,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Radeon RX 9070",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 57.7,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 3090 Ti",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 131.7,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 3090 Ti",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 99.9,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 3090 Ti",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 59.3,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 4070 Ti",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 135.1,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 4070 Ti",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 97.9,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 4070 Ti",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 53.9,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 5070",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 132.6,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 5070",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 96.4,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 5070",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 54.3,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 3090",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 122.9,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 3090",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 91.5,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 3090",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 53.1,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 4070 Super",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 126.7,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 4070 Super",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 91.2,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 4070 Super",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 49.2,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Radeon RX 6950 XT",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 123.3,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Radeon RX 6950 XT",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 89.5,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Radeon RX 6950 XT",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 48.3,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 3080 Ti",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 119.6,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 3080 Ti",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 89.1,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 3080 Ti",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 51.0,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Radeon RX 9070 GRE",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 120.6,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Radeon RX 9070 GRE",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 86.6,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Radeon RX 9070 GRE",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 46.3,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 7800 XT",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 118.4,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 7800 XT",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 84.7,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 7800 XT",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 45.1,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 6900 XT",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 117.1,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 6900 XT",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 83.9,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 6900 XT",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 44.9,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 3080",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 111.6,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 3080",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 82.0,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 3080",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 43.9,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 6800 XT",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 111.8,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 6800 XT",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 79.6,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 6800 XT",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 42.2,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 4070",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 111.5,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 4070",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 77.8,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 4070",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 41.3,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 5060 Ti 16GB",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 105.2,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 5060 Ti 16GB",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 73.4,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 5060 Ti 16GB",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 40.2,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 7700 XT",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 102.9,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 7700 XT",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 72.7,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 7700 XT",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 38.0,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Radeon RX 9060 XT 16GB",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 98.3,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Radeon RX 9060 XT 16GB",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 67.3,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Radeon RX 9060 XT 16GB",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 35.2,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 5060 Ti 8GB",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 100.4,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 5060 Ti 8GB",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 68.6,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 5060 Ti 8GB",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 28.1,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 3070 Ti",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 94.6,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 3070 Ti",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 66.9,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 3070 Ti",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 26.0,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Radeon RX 9060 XT 8GB",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 93.2,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Radeon RX 9060 XT 8GB",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 62.5,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Radeon RX 9060 XT 8GB",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 29.7,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 4060 Ti 16GB",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 89.3,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 4060 Ti 16GB",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 60.5,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 4060 Ti 16GB",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 31.3,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 7600 XT",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 102.1,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 7600 XT",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 50.2,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 7600 XT",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 25.5,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 3070",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 87.2,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 3070",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 58.2,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 3070",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 26.2,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 4060 Ti 8GB",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 88.0,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 4060 Ti 8GB",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 58.9,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 4060 Ti 8GB",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 23.9,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Radeon RX 6750 XT",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 83.2,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Radeon RX 6750 XT",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 57.6,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Radeon RX 6750 XT",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 29.6,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 5060",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 88.5,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 5060",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 59.8,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 5060",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 21.8,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 6700 XT",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 79.2,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 6700 XT",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 54.3,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 6700 XT",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 28.0,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Intel Arc B580",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 71.5,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Intel Arc B580",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 50.7,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Intel Arc B580",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 27.6,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 3060 Ti",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 74.2,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 3060 Ti",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 51.0,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 3060 Ti",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 19.4,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 4060",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 71.5,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 4060",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 47.6,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "NVIDIA RTX 4060",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 17.4,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 7600",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 69.9,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 7600",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 45.4,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 7600",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 18.4,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 5050",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 69.3,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 5050",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 45.2,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 5050",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 17.0,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Intel Arc B570",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 63.5,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Intel Arc B570",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 44.3,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Intel Arc B570",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 19.6,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 3060 12GB",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 61.5,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 3060 12GB",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 41.9,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 3060 12GB",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 22.2,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Radeon RX 6650 XT",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 64.3,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Radeon RX 6650 XT",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 38.0,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "Radeon RX 6650 XT",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 19.0,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 6600 XT",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 62.7,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 6600 XT",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 40.7,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 6600 XT",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 17.3,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 6600",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 51.9,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 6600",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 24.8,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "AMD RX 6600",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 14.5,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 3050",
+        "game": "average_games",
+        "resolution": "1080",
+        "setting": "high",
+        "avg_fps": 44.6,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 3050",
+        "game": "average_games",
+        "resolution": "1440",
+        "setting": "high",
+        "avg_fps": 29.8,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      },
+      {
+        "type": "GPU",
+        "name": "GeForce RTX 3050",
+        "game": "average_games",
+        "resolution": "2160",
+        "setting": "high",
+        "avg_fps": 12.6,
+        "low1_fps": 0.0,
+        "source_url": "https://www.tomshardware.com/reviews/gpu-hierarchy,4388.html"
+      }
+    ]
+  },
+  "meta": {
+    "feedback_rows": 0,
+    "has_db": true,
+    "benchmark_samples": 144
+  }
+}

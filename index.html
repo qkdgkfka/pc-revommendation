@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>PC 견적 도우미</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- server badge -->
+<div class="srv">
+  <div class="sdot pulse" id="sdot"></div>
+  <span id="stxt">확인 중...</span>
+</div>
+
+<div class="app">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-copy">
+      <h1 class="hero-title">PC 견적 도우미</h1>
+      <p class="hero-sub">AI 추천과 직접 선택 중 원하는 방식으로 게임 FPS와 작업 성능을 확인하세요</p>
+    </div>
+    <div class="hero-actions" aria-label="견적 방식 선택">
+      <div class="view-toggle">
+        <button type="button" class="view-btn active" id="viewAiBtn" data-view="ai" aria-pressed="true">AI 자동 추천</button>
+        <button type="button" class="view-btn" id="viewCustomBtn" data-view="custom" aria-pressed="false">직접 사양 선택</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ CUSTOM SPEC SECTION ═══ -->
+  <div class="custom-wrap app-view" id="customSection" hidden>
+    <div class="custom-hdr">
+      <h2>직접 사양 선택하기</h2>
+      <span>부품을 고르면 예상 성능을 바로 계산해드려요</span>
+    </div>
+    <div class="custom-body">
+      <div class="custom-builder">
+        <section class="product-browser">
+          <div class="builder-head">
+            <div>
+              <div class="sec-title">제품 선택</div>
+              <h3 id="builderCategoryTitle">CPU</h3>
+            </div>
+            <div class="builder-tabs" id="builderTabs">
+              <button type="button" class="builder-tab active" data-part="cpu">CPU</button>
+              <button type="button" class="builder-tab" data-part="mb">메인보드</button>
+              <button type="button" class="builder-tab" data-part="gpu">GPU</button>
+              <button type="button" class="builder-tab" data-part="ram">RAM</button>
+              <button type="button" class="builder-tab" data-part="storage">SSD</button>
+              <button type="button" class="builder-tab" data-part="hdd">HDD</button>
+              <button type="button" class="builder-tab" data-part="psu">파워</button>
+              <button type="button" class="builder-tab" data-part="case">케이스</button>
+              <button type="button" class="builder-tab" data-part="software">소프트웨어</button>
+            </div>
+          </div>
+
+          <div class="builder-filter">
+            <div class="product-search-row">
+              <input id="productSearchInput" class="product-search-input" type="search" placeholder="제품명, 칩셋, 소켓 검색"/>
+              <button type="button" class="mini-btn" id="refreshProductsBtn">가격 갱신</button>
+            </div>
+            <div class="filter-grid" id="builderFilters"></div>
+          </div>
+
+          <div class="product-list-head">
+            <span id="productListTitle">선택 가능한 제품</span>
+            <span class="product-list-meta"><span id="productOrderLabel">다나와 인기상품순</span><span id="productCount">0개</span></span>
+          </div>
+          <div class="product-list" id="productList"></div>
+          <div class="product-list-footer" id="productListFooter" hidden>
+            <button type="button" class="mini-btn ghost" id="loadMoreProductsBtn">다나와 결과 더 보기</button>
+          </div>
+        </section>
+
+        <aside class="build-side">
+          <section class="build-card">
+            <div class="build-card-head">
+              <div>
+                <div class="sec-title">선택한 견적</div>
+                <h3>내 부품 구성</h3>
+              </div>
+              <button type="button" class="mini-btn ghost" id="clearBuildBtn">초기화</button>
+            </div>
+            <div class="build-cart" id="buildCart"></div>
+            <div class="spec-total">
+              <span class="spec-total-label">부품 합계</span>
+              <span class="spec-total-price" id="csTotalPrice">₩0</span>
+            </div>
+            <div class="build-value-summary" id="csBuildValue">부품을 선택하면 가격 대비 성능을 계산합니다.</div>
+            <div class="buy-links" id="csBuyLinks"></div>
+          </section>
+
+          <div class="legacy-selects" hidden>
+            <select class="spec-select" id="csGpu"></select>
+            <select class="spec-select" id="csCpu"></select>
+            <select class="spec-select" id="csRam"></select>
+            <select class="spec-select" id="csMb"></select>
+            <select class="spec-select" id="csStorage"></select>
+            <select class="spec-select" id="csHdd"></select>
+            <select class="spec-select" id="csPsu"></select>
+            <select class="spec-select" id="csCase"></select>
+            <select class="spec-select" id="csSoftware"></select>
+          </div>
+
+          <section class="use-panel">
+            <div class="mode-toggle">
+              <button class="mode-btn active" id="csModeGame">게임</button>
+              <button class="mode-btn" id="csModeWork">작업</button>
+            </div>
+
+            <div id="csPanelGame">
+              <div class="sec-title" style="margin-bottom:6px">해상도</div>
+              <div class="res-row" id="csResRow">
+                <div class="res-chip selected" data-res="1080">FHD 1080p</div>
+                <div class="res-chip" data-res="1440">QHD 1440p</div>
+                <div class="res-chip" data-res="2160">4K</div>
+              </div>
+              <div class="sec-title" style="margin-bottom:6px">게임 선택</div>
+              <div class="game-select-stack">
+                <select class="custom-game-select" id="csGameCategorySelect" aria-label="게임 카테고리"></select>
+                <select class="custom-game-select" id="csGameSelect" aria-label="세부 게임"></select>
+              </div>
+              <div class="sec-title" style="margin-bottom:6px">예상 FPS <span style="font-weight:400;text-transform:none;letter-spacing:0">(저옵 / 중옵 / 고옵)</span></div>
+              <div id="csGameChart"><div class="no-spec"><div class="no-spec-text">부품을 선택해주세요</div></div></div>
+            </div>
+
+            <div id="csPanelWork" style="display:none">
+              <div class="sec-title" style="margin-bottom:8px">세부 작업 선택</div>
+              <select class="custom-game-select" id="csWorkSelect"></select>
+              <div class="sec-title" style="margin-bottom:6px">작업별 사양 적합도</div>
+              <div id="csWorkChart"><div class="no-spec"><div class="no-spec-text">부품을 선택해주세요</div></div></div>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ BUDGET RECOMMEND SECTION ═══ -->
+  <div class="grid app-view" id="recommendSection">
+    <!-- Left: input panel -->
+    <section class="panel">
+
+      <div class="group">
+        <div class="sec-title">예산 설정</div>
+        <div class="choices" id="budgetChoices">
+          <div class="choice block" data-budget="2000000" data-budget-min="1000000" data-budget-max="2000000">100~200만원<small>총 예산 범위</small></div>
+          <div class="choice block" data-budget="3000000" data-budget-min="2000000" data-budget-max="3000000">200~300만원<small>총 예산 범위</small></div>
+          <div class="choice block" data-budget="4500000" data-budget-min="3000000" data-budget-max="4500000">300만원 이상<small>고사양 구성</small></div>
+        </div>
+        <div class="hint">선택한 예산 범위 안에서 LOW / MID / HIGH 조합을 나눠 추천합니다.</div>
+      </div>
+
+      <div class="group">
+        <div class="sec-title">해상도</div>
+        <div class="choices" id="resChoices">
+          <div class="choice" data-resolution="1080">FHD 1080p</div>
+          <div class="choice" data-resolution="1440">QHD 1440p</div>
+          <div class="choice" data-resolution="2160">4K 2160p</div>
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="sec-title">주사율 (목표 Hz)</div>
+        <div class="choices" id="refreshChoices">
+          <div class="choice" data-refresh="60">60Hz</div>
+          <div class="choice" data-refresh="120">120Hz</div>
+          <div class="choice" data-refresh="144">144Hz</div>
+          <div class="choice" data-refresh="240">240Hz</div>
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="sec-title">GPU 칩셋 선호도</div>
+        <div class="choices" id="gpuPrefChoices">
+          <div class="choice" data-gpu="nopref">선호 없음</div>
+          <div class="choice" data-gpu="nvidia">NVIDIA</div>
+          <div class="choice" data-gpu="amd">AMD</div>
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="sec-title">GPU 제조사 선호도</div>
+        <div class="choices" id="gpuMakerChoices">
+          <div class="choice" data-maker="msi">MSI</div>
+          <div class="choice" data-maker="gigabyte">Gigabyte</div>
+          <div class="choice" data-maker="palit">Palit</div>
+          <div class="choice" data-maker="colorful">Colorful</div>
+          <div class="choice" data-maker="asus">ASUS</div>
+          <div class="choice" data-maker="zotac">ZOTAC</div>
+          <div class="choice" data-maker="galax">GALAX</div>
+          <div class="choice" data-maker="emtek">Emtek</div>
+        </div>
+        <div class="hint">선택하지 않으면 해당 GPU 칩셋에서 가장 싼 정상 그래픽카드 후보를 사용합니다</div>
+      </div>
+
+      <!-- 게임 / 작업 toggle -->
+      <div class="group">
+        <div class="sec-title">사용 목적</div>
+        <div class="panel-toggle">
+          <button class="ptog-btn active" id="panelModeGame">🎮 게임</button>
+          <button class="ptog-btn" id="panelModeWork">💼 작업</button>
+        </div>
+
+        <!-- game sub-panel -->
+        <div id="panelGameSub">
+          <div class="hint" style="margin-bottom:8px">카테고리와 세부 게임을 선택하세요. 기본값은 AAA 게임입니다.</div>
+          <div class="gsel-wrap">
+            <select class="gsel" id="gameCategorySelect" aria-label="게임 카테고리"></select>
+            <span class="gsel-arr">▾</span>
+          </div>
+          <div class="gsel-wrap" style="margin-top:8px">
+            <select class="gsel" id="gameSelect" aria-label="세부 게임"></select>
+            <span class="gsel-arr">▾</span>
+          </div>
+        </div>
+
+        <!-- work sub-panel -->
+        <div id="panelWorkSub" style="display:none">
+          <div class="hint" style="margin-bottom:8px">영상 편집은 FHD/4K/8K처럼 작업 강도를 선택할 수 있습니다</div>
+          <select class="gsel" id="panelWorkSelect"></select>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="submitBtn">
+          <span id="submitBtnTxt">견적 분석하기</span>
+        </button>
+        <button class="btn btn-sec" id="resetBtn">초기화</button>
+      </div>
+    </section>
+
+    <!-- Right: results -->
+    <section class="results-wrap" id="resultsWrap">
+      <div id="statusBox"></div>
+      <div id="resultsContainer">
+        <div class="results-placeholder" id="placeholder">
+          <div class="ph-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c8d0e0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          </div>
+          <div class="ph-text">아직 견적이 없습니다</div>
+          <div class="ph-sub">왼쪽에서 사양을 선택하고 분석을 눌러보세요</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+</div><!-- .app -->
+
+<script src="app.js"></script>
+</body>
+</html>
