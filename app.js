@@ -557,9 +557,13 @@ function partUrl(part) {
 }
 function partImageUrl(part, type = '') {
   if (!part?.name && !part?.product_name) return '';
-  if (part?.image_url) return part.image_url;
+  if (String(part.image_url || '').startsWith('/api/part-image?')) return `${baseUrl()}${part.image_url}`;
+  if (/^https?:\/\//i.test(part.image_url || '') && new URL(part.image_url).pathname === '/api/part-image') return part.image_url;
   const name = part.product_name || part.name;
-  const params = queryString({ name:String(name), type:String(type || part.type || part.part_type || '') });
+  const params = queryString({
+    name:String(name), type:String(type || part.part_type || part.type || ''),
+    image_url:part.image_url || '', product_url:partUrl(part),
+  });
   return `${baseUrl()}/api/part-image?${params}`;
 }
 function previewAttrs(part, type = '') {
@@ -567,8 +571,9 @@ function previewAttrs(part, type = '') {
   const price = effectivePrice(part);
   const data = {
     'preview-url': partUrl(part),
-    'preview-name': displayName(part),
+    'preview-name': fullProductName(part),
     'preview-image': partImageUrl(part, type),
+    'preview-fallback': imageFallbackUrl(part),
     'preview-price': price != null ? money(price) : '',
     'preview-source': priceProvenance(part).text,
   };
@@ -579,7 +584,11 @@ function previewAttrs(part, type = '') {
 function partThumb(part, type = '', className = 'part-thumb') {
   const src = partImageUrl(part, type);
   if (!src) return `<span class="${className}"></span>`;
-  return `<span class="${className}"><img src="${escapeHtml(src)}" alt="" loading="lazy" referrerpolicy="no-referrer"/></span>`;
+  return `<span class="${className} image-loading"><img src="${escapeHtml(src)}" data-image-fallback="${escapeHtml(imageFallbackUrl(part))}" alt="${escapeHtml(displayName(part))} 제품 이미지" loading="lazy" decoding="async" referrerpolicy="no-referrer"/></span>`;
+}
+function imageFallbackUrl(part) {
+  const url = String(part?.image_url || '');
+  return /^https?:\/\//i.test(url) && !url.includes('/api/part-image') ? url : '';
 }
 function gpuBrand(item) {
   const value = String(item?.brand || item?.vendor || item?.name || '').toLowerCase();
@@ -596,18 +605,60 @@ function withPartType(items, type) {
     brand: type === 'gpu' ? gpuBrand(item) : item.brand,
   }));
 }
-function displayName(item) {
+function fullProductName(item) {
   const name = String(item?.product_name || item?.name || '-');
   const brand = String(item?.brand || '').trim();
   if (!brand || brand.toLowerCase() === 'nvidia' || brand.toLowerCase() === 'amd') return name;
   return name.toLowerCase().includes(brand.toLowerCase()) ? name : `${brand} ${name}`;
+}
+function displayName(item) {
+  const fullName = fullProductName(item);
+  if (!item || /추가 안 함|직접 선택/.test(fullName)) return fullName;
+  const makers = [
+    ['GIGABYTE', /gigabyte|기가바이트/i], ['ASUS', /asus|아수스|에이수스/i],
+    ['MSI', /\bmsi\b/i], ['ZOTAC', /zotac|조텍/i], ['GALAX', /galax|갤럭시/i],
+    ['이엠텍', /emtek|이엠텍/i], ['PALIT', /palit|팰릿/i], ['COLORFUL', /colorful|컬러풀/i],
+    ['SAPPHIRE', /sapphire|사파이어/i], ['PowerColor', /powercolor|파워컬러/i], ['XFX', /\bxfx\b/i],
+    ['삼성', /samsung|삼성/i], ['SK하이닉스', /sk\s*hynix|하이닉스/i], ['마이크론', /micron|crucial|마이크론/i],
+    ['WD', /western digital|\bwd\b|웨스턴디지털/i], ['Seagate', /seagate|씨게이트/i],
+    ['G.SKILL', /g\.?skill|지스킬/i], ['CORSAIR', /corsair|커세어/i], ['TeamGroup', /teamgroup|팀그룹/i],
+    ['마이크로닉스', /micronics|마이크로닉스/i], ['FSP', /\bfsp\b/i],
+    ['Seasonic', /seasonic|시소닉/i], ['SuperFlower', /superflower|슈퍼플라워/i],
+    ['ASRock', /asrock|애즈락/i], ['Intel', /intel|인텔/i], ['AMD', /\bamd\b|라이젠|ryzen/i],
+  ];
+  const makerText = [item.manufacturer, item.maker, fullName, item.brand].filter(Boolean).join(' ');
+  let maker = makers.find(([, pattern]) => pattern.test(makerText))?.[0]
+    || String(item.manufacturer || item.maker || item.brand || '').replace(/^(nvidia|amd)$/i, '');
+  const gpu = fullName.match(/\b(RTX|GTX|RX)\s*[- ]?\s*(\d{4})\s*(TI\s*SUPER|TI|SUPER|XTX|XT|GRE)?/i);
+  if (gpu) {
+    const suffix = (gpu[3] || '').toUpperCase().replace('TI', 'Ti').replace('SUPER', 'Super');
+    const vramVariant = /5060\s*ti|4060\s*ti/i.test(gpu[0]) && item.vram ? ` ${item.vram}GB` : '';
+    return `${maker || (gpu[1].toUpperCase() === 'RX' ? 'AMD' : 'NVIDIA')} - ${gpu[1].toUpperCase()} ${gpu[2]}${suffix ? ` ${suffix}` : ''}${vramVariant}`;
+  }
+  const type = item.part_type || item.component_type || item.type || '';
+  const intel = fullName.match(/(?:i[3579]\s*[- ]?\s*|코어\s*i[3579]\s*)?(\d{4,5}(?:KF|KS|K|F|T|HX|H|U)?)\b/i);
+  if (/intel|인텔|core\s*i[3579]/i.test(fullName) && intel) return `Intel - ${intel[1].toUpperCase()}`;
+  const ultra = fullName.match(/(?:ultra|울트라)\s*([3579])?\s*[- ]?\s*(\d{3}[A-Z]*)/i);
+  if (ultra) return `Intel - Ultra ${ultra[1] ? `${ultra[1]} ` : ''}${ultra[2].toUpperCase()}`;
+  const ryzen = fullName.match(/(?:ryzen|라이젠)[^\d]*(?:[3579]\s+)?(\d{4}(?:X3D|XT|X|G|F|GE)?)/i);
+  if (ryzen) return `AMD - Ryzen ${ryzen[1].toUpperCase()}`;
+  if ((type === 'ram' || /^DDR[345]$/i.test(type)) && item.gb) {
+    const memoryType = item.ram_type || (/^DDR[345]$/i.test(item.type) ? item.type : fullName.match(/DDR[345]/i)?.[0]);
+    return `${maker ? `${maker} - ` : ''}${[memoryType, `${item.gb}GB`, item.speed].filter(Boolean).join(' ')}`;
+  }
+  let shortName = fullName.replace(/\([^)]*\)|\[[^\]]*\]/g, '').replace(/벌크|정품|병행수입|해외구매|공식인증|당일발송|무료배송/g, '').replace(/\s+/g, ' ').trim();
+  const makerMatch = makers.find(([label]) => label === maker);
+  if (makerMatch) shortName = shortName.replace(makerMatch[1], '').trim();
+  if (maker && shortName.toLowerCase().startsWith(maker.toLowerCase())) shortName = shortName.slice(maker.length).trim();
+  const label = `${maker ? `${maker} - ` : ''}${shortName}`;
+  return label.length > 46 ? `${label.slice(0, 43).trim()}…` : label;
 }
 function partLink(part) {
   const name = escapeHtml(displayName(part));
   const href = partUrl(part);
   return href === '#'
     ? name
-    : `<a class="part-link" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${name}</a>`;
+    : `<a class="part-link" href="${escapeHtml(href)}" title="${escapeHtml(fullProductName(part))}" target="_blank" rel="noopener noreferrer">${name}</a>`;
 }
 function partMeta(part, type = '') {
   const items = [];
@@ -655,25 +706,23 @@ function partMeta(part, type = '') {
   return [...new Set(items.filter(Boolean))].join(' · ');
 }
 function partCell(part, type = '') {
-  const meta = partMeta(part, type);
-  return `<span class="part-title">${partLink(part)}</span>${meta ? `<span class="part-meta">${escapeHtml(meta)}</span>` : ''}`;
+  return `<span class="part-title" title="${escapeHtml(fullProductName(part))}">${partLink(part)}</span>`;
 }
 function partRowHtml(label, part, type = '') {
   if (!part?.name && !part?.product_name) return '';
   const price = effectivePrice(part);
-  const value = componentValueText(part, type);
   return `
     <div class="part-row" ${previewAttrs(part, type)}>
       <span class="part-lbl">${escapeHtml(label)}</span>
       ${partThumb(part, type, 'part-thumb')}
-      <span class="part-name">${partCell(part, type)}<span class="part-value">${escapeHtml(value)}</span>${priceProvenanceHtml(part)}</span>
+      <span class="part-name">${partCell(part, type)}${priceProvenanceHtml(part)}</span>
       <span class="part-price">${price != null ? money(price) : '가격 미확인'}</span>
     </div>`;
 }
 function buyChip(label, part) {
   if (!part?.name) return '';
   if (effectivePrice(part) === 0) return '';
-  return `<a class="buy-chip" href="${escapeHtml(partUrl(part))}" target="_blank" rel="noopener noreferrer"><span>${escapeHtml(label)}</span><b>${escapeHtml(displayName(part))}</b></a>`;
+  return `<a class="buy-chip" href="${escapeHtml(partUrl(part))}" title="${escapeHtml(fullProductName(part))}" target="_blank" rel="noopener noreferrer"><span>${escapeHtml(label)}</span><b>${escapeHtml(displayName(part))}</b></a>`;
 }
 function catalogKey(name) {
   return String(name || '')
@@ -1230,19 +1279,16 @@ function renderProductList() {
     const price = effectivePrice(part);
     const selected = part.id === selectedId;
     const badges = productBadges(part, type);
-    const value = componentValueText(part, type);
     return `
       <button type="button" class="product-card ${selected ? 'selected' : ''}" aria-pressed="${selected}" data-part-id="${escapeHtml(part.id)}" ${previewAttrs(part, type)}>
         <div class="product-card-body">
           ${partThumb(part, type, 'product-thumb')}
           <div class="product-info">
             <div class="product-top">
-              <div class="product-name">${escapeHtml(displayName(part))}</div>
+              <div class="product-name" title="${escapeHtml(fullProductName(part))}">${escapeHtml(displayName(part))}</div>
               <div class="product-price">${price != null ? money(price) : '가격 미확인'}</div>
             </div>
-            <div class="product-meta">${escapeHtml(partMeta(part, type) || '세부 정보 없음')}</div>
-            <div class="product-badges">${badges.map(b => `<span class="product-badge">${escapeHtml(b)}</span>`).join('')}</div>
-            <div class="product-value">${escapeHtml(value)}</div>
+            ${badges.length ? `<div class="product-badges">${badges.map(b => `<span class="product-badge">${escapeHtml(b)}</span>`).join('')}</div>` : ''}
             <div class="product-source">${priceProvenanceHtml(part)}</div>
           </div>
         </div>
@@ -1255,8 +1301,7 @@ function renderProductList() {
 }
 
 function productBadges(part, type) {
-  if (type === 'cpu') return [cpuVendor(part).toUpperCase(), part.socket, `${cpuCores(part)}C/${cpuThreads(part)}T`].filter(Boolean);
-  if (type === 'gpu') return [gpuBrand(part).toUpperCase(), gpuModelToken(part), part.vram ? `${part.vram}GB` : '', part.tdp ? `${part.tdp}W` : ''].filter(Boolean);
+  if (type === 'cpu' || type === 'gpu') return [];
   if (type === 'ram') return [part.type, part.gb ? `${part.gb}GB` : '', part.speed ? `${part.speed}MHz` : ''].filter(Boolean);
   if (type === 'mb') return [part.socket, part.ram_type, part.brand].filter(Boolean);
   if (type === 'storage') return [part.capacity ? (part.capacity >= 1000 ? `${part.capacity/1000}TB` : `${part.capacity}GB`) : '', part.tier?.toUpperCase()].filter(Boolean);
@@ -1308,15 +1353,12 @@ function renderBuildCart() {
     const part = parts[meta.key] || {};
     const price = effectivePrice(part);
     const active = st.builderPart === meta.key;
-    const value = part.name || part.product_name ? componentValueText(part, meta.key, true) : '부품을 선택하세요';
     return `
       <button type="button" class="cart-row ${active ? 'active' : ''}" data-cart-part="${meta.key}" ${previewAttrs(part, meta.key)}>
         <span class="cart-label">${meta.cart}</span>
         ${partThumb(part, meta.key, 'cart-thumb')}
         <span class="cart-main">
-          <span class="cart-name">${escapeHtml(part.name || part.product_name ? displayName(part) : '선택 필요')}</span>
-          <span class="cart-meta">${escapeHtml(partMeta(part, meta.key) || '부품을 선택하세요')}</span>
-          <span class="cart-value">${escapeHtml(value)}</span>
+          <span class="cart-name" title="${escapeHtml(fullProductName(part))}">${escapeHtml(part.name || part.product_name ? displayName(part) : '선택 필요')}</span>
           ${priceProvenanceHtml(part)}
         </span>
         <span class="cart-price">${price != null ? money(price) : '-'}</span>
@@ -1663,6 +1705,7 @@ function ensurePreviewPopover() {
   previewPopover.innerHTML = '<div class="preview-image-wrap"><img alt="" referrerpolicy="no-referrer"><span class="preview-image-empty" hidden>대표 이미지가 없습니다</span></div><div class="preview-caption"><strong class="preview-name"></strong><span class="preview-price"></span><span class="preview-source"></span></div>';
   const img = previewPopover.querySelector('img');
   img.addEventListener('error', () => {
+    if (retryProductImage(img)) return;
     img.hidden = true;
     previewPopover.querySelector('.preview-image-empty').hidden = false;
   });
@@ -1705,6 +1748,8 @@ function schedulePartPreview(target) {
     img.hidden = !src;
     pop.querySelector('.preview-image-empty').hidden = Boolean(src);
     img.alt = `${target.dataset.previewName} 대표 이미지`;
+    img.dataset.imageFallback = target.dataset.previewFallback || '';
+    delete img.dataset.imageRetried;
     if (src) img.src = src;
     else img.removeAttribute('src');
     pop.querySelector('.preview-name').textContent = target.dataset.previewName;
@@ -1732,13 +1777,30 @@ function bindPreviewTargets(root = document) {
     if (img.dataset.fallbackBound) return;
     img.dataset.fallbackBound = '1';
     const fallback = () => {
+      if (retryProductImage(img)) return;
       img.hidden = true;
+      img.parentElement.classList.remove('image-loading');
       img.parentElement.classList.add('image-unavailable');
       img.parentElement.setAttribute('aria-label', '대표 이미지 없음');
     };
+    const loaded = () => {
+      img.hidden = false;
+      img.parentElement.classList.remove('image-unavailable', 'image-loading');
+      img.parentElement.removeAttribute('aria-label');
+    };
     img.addEventListener('error', fallback);
-    if (img.complete && !img.naturalWidth) fallback();
+    img.addEventListener('load', loaded);
+    if (img.complete) img.naturalWidth ? loaded() : fallback();
   });
+}
+
+function retryProductImage(img) {
+  const fallback = img.dataset.imageFallback;
+  if (!fallback || img.dataset.imageRetried || img.src === fallback) return false;
+  img.dataset.imageRetried = '1';
+  img.hidden = false;
+  img.src = fallback;
+  return true;
 }
 
 document.addEventListener('keydown', event => { if (event.key === 'Escape') hidePartPreview(); });
@@ -1971,31 +2033,34 @@ function selectedCustomParts() {
   };
 }
 
-function fpsValueGrade(fpsPerThousand) {
-  if (fpsPerThousand >= 0.09) return '매우 좋음';
-  if (fpsPerThousand >= 0.07) return '좋음';
-  if (fpsPerThousand >= 0.05) return '보통';
-  if (fpsPerThousand >= 0.03) return '낮음';
-  return '매우 낮음';
+function pricePerFrame(totalPrice, fps) {
+  const price = Number(totalPrice), frames = Number(fps);
+  return Number.isFinite(price) && price > 0 && Number.isFinite(frames) && frames > 0
+    ? price / frames : null;
+}
+
+function pricePerFrameHtml(totalPrice, fps, game, resolution, missing = false) {
+  const value = missing ? null : pricePerFrame(totalPrice, fps);
+  const gameName = GAME_OPTIONS.find(item => item.id === game)?.label || game || '선택 게임';
+  const result = value == null ? '계산 대기' : `${Math.round(value).toLocaleString('ko-KR')}원 / 프레임`;
+  return `<div class="frame-value" aria-live="polite">
+    <span class="frame-value-label">1프레임당 가격</span><strong>${result}</strong>
+    <span class="frame-value-detail">${escapeHtml(gameName)} · ${escapeHtml(resolution)}p · 고옵</span>
+    <span class="frame-value-formula">${value == null ? '전체 부품 가격과 FPS 확인 후 계산합니다.' : `${money(totalPrice)} ÷ ${Number(fps).toLocaleString('ko-KR')} FPS · 낮을수록 좋은 가성비`}</span>
+  </div>`;
 }
 
 function renderCustomBuildValue(parts, totalPrice, missing) {
   const box = document.getElementById('csBuildValue');
   if (!box) return;
   if (missing || totalPrice <= 0 || !parts.gpu || !parts.cpu || !parts.ram) {
-    box.textContent = 'GPU, CPU, RAM의 가격이 확인되면 가격 대비 성능을 계산합니다.';
+    box.textContent = '전체 부품 가격과 게임 FPS가 확인되면 1프레임당 가격을 계산합니다.';
     return;
   }
   if (st.csMode === 'game') {
     const game = document.getElementById('csGameSelect')?.value || st.csGame || 'cyberpunk2077';
     const benchmark = customFpsCache.get(customFpsKey(parts.gpu, parts.cpu, parts.ram, game, st.csRes, st.refresh));
-    const highFps = Number(benchmark?.fps_by_option?.high) || estFPS(parts.gpu, parts.cpu, parts.ram, game, st.csRes, 'high');
-    const fpsPerThousand = highFps / Math.max(1, totalPrice / 1000);
-    const target = Number(benchmark?.target_fps) || Number(st.refresh) || 60;
-    const coverage = highFps / Math.max(1, target);
-    const capacity = benchmark?.capacity_label
-      || (coverage >= 1.2 ? '목표 성능 여유' : coverage >= 1 ? '목표 성능 충족' : coverage >= .85 ? '거의 충족' : coverage >= .6 ? '다소 부족' : '매우 부족');
-    box.innerHTML = `<strong>${escapeHtml(capacity)} · 고옵 기준 천원당 ${fpsPerThousand.toFixed(2)}프레임</strong><br><span>목표 ${target.toFixed(0)}fps 대비 ${(coverage * 100).toFixed(0)}% · ${fpsValueGrade(fpsPerThousand)} 가성비 · 전체 부품 합계 기준</span>`;
+    box.innerHTML = pricePerFrameHtml(totalPrice, benchmark?.fps_by_option?.high, game, st.csRes, missing);
     return;
   }
   const profile = document.getElementById('csWorkSelect')?.value || st.csWork;
@@ -2066,12 +2131,34 @@ function customFpsKey(gpu, cpu, ram, game, resolution, refresh) {
 
 function fpsSourceLabel(fps) {
   const labels = {
+    measured_benchmark: '동일 구성 실측 벤치마크',
+    benchmark_calibrated: '실측 벤치마크 보정 추정',
+    model_estimate: '성능 모델 추정 · 실측 자료 없음',
     game_db_benchmark: '수집된 게임별 실측 벤치마크',
     tpu_reference_calibrated: '공개 실측 벤치마크 앵커 보정',
     crawled_gpu_hierarchy: '수집된 GPU 벤치마크 기반 보정',
     embedded_hierarchy: 'GPU 벤치마크 기반 보정',
   };
-  return labels[fps?.fps_source] || '공개 벤치마크 기반 보정';
+  return fps?.fps_source_label || labels[fps?.fps_source] || '성능 모델 추정';
+}
+
+function fpsEvidenceHtml(fps) {
+  if (!fps) return '';
+  const confidence = { high:'높음', medium:'보통', low:'낮음' }[fps.confidence];
+  const sourceUrl = /^https?:\/\//i.test(fps.benchmark_source_url || '') ? fps.benchmark_source_url : '';
+  const source = sourceUrl ? `<a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(fps.benchmark_source_title || '벤치마크 원문')}</a>` : '';
+  const range = fps.fps_range_by_option?.high;
+  const rangeText = range && Number.isFinite(Number(range.min)) && Number.isFinite(Number(range.max))
+    ? `고옵 예상 범위 ${Number(range.min).toLocaleString('ko-KR')}–${Number(range.max).toLocaleString('ko-KR')} FPS` : '';
+  const notes = Array.isArray(fps.estimation_notes) ? fps.estimation_notes.filter(Boolean) : [];
+  const reference = [fps.benchmark_reference_gpu, fps.benchmark_reference_cpu].filter(Boolean).join(' + ');
+  return `<div class="benchmark-evidence">
+    <span class="evidence-label">${escapeHtml(fpsSourceLabel(fps))}${confidence ? ` · 신뢰도 ${confidence}` : ''}</span>
+    ${rangeText ? `<span>${rangeText}</span>` : ''}
+    ${source ? `<span>${source}</span>` : ''}
+    ${fps.benchmark_conditions ? `<span>원문 측정 조건 · ${escapeHtml(fps.benchmark_conditions)}</span>` : ''}
+    ${reference || notes.length ? `<details><summary>추정 기준 보기</summary>${reference ? `<p>기준 구성 · ${escapeHtml(reference)}</p>` : ''}${notes.map(note => `<p>${escapeHtml(note)}</p>`).join('')}</details>` : ''}
+  </div>`;
 }
 
 function fpsRequestPart(part) {
@@ -2102,6 +2189,7 @@ async function fetchCustomBenchmark(gpu, cpu, ram, game, resolution, refresh, ke
         refresh,
         tier: 'mid',
       }),
+      signal: AbortSignal.timeout(20000),
     });
     const data = await response.json();
     if (!response.ok || !data?.fps) throw new Error(data?.error || 'fps estimate failed');
@@ -2113,7 +2201,9 @@ async function fetchCustomBenchmark(gpu, cpu, ram, game, resolution, refresh, ke
     renderCustomGameChart(current.gpu, current.cpu, current.ram, data.fps, false);
     updateCustomPrice();
   } catch {
-    // The local chart remains visible if the API is temporarily unavailable.
+    if (token !== customFpsToken || st.csMode !== 'game') return;
+    renderCustomGameChart(gpu, cpu, ram, null, false);
+    updateCustomPrice();
   }
 }
 
@@ -2121,17 +2211,20 @@ function renderCustomGameChart(gpu, cpu, ram, benchmark = null, loading = false)
   const gameKey = document.getElementById('csGameSelect').value;
   const res = st.csRes;
   const benchmarkFps = benchmark?.fps_by_option;
-  const fps = benchmarkFps ? {
-    low: Number(benchmarkFps.low) || 0,
-    medium: Number(benchmarkFps.medium) || 0,
-    high: Number(benchmarkFps.high) || 0,
-  } : enforceFpsOrder({
-    low: estFPS(gpu, cpu, ram, gameKey, res, 'low'),
-    medium: estFPS(gpu, cpu, ram, gameKey, res, 'medium'),
-    high: estFPS(gpu, cpu, ram, gameKey, res, 'high'),
-  });
+  const chart = document.getElementById('csGameChart');
+  chart.setAttribute('aria-busy', String(loading));
+  if (!benchmarkFps) {
+    chart.innerHTML = `<div class="fps-empty ${loading ? 'is-loading' : ''}" role="status">${loading ? '<span class="spinner"></span> 선택 구성의 벤치마크를 확인하고 있습니다.' : 'FPS 정보를 불러오지 못했습니다. 아래 버튼으로 다시 확인해주세요.'}${loading ? '' : '<button type="button" class="mini-btn ghost" id="retryFpsBtn">FPS 다시 확인</button>'}</div>`;
+    chart.querySelector('#retryFpsBtn')?.addEventListener('click', updateCustomChart);
+    return;
+  }
+  const fps = {
+    low: Number(benchmarkFps.low),
+    medium: Number(benchmarkFps.medium),
+    high: Number(benchmarkFps.high),
+  };
   const low = fps.low, med = fps.medium, high = fps.high;
-  const maxFps = Math.max(low, med, 60);
+  const maxFps = Math.max(...[low, med, high].filter(Number.isFinite), 60);
 
   const rows = [
     { label:'저옵', fps:low },
@@ -2140,6 +2233,7 @@ function renderCustomGameChart(gpu, cpu, ram, benchmark = null, loading = false)
   ];
 
   const html = rows.map(r => {
+    if (!Number.isFinite(r.fps) || r.fps < 0) return `<div class="chart-row"><span class="chart-lbl">${r.label}</span><span class="chart-note">측정 정보 없음</span></div>`;
     const pct = Math.min(100, (r.fps/maxFps)*100);
     const cls = r.fps >= 144 ? 'fps-over' : r.fps >= 60 ? '' : 'fps-low';
     return `
@@ -2150,14 +2244,8 @@ function renderCustomGameChart(gpu, cpu, ram, benchmark = null, loading = false)
       </div>`;
   }).join('');
 
-  const source = benchmark
-    ? fpsSourceLabel(benchmark)
-    : loading
-      ? '게임별 실측 벤치마크 확인 중'
-      : '로컬 GPU 벤치마크 보정치';
   const capNote = benchmark?.frame_cap ? ` · 게임 기본 ${benchmark.frame_cap}fps 제한 반영` : '';
-  document.getElementById('csGameChart').innerHTML =
-    `<div class="chart-wrap">${html}<div class="chart-note">* ${source}${capNote}</div></div>`;
+  chart.innerHTML = `<div class="chart-wrap">${html}<div class="chart-note">${res}p · 네이티브 래스터 · RT / 프레임 생성 끔${capNote}</div>${fpsEvidenceHtml(benchmark)}</div>`;
 }
 
 function renderCustomWorkChart(gpu, cpu, ram, storage) {
@@ -2375,21 +2463,6 @@ document.getElementById('panelModeWork').addEventListener('click', () => {
 // ─────────────────────────────────────────────────────────────
 // SERVER HEALTH CHECK
 // ─────────────────────────────────────────────────────────────
-async function healthCheck() {
-  const dot = document.getElementById('sdot'), txt = document.getElementById('stxt');
-  try {
-    const r = await fetch(baseUrl()+'/health', { signal:AbortSignal.timeout(5000) });
-    if (!r.ok) throw 0;
-    const d = await r.json();
-    dot.className = 'sdot ok';
-    txt.textContent = `서버 연결됨 · GPU ${d.catalog_sizes?.gpu||'?'}종`;
-  } catch {
-    dot.className = 'sdot bad';
-    txt.textContent = '서버 연결 불가 (로컬 계산 모드)';
-  }
-}
-
-// ─────────────────────────────────────────────────────────────
 // STATUS / SKELETON helpers
 // ─────────────────────────────────────────────────────────────
 const statusBox = document.getElementById('statusBox');
@@ -2405,6 +2478,7 @@ function showSkeleton() {
 }
 function setLoading(v) {
   isLoading = v;
+  resultsContainer.setAttribute('aria-busy', String(v));
   const btn = document.getElementById('submitBtn');
   if (!btn) return;
   btn.disabled = v;
@@ -2440,8 +2514,9 @@ function renderResults(data) {
     const mb      = parts.mb      || {};
     const stor    = parts.storage || {};
     const psu     = parts.psu     || {};
-    const summedTotal = [gpu, cpu, ram, mb, stor, psu]
-      .reduce((sum, part) => sum + (Number(part?.price) || 0), 0);
+    const buildParts = Object.values(parts).filter(part => part && typeof part === 'object');
+    const summedTotal = buildParts.reduce((sum, part) => sum + (effectivePrice(part) || 0), 0);
+    const missingPrice = buildParts.some(part => effectivePrice(part) == null);
     const responseTotal = Number(r.totalPrice || r.total_price || r.debug?.total_price);
     const totalPrice = Number.isFinite(responseTotal) && responseTotal > 0 ? responseTotal : summedTotal;
 
@@ -2452,23 +2527,20 @@ function renderResults(data) {
       const frameCap = Number(fps.frame_cap || 0);
       const targetFps = Number(fps.target_fps || (frameCap ? Math.min(hz, frameCap) : hz));
       const displayTarget = frameCap ? Math.min(hz, frameCap) : hz;
-      const maxFps   = Math.max(...Object.values(fpsByOpt), displayTarget*1.5, 60);
+      const maxFps   = Math.max(...Object.values(fpsByOpt).map(Number).filter(Number.isFinite), displayTarget*1.5, 60);
       const hzPct    = Math.min(100, (displayTarget/maxFps)*100);
       const hzCov    = Number(fps.target_coverage || fps.hz_coverage || 0);
       const vLabel   = fps.value_label || '–';
       const capacityLabel = fps.capacity_label || vLabel;
-      const vScore   = Number(fps.value_score || 0);
-      const fpsPerThousand = Number(fps.value_fps_per_1000krw || 0);
       const gameName = fps.game || st.game;
-      const sourceText = fpsSourceLabel(fps);
 
       const fpsRows = [
         { label:'저옵', key:'low'    },
         { label:'중옵', key:'medium' },
         { label:'고옵', key:'high'   },
       ].map(({label,key}) => {
-        const val = fpsByOpt[key];
-        if (val==null) return '';
+        const val = Number(fpsByOpt[key]);
+        if (fpsByOpt[key] == null || !Number.isFinite(val) || val < 0) return '';
         const pct = Math.min(100,(val/maxFps)*100);
         const cls = fpsClass(val, displayTarget);
         const badge = val>=displayTarget ? (val>=displayTarget*1.1?'✓+':'✓') : '✗';
@@ -2487,18 +2559,20 @@ function renderResults(data) {
         <div class="fps-section">
           <div class="fps-hdr">
             <span class="fps-title">예상 FPS · ${st.resolution}p @ ${displayTarget}fps 목표</span>
-            <span class="fps-tag">${gameName}</span>
+            <span class="fps-tag">${escapeHtml(gameName)}</span>
           </div>
           <div class="fps-bars">${fpsRows}</div>
-          <div class="chart-note" style="margin-top:7px">* ${sourceText}${frameCap ? ` · 게임 기본 ${frameCap}fps 제한 반영` : ''}</div>
+          <div class="chart-note" style="margin-top:7px">네이티브 래스터 · RT / 프레임 생성 끔${frameCap ? ` · 게임 기본 ${frameCap}fps 제한 반영` : ''}</div>
+          ${fpsEvidenceHtml(fps)}
           <div class="val-row">
             <span class="val-icon">${valueIcon(capacityLabel)}</span>
             <div class="val-info">
-              <div class="val-lbl">${capacityLabel}</div>
-              <div class="val-sub">목표 ${targetFps.toFixed(0)}fps 대비 ${(hzCov * 100).toFixed(0)}% · ${vLabel} ${vScore.toFixed(1)}점 · 천원당 ${fpsPerThousand.toFixed(2)}프레임</div>
+              <div class="val-lbl">${escapeHtml(capacityLabel)}</div>
+              <div class="val-sub">목표 ${targetFps.toFixed(0)}fps 대비 ${(hzCov * 100).toFixed(0)}%</div>
             </div>
             <span class="hz-pill ${hzPillClass(hzCov)}">${hzPillText(hzCov,displayTarget)}</span>
           </div>
+          ${pricePerFrameHtml(totalPrice, fpsByOpt.high, st.game, st.resolution, missingPrice)}
         </div>`;
     } else {
       // Work mode
@@ -2664,5 +2738,3 @@ syncDefaults();
 setActiveView(st.activeView);
 loadServerCatalog();
 refreshSelectedPrices();
-healthCheck();
-setInterval(healthCheck, 60000);
