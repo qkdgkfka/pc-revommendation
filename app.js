@@ -515,6 +515,8 @@ const st = {
   builderPart: 'cpu',
   builderFilters: {},
   productQuery: '',
+  productSource: 'all',
+  productSort: 'popular',
   lastRecommendation: null,
 };
 let isLoading = false;
@@ -551,7 +553,7 @@ function queryString(params) {
     .join('&');
 }
 function partUrl(part) {
-  return part?.url || part?.shop_url || part?.product_url || shopSearchUrl(part?.name);
+  return part?.source_url || part?.url || part?.shop_url || part?.product_url || shopSearchUrl(part?.name);
 }
 function partImageUrl(part, type = '') {
   if (!part?.name && !part?.product_name) return '';
@@ -568,6 +570,7 @@ function previewAttrs(part, type = '') {
     'preview-name': displayName(part),
     'preview-image': partImageUrl(part, type),
     'preview-price': price != null ? money(price) : '',
+    'preview-source': priceProvenance(part).text,
   };
   return Object.entries(data)
     .map(([key, value]) => `data-${key}="${escapeHtml(value)}"`)
@@ -587,8 +590,9 @@ function gpuBrand(item) {
 function withPartType(items, type) {
   return (items || []).map(item => ({
     ...item,
-    type,
+    type: type === 'ram' ? (item.ram_type || (/^DDR[345]$/i.test(item.type || '') ? item.type : '')) : type,
     part_type: type,
+    component_type: type,
     brand: type === 'gpu' ? gpuBrand(item) : item.brand,
   }));
 }
@@ -662,8 +666,8 @@ function partRowHtml(label, part, type = '') {
     <div class="part-row" ${previewAttrs(part, type)}>
       <span class="part-lbl">${escapeHtml(label)}</span>
       ${partThumb(part, type, 'part-thumb')}
-      <span class="part-name">${partCell(part, type)}<span class="part-value">${escapeHtml(value)}</span></span>
-      <span class="part-price">${price != null ? money(price) : ''}</span>
+      <span class="part-name">${partCell(part, type)}<span class="part-value">${escapeHtml(value)}</span>${priceProvenanceHtml(part)}</span>
+      <span class="part-price">${price != null ? money(price) : '가격 미확인'}</span>
     </div>`;
 }
 function buyChip(label, part) {
@@ -722,8 +726,8 @@ function seedCatalogItems(items) {
     base_price: Number.isFinite(Number(item?.base_price))
       ? Number(item.base_price)
       : (Number.isFinite(Number(item?.price)) ? Number(item.price) : null),
-    price: null,
-    price_source: item.price_source || 'danawa_search',
+    price: item.price_source && !['catalog_fallback','catalog_search','danawa_search'].includes(item.price_source) ? item.price : (Number(item.price) === 0 ? 0 : null),
+    price_source: item.price_source || 'catalog_fallback',
     url: item.url || shopSearchUrl(item.name),
     image_url: item.image_url || '',
     shop: item.shop || 'Danawa',
@@ -739,9 +743,42 @@ function effectivePrice(item) {
   return null;
 }
 
+function marketName(source) {
+  const text = String(source || '').toLowerCase();
+  if (text.includes('compuzone') || text.includes('컴퓨존')) return '컴퓨존';
+  if (text.includes('danawa') || text.includes('다나와')) return '다나와';
+  return '다나와 + 컴퓨존';
+}
+
+function priceProvenance(item) {
+  const price = effectivePrice(item);
+  if (price === 0 && /none$/.test(item?.id || '')) return { status:'optional', text:'추가 안 함' };
+  if (price == null) return { status:'unavailable', text:'가격 미확인 · 판매처 확인 필요' };
+  const source = String(item?.price_source || '');
+  const shop = marketName(item?.shop || source);
+  const checked = item?.price_checked_at || item?.checked_at;
+  const date = checked ? new Date(checked) : null;
+  const checkedText = date && Number.isFinite(date.getTime())
+    ? date.toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '';
+  const status = item?.price_status === 'stale' || item?.price_stale || item?.stale ? 'stale'
+    : item?.price_status === 'cached' ? 'cached'
+    : item?.price_status === 'verified' && item?.price != null ? 'verified'
+    : /(?:danawa|compuzone).*(?:live|browse)/.test(source) && item?.price != null && checkedText ? 'verified'
+    : 'estimated';
+  if (status === 'verified') return { status, text:`${shop} 확인가${checkedText ? ' · ' + checkedText : ''}` };
+  if (status === 'cached') return { status, text:`${shop} 저장된 확인가${checkedText ? ' · ' + checkedText : ''}` };
+  if (status === 'stale') return { status, text:`${shop} 이전 확인가${checkedText ? ' · ' + checkedText : ''} · 재확인 필요` };
+  return { status, text:'참고가 · 현재 판매가 미확인' };
+}
+
+function priceProvenanceHtml(item) {
+  const provenance = priceProvenance(item);
+  return `<span class="price-provenance ${provenance.status}">${escapeHtml(provenance.text)}</span>`;
+}
+
 function catalogPriceLabel(item) {
   const price = effectivePrice(item);
-  return `${displayName(item)}${price != null ? ' — ' + money(price) : ' — 검색중'}`;
+  return `${displayName(item)} — ${price != null ? money(price) : '가격 미확인'} · ${priceProvenance(item).text}`;
 }
 
 const SELECTOR_PART_TYPES = {
@@ -776,7 +813,8 @@ function browseStateFor(type) {
   if (!danawaBrowseByType[type]) {
     danawaBrowseByType[type] = {
       items: [], page: 0, query: '', hasMore: false, loading: false,
-      source: 'catalog', sortLabel: '다나와 인기상품순', error: '',
+      source: 'catalog', requestedSource:'all', status:'idle', total:null,
+      sortLabel: '검색처 기본순', error: '', loaded:false, controller:null,
     };
   }
   return danawaBrowseByType[type];
@@ -787,8 +825,10 @@ function activeDanawaProducts(type) {
 }
 
 function browseProductsFor(type) {
-  const live = activeDanawaProducts(type);
-  return live.length ? live : baseCatalogFor(type);
+  const browse = browseStateFor(type);
+  const matches = browse.query === st.productQuery.trim() && browse.requestedSource === st.productSource;
+  if (matches && browse.loaded && browse.status !== 'unavailable') return browse.items;
+  return baseCatalogFor(type);
 }
 
 function allKnownProductsFor(type) {
@@ -824,6 +864,9 @@ function applyPriceResult(result) {
   if (result.price_source) target.price_source = result.price_source;
   if (result.product_name) target.product_name = result.product_name;
   if (result.image_url) target.image_url = result.image_url;
+  ['price_status','price_checked_at','source_url'].forEach(key => {
+    if (result[key] != null) target[key] = result[key];
+  });
   target.lookup_name = result.name || target.lookup_name || target.name;
 }
 
@@ -841,7 +884,7 @@ function compatibleMbs(cpu, ram, pool = allKnownProductsFor('mb')) {
     const ramOk = !ramType || !mbRam || ramType === mbRam;
     return socketOk && ramOk;
   });
-  return filtered.length ? filtered : (pool || []);
+  return filtered;
 }
 
 const BUILDER_PARTS = [
@@ -1037,6 +1080,11 @@ function productMatchesFilters(type, part) {
     if (!includes('vendor', gpuBrand(part))) return false;
     if (!includes('model', gpuModelToken(part))) return false;
     if (!includes('vram', part.vram)) return false;
+    if (has('maker')) {
+      const makerNames = { msi:['msi'], gigabyte:['gigabyte','기가바이트'], palit:['palit','팰릿'], colorful:['colorful','컬러풀'], asus:['asus','아수스'], zotac:['zotac','조텍'], galax:['galax','갤럭시'], emtek:['emtek','이엠텍'] };
+      const productName = String([part.name, part.product_name, part.brand, part.manufacturer].filter(Boolean).join(' ')).toLowerCase();
+      if (!f.maker.some(maker => (makerNames[maker] || [maker]).some(name => productName.includes(name)))) return false;
+    }
   }
   if (type === 'mb') {
     if (!includes('socket', part.socket)) return false;
@@ -1080,10 +1128,10 @@ function productMatchesFilters(type, part) {
   // Once the server has returned a live result page for this exact query,
   // Danawa has already performed the text search.  Re-filtering it locally
   // would incorrectly hide Korean/English model-name variants.
-  const queryAlreadyApplied = q && browse.items.length && normalizeSearchText(browse.query) === q;
+  const queryAlreadyApplied = q && browse.loaded && browse.status !== 'unavailable' && browse.requestedSource === st.productSource && normalizeSearchText(browse.query) === q;
   if (q && !queryAlreadyApplied) {
     const haystack = normalizeSearchText([part.name, displayName(part), partMeta(part, type), gpuModelToken(part)].join(' '));
-    if (!haystack.includes(q)) return false;
+    if (!q.split(' ').every(term => haystack.includes(term))) return false;
   }
   return true;
 }
@@ -1093,7 +1141,17 @@ function normalizeSearchText(value) {
 }
 
 function filteredProducts(type = st.builderPart) {
-  return rawCatalogFor(type).filter(part => productMatchesFilters(type, part));
+  const products = rawCatalogFor(type).filter(part => productMatchesFilters(type, part));
+  if (st.productSort === 'name') products.sort((a, b) => displayName(a).localeCompare(displayName(b), 'ko'));
+  if (['price_asc','price_desc'].includes(st.productSort)) {
+    products.sort((a, b) => {
+      const aPrice = effectivePrice(a), bPrice = effectivePrice(b);
+      if (aPrice == null) return bPrice == null ? 0 : 1;
+      if (bPrice == null) return -1;
+      return st.productSort === 'price_asc' ? aPrice - bPrice : bPrice - aPrice;
+    });
+  }
+  return products;
 }
 
 function selectedIdForType(type) {
@@ -1110,7 +1168,7 @@ function renderBuilderFilters() {
       <div class="filter-label">${escapeHtml(group.label)}</div>
       <div class="filter-options">
         ${group.options.map(([value,label]) => `
-          <button type="button" class="filter-check ${filterHas(type, group.key, value) ? 'selected' : ''}"
+          <button type="button" class="filter-check ${filterHas(type, group.key, value) ? 'selected' : ''}" aria-pressed="${filterHas(type, group.key, value)}"
             data-filter-key="${escapeHtml(group.key)}" data-filter-value="${escapeHtml(value)}">${escapeHtml(label)}</button>
         `).join('') || '<span class="product-source">선택 가능한 옵션 없음</span>'}
       </div>
@@ -1134,24 +1192,37 @@ function renderProductList() {
   const list = document.getElementById('productList');
   const footer = document.getElementById('productListFooter');
   const moreButton = document.getElementById('loadMoreProductsBtn');
+  const note = document.getElementById('productBrowseNote');
+  const currentResults = browse.query === st.productQuery.trim() && browse.requestedSource === st.productSource;
+  const usingMarket = currentResults && browse.loaded && browse.status !== 'unavailable';
+  const shop = marketName(st.productSource);
   if (title) title.textContent = meta?.label || '제품';
-  if (listTitle) listTitle.textContent = browse.source === 'danawa' ? '다나와에서 선택 가능한 제품' : '선택 가능한 제품';
+  if (listTitle) listTitle.textContent = usingMarket ? `${shop} 검색 결과` : '부품 카탈로그';
   if (orderLabel) {
-    if (browse.loading) orderLabel.textContent = '다나와 결과 불러오는 중…';
-    else if (browse.source === 'danawa') orderLabel.textContent = browse.sortLabel || '다나와 인기상품순';
-    else if (browse.error) orderLabel.textContent = '다나와 연결 실패 · 기본 목록';
-    else orderLabel.textContent = '기본 목록';
+    if (browse.loading) orderLabel.textContent = `${shop} 검색 중…`;
+    else if (usingMarket) orderLabel.textContent = st.productSort === 'popular' ? (browse.sortLabel || '검색처 기본순') : '불러온 제품 기준';
+    else orderLabel.textContent = '카탈로그 기준';
   }
-  if (count) count.textContent = `${products.length}개`;
-  if (footer) footer.hidden = !(browse.source === 'danawa' && browse.hasMore);
+  if (count) count.textContent = `${products.length}개 표시${usingMarket && browse.total != null ? ` / 검색 ${Number(browse.total).toLocaleString('ko-KR')}개` : ''}`;
+  if (note) {
+    const failures = usingMarket ? Object.entries(browse.sourceStatus || {}).filter(([, value]) => ['unavailable','error'].includes(typeof value === 'string' ? value : value?.status)).map(([key]) => marketName(key)) : [];
+    note.textContent = browse.loading ? '판매처의 제품과 가격을 불러오고 있습니다.'
+      : !usingMarket && browse.error ? `${browse.error} 카탈로그의 이전 확인가·참고가를 표시합니다. 가격 갱신으로 다시 시도할 수 있어요.`
+      : usingMarket && browse.status === 'stale' ? '이전에 확인한 검색 결과입니다. 각 가격의 확인 시각을 확인해주세요.'
+      : failures.length ? `${failures.join(', ')} 연결이 지연되어 응답한 판매처의 결과를 표시합니다.`
+      : '필터와 정렬은 불러온 제품에 적용됩니다. 마우스를 올리거나 키보드로 선택하면 대표 이미지를 볼 수 있어요.';
+  }
+  if (footer) footer.hidden = !(usingMarket && browse.hasMore);
   if (moreButton) {
     moreButton.disabled = !!browse.loading;
-    moreButton.textContent = browse.loading ? '다나와 결과 불러오는 중…' : '다나와 결과 더 보기';
+    moreButton.textContent = browse.loading ? '제품 불러오는 중…' : '제품 더 보기';
   }
   if (!list) return;
+  list.setAttribute('aria-busy', String(browse.loading));
+  hidePartPreview();
   if (!products.length) {
     list.innerHTML = browse.loading
-      ? '<div class="product-empty">다나와 추천 상품을 불러오는 중입니다…</div>'
+      ? '<div class="product-empty">판매처에서 제품을 검색하고 있습니다…</div>'
       : '<div class="product-empty">조건에 맞는 제품이 없습니다. 필터를 줄이거나 검색어를 지워보세요.</div>';
     return;
   }
@@ -1159,25 +1230,20 @@ function renderProductList() {
     const price = effectivePrice(part);
     const selected = part.id === selectedId;
     const badges = productBadges(part, type);
-    const source = part.danawa_rank
-      ? `다나와 인기상품순 #${part.danawa_rank}`
-      : part.price_source && !['danawa_search','catalog_fallback'].includes(part.price_source)
-        ? '다나와 가격 반영'
-        : '카탈로그 기준가';
     const value = componentValueText(part, type);
     return `
-      <button type="button" class="product-card ${selected ? 'selected' : ''}" data-part-id="${escapeHtml(part.id)}" ${previewAttrs(part, type)}>
+      <button type="button" class="product-card ${selected ? 'selected' : ''}" aria-pressed="${selected}" data-part-id="${escapeHtml(part.id)}" ${previewAttrs(part, type)}>
         <div class="product-card-body">
           ${partThumb(part, type, 'product-thumb')}
           <div class="product-info">
             <div class="product-top">
               <div class="product-name">${escapeHtml(displayName(part))}</div>
-              <div class="product-price">${price != null ? money(price) : '검색중'}</div>
+              <div class="product-price">${price != null ? money(price) : '가격 미확인'}</div>
             </div>
             <div class="product-meta">${escapeHtml(partMeta(part, type) || '세부 정보 없음')}</div>
             <div class="product-badges">${badges.map(b => `<span class="product-badge">${escapeHtml(b)}</span>`).join('')}</div>
             <div class="product-value">${escapeHtml(value)}</div>
-            <div class="product-source">${source}</div>
+            <div class="product-source">${priceProvenanceHtml(part)}</div>
           </div>
         </div>
       </button>`;
@@ -1222,9 +1288,12 @@ function selectBuilderProduct(type, id) {
 }
 
 function setBuilderPart(type) {
+  clearTimeout(productSearchTimer);
+  invalidateProductRequest(st.builderPart);
   st.builderPart = BUILDER_META[type] ? type : 'cpu';
   document.querySelectorAll('#builderTabs .builder-tab').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.part === st.builderPart);
+    btn.setAttribute('aria-pressed', String(btn.dataset.part === st.builderPart));
   });
   renderBuilderFilters();
   renderProductList();
@@ -1248,6 +1317,7 @@ function renderBuildCart() {
           <span class="cart-name">${escapeHtml(part.name || part.product_name ? displayName(part) : '선택 필요')}</span>
           <span class="cart-meta">${escapeHtml(partMeta(part, meta.key) || '부품을 선택하세요')}</span>
           <span class="cart-value">${escapeHtml(value)}</span>
+          ${priceProvenanceHtml(part)}
         </span>
         <span class="cart-price">${price != null ? money(price) : '-'}</span>
       </button>`;
@@ -1258,46 +1328,77 @@ function renderBuildCart() {
   bindPreviewTargets(box);
 }
 
+function invalidateProductRequest(type) {
+  const browse = browseStateFor(type);
+  browse.requestId = ++danawaBrowseRequestToken;
+  browse.controller?.abort();
+  browse.controller = null;
+  browse.loading = false;
+}
+
 async function loadDanawaProducts(type = st.builderPart, options = {}) {
   if (!BUILDER_META[type]) return;
   const browse = browseStateFor(type);
   const query = String(options.query ?? st.productQuery ?? '').trim();
-  const append = Boolean(options.append && browse.items.length && browse.query === query);
-  if (browse.loading) return;
+  const source = options.source || st.productSource;
+  const append = Boolean(options.append && browse.loaded && browse.query === query && browse.requestedSource === source);
+  if (append && (browse.loading || !browse.hasMore)) return;
+  invalidateProductRequest(type);
   const page = append ? Math.max(1, Number(browse.page || 0) + 1) : 1;
   const requestId = ++danawaBrowseRequestToken;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20000);
   browse.requestId = requestId;
+  browse.controller = controller;
   browse.loading = true;
   browse.error = '';
-  renderProductList();
+  if (type === st.builderPart) renderProductList();
   try {
-    const params = new URLSearchParams({ type, query, page:String(page), limit:'40' });
+    const params = new URLSearchParams({ type, query, source, page:String(page), limit:'40' });
     if (options.force) params.set('refresh', '1');
-    const r = await fetch(baseUrl() + '/api/danawa-products?' + params.toString(), {
-      signal: AbortSignal.timeout(12000),
-    });
-    const data = await r.json();
-    if (!r.ok || !data?.ok) throw new Error(data?.error || 'danawa product browse failed');
+    const response = await fetch(baseUrl() + '/api/products?' + params.toString(), { signal:controller.signal });
+    const data = await response.json();
+    if (!response.ok || data?.ok === false) throw new Error(data?.error || 'product browse failed');
     if (browse.requestId !== requestId) return;
+    // Selected SKUs survive a new search, page replacement, or source switch.
+    Object.entries(selectedCustomParts()).forEach(([key, part]) => rememberBrowseProduct(key, part));
     const items = withPartType(data.items || [], type);
     browse.items = append ? uniqueProducts([...browse.items, ...items]) : uniqueProducts(items);
     browse.page = page;
     browse.query = query;
-    browse.hasMore = !!data.has_more;
-    browse.source = 'danawa';
-    browse.sortLabel = data.sort_label || '다나와 인기상품순';
-    browse.error = '';
+    browse.requestedSource = source;
+    browse.hasMore = Boolean(data.has_more);
+    browse.total = data.total == null ? null : Number(data.total);
+    browse.status = data.status || (items.length ? 'live' : 'empty');
+    browse.sourceStatus = data.source_status || {};
+    browse.source = source;
+    browse.sortLabel = data.sort_label || '검색처 기본순';
+    browse.loaded = true;
+    browse.loadedAt = Date.now();
+    browse.error = browse.status === 'unavailable' ? `${marketName(source)} 검색에 연결하지 못했습니다.` : '';
     syncCatalogSelectors();
     updateCustomPrice();
-  } catch {
+  } catch (error) {
     if (browse.requestId !== requestId) return;
-    browse.error = '다나와 상품 목록을 불러오지 못했습니다.';
-    if (!browse.items.length) browse.source = 'catalog';
+    browse.error = `${marketName(source)} 검색에 연결하지 못했습니다.`;
+    if (!append) {
+      browse.items = [];
+      browse.query = query;
+      browse.requestedSource = source;
+      browse.status = 'unavailable';
+      browse.source = 'catalog';
+      browse.loaded = false;
+      browse.hasMore = false;
+    }
   } finally {
+    clearTimeout(timeout);
     if (browse.requestId === requestId) {
       browse.loading = false;
-      renderBuilderFilters();
-      renderProductList();
+      browse.controller = null;
+      if (type === st.builderPart) {
+        renderBuilderFilters();
+        renderProductList();
+      }
     }
   }
 }
@@ -1306,10 +1407,11 @@ function refreshProductBrowserPrices(options = {}) {
   const type = options.type || st.builderPart;
   const browse = browseStateFor(type);
   const query = String(options.query ?? st.productQuery ?? '').trim();
-  if (!options.force && !options.append && browse.items.length && browse.query === query) {
+  const source = options.source || st.productSource;
+  if (!options.force && !options.append && browse.loaded && browse.status !== 'unavailable' && browse.query === query && browse.requestedSource === source && Date.now() - browse.loadedAt < 300000) {
     return Promise.resolve();
   }
-  return loadDanawaProducts(type, { ...options, query });
+  return loadDanawaProducts(type, { ...options, query, source });
 }
 
 function populateMbs(cpu, ram, keepId = '') {
@@ -1325,7 +1427,7 @@ function populateMbs(cpu, ram, keepId = '') {
 function syncCatalogSelectors() {
   const activeBrand = document.querySelector('#brandFilter .brand-btn.active')?.dataset.brand || 'all';
   const selected = selectedCustomParts();
-  populateGpus(activeBrand);
+  populateGpus(activeBrand, false);
   populateDropdown('csCpu', CPUS);
   populateDropdown('csRam', RAMS);
   populateMbs(selected.cpu, selected.ram, selected.mb?.id);
@@ -1357,7 +1459,7 @@ async function lookupLivePrices(items, options = {}) {
     .filter(Boolean)
     .map(item => ({
       id: item.id,
-      type: item.type || item.part_type || '',
+      type: item.component_type || item.part_type || item.type || '',
       name: item.name,
       base_price: item.base_price ?? item.price ?? null,
     }))
@@ -1371,7 +1473,7 @@ async function lookupLivePrices(items, options = {}) {
     const r = await fetch(baseUrl() + '/api/price-lookup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items: payloadItems, gpu_brands: options.gpu_brands || [] }),
+      body: JSON.stringify({ items: payloadItems, gpu_brands: options.gpu_brands || [], source:st.productSource }),
       signal: ctrl.signal
     });
     const data = await r.json();
@@ -1385,7 +1487,7 @@ async function lookupLivePrices(items, options = {}) {
 async function refreshSelectedPrices() {
   const token = ++priceLookupToken;
   const selected = selectedCustomParts();
-  const liveDanawa = part => part?.price_source === 'danawa_recommend_live';
+  const liveDanawa = part => ['verified','stale','cached'].includes(priceProvenance(part).status);
   const wanted = [
     selected.gpu && !liveDanawa(selected.gpu) ? { id: selected.gpu.id, type: 'gpu', name: selected.gpu.name, base_price: selected.gpu.base_price } : null,
     selected.cpu && !liveDanawa(selected.cpu) ? { id: selected.cpu.id, type: 'cpu', name: selected.cpu.name, base_price: selected.cpu.base_price } : null,
@@ -1491,7 +1593,10 @@ function importRecommendedBuild(tier) {
   priceLookupToken += 1;
   productLookupToken += 1;
   Object.entries(parts).forEach(([type, part]) => {
-    if (part?.id) applyPriceResult({ ...part, type, id:part.id });
+    if (part?.id) {
+      rememberBrowseProduct(type, withPartType([part], type)[0]);
+      applyPriceResult({ ...part, type, id:part.id });
+    }
   });
 
   document.querySelectorAll('#brandFilter .brand-btn').forEach(button => {
@@ -1513,8 +1618,8 @@ function importRecommendedBuild(tier) {
 
   setSelectValue('csCpu', parts.cpu.id);
   setSelectValue('csRam', parts.ram.id);
-  const selectedCpu = CPUS.find(part => part.id === document.getElementById('csCpu').value);
-  const selectedRam = RAMS.find(part => part.id === document.getElementById('csRam').value);
+  const selectedCpu = findPartById('cpu', document.getElementById('csCpu').value);
+  const selectedRam = findPartById('ram', document.getElementById('csRam').value);
   populateMbs(selectedCpu, selectedRam, parts.mb.id);
   setSelectValue('csGpu', parts.gpu.id);
   setSelectValue('csMb', parts.mb.id);
@@ -1546,58 +1651,71 @@ function importRecommendedBuild(tier) {
 
 let previewTimer = null;
 let previewPopover = null;
+let previewTarget = null;
 
 function ensurePreviewPopover() {
   if (previewPopover) return previewPopover;
   previewPopover = document.createElement('div');
   previewPopover.className = 'part-preview-popover';
-  previewPopover.innerHTML = '<iframe title="상품 미리보기" loading="lazy"></iframe>';
+  previewPopover.id = 'partImagePreview';
+  previewPopover.setAttribute('role', 'tooltip');
+  previewPopover.setAttribute('aria-hidden', 'true');
+  previewPopover.innerHTML = '<div class="preview-image-wrap"><img alt="" referrerpolicy="no-referrer"><span class="preview-image-empty" hidden>대표 이미지가 없습니다</span></div><div class="preview-caption"><strong class="preview-name"></strong><span class="preview-price"></span><span class="preview-source"></span></div>';
+  const img = previewPopover.querySelector('img');
+  img.addEventListener('error', () => {
+    img.hidden = true;
+    previewPopover.querySelector('.preview-image-empty').hidden = false;
+  });
   document.body.appendChild(previewPopover);
   return previewPopover;
 }
 
-function previewSrcFromTarget(target) {
-  const params = queryString({
-    url: target.dataset.previewUrl || '',
-    name: target.dataset.previewName || '',
-    image: target.dataset.previewImage || '',
-    price: target.dataset.previewPrice || '',
-  });
-  return `${baseUrl()}/api/page-preview?${params}`;
-}
-
 function positionPreviewPopover(target, pop) {
-  if (!target.getBoundingClientRect) return;
   const rect = target.getBoundingClientRect();
   const margin = 12;
-  const width = 320;
-  const height = 282;
+  const width = pop.offsetWidth || 260;
+  const height = pop.offsetHeight || 300;
   let left = rect.right + margin;
-  let top = rect.top;
-  if (left + width > window.innerWidth - margin) left = Math.max(margin, rect.left - width - margin);
-  if (top + height > window.innerHeight - margin) top = Math.max(margin, window.innerHeight - height - margin);
+  if (left + width > window.innerWidth - margin) left = rect.left - width - margin;
+  left = Math.max(margin, Math.min(left, window.innerWidth - width - margin));
+  const top = Math.max(margin, Math.min(rect.top, window.innerHeight - height - margin));
   pop.style.left = `${left}px`;
   pop.style.top = `${top}px`;
 }
 
 function hidePartPreview() {
-  if (previewTimer) {
-    clearTimeout(previewTimer);
-    previewTimer = null;
+  clearTimeout(previewTimer);
+  previewTimer = null;
+  if (previewTarget) previewTarget.removeAttribute('aria-describedby');
+  previewTarget = null;
+  if (previewPopover) {
+    previewPopover.classList.remove('show');
+    previewPopover.setAttribute('aria-hidden', 'true');
   }
-  if (previewPopover) previewPopover.classList.remove('show');
 }
 
 function schedulePartPreview(target) {
   hidePartPreview();
   if (!target?.dataset?.previewName) return;
   previewTimer = setTimeout(() => {
+    if (!target.isConnected) return;
     const pop = ensurePreviewPopover();
-    const iframe = pop.querySelector('iframe');
-    if (iframe) iframe.src = previewSrcFromTarget(target);
+    const img = pop.querySelector('img');
+    const src = target.dataset.previewImage;
+    img.hidden = !src;
+    pop.querySelector('.preview-image-empty').hidden = Boolean(src);
+    img.alt = `${target.dataset.previewName} 대표 이미지`;
+    if (src) img.src = src;
+    else img.removeAttribute('src');
+    pop.querySelector('.preview-name').textContent = target.dataset.previewName;
+    pop.querySelector('.preview-price').textContent = target.dataset.previewPrice || '가격 미확인';
+    pop.querySelector('.preview-source').textContent = target.dataset.previewSource || '';
     positionPreviewPopover(target, pop);
     pop.classList.add('show');
-  }, 500);
+    pop.setAttribute('aria-hidden', 'false');
+    target.setAttribute('aria-describedby', pop.id);
+    previewTarget = target;
+  }, 220);
 }
 
 function bindPreviewTargets(root = document) {
@@ -1607,10 +1725,25 @@ function bindPreviewTargets(root = document) {
     node.dataset.previewBound = '1';
     node.addEventListener('mouseenter', () => schedulePartPreview(node));
     node.addEventListener('mouseleave', hidePartPreview);
-    node.addEventListener('focus', () => schedulePartPreview(node));
-    node.addEventListener('blur', hidePartPreview);
+    node.addEventListener('focusin', () => schedulePartPreview(node));
+    node.addEventListener('focusout', hidePartPreview);
+  });
+  root.querySelectorAll('.product-thumb img, .part-thumb img, .cart-thumb img').forEach(img => {
+    if (img.dataset.fallbackBound) return;
+    img.dataset.fallbackBound = '1';
+    const fallback = () => {
+      img.hidden = true;
+      img.parentElement.classList.add('image-unavailable');
+      img.parentElement.setAttribute('aria-label', '대표 이미지 없음');
+    };
+    img.addEventListener('error', fallback);
+    if (img.complete && !img.naturalWidth) fallback();
   });
 }
+
+document.addEventListener('keydown', event => { if (event.key === 'Escape') hidePartPreview(); });
+window.addEventListener('resize', hidePartPreview);
+window.addEventListener('scroll', hidePartPreview, true);
 
 // ─────────────────────────────────────────────────────────────
 // POPULATE DROPDOWNS (custom spec section)
@@ -1878,7 +2011,15 @@ function updateCustomPrice() {
   const missing = parts.some(part => effectivePrice(part) == null);
 
   const priceEl = document.getElementById('csTotalPrice');
-  priceEl.textContent = missing ? '검색 중' : money(totalPrice);
+  priceEl.textContent = missing ? `${money(totalPrice)} + 미확인` : money(totalPrice);
+  const priceNote = document.getElementById('csPriceNote');
+  if (priceNote) {
+    const statuses = parts.map(part => priceProvenance(part).status);
+    priceNote.textContent = missing ? '가격 미확인 부품을 제외한 합계입니다.'
+      : statuses.includes('estimated') ? '참고가가 포함된 예상 합계입니다. 판매처에서 현재 가격을 확인해주세요.'
+      : statuses.includes('stale') ? '이전 확인가가 포함된 합계입니다. 구매 전 가격을 다시 확인해주세요.'
+      : '판매처 확인가 기준 · 배송비 및 조립비 별도';
+  }
   renderCustomBuildValue({ gpu, cpu, ram, mb, storage, hdd, psu, case:pcCase, software }, totalPrice, missing);
 
   const links = document.getElementById('csBuyLinks');
@@ -2069,6 +2210,7 @@ const productSearchInput = document.getElementById('productSearchInput');
 if (productSearchInput) {
   productSearchInput.addEventListener('input', e => {
     st.productQuery = e.target.value;
+    invalidateProductRequest(st.builderPart);
     renderProductList();
     clearTimeout(productSearchTimer);
     productSearchTimer = setTimeout(() => {
@@ -2077,9 +2219,31 @@ if (productSearchInput) {
   });
 }
 
+document.getElementById('productSourceSelect')?.addEventListener('change', event => {
+  st.productSource = event.target.value;
+  clearTimeout(productSearchTimer);
+  invalidateProductRequest(st.builderPart);
+  renderBuilderFilters();
+  renderProductList();
+  void refreshProductBrowserPrices({ force:true });
+});
+
+document.getElementById('productSortSelect')?.addEventListener('change', event => {
+  st.productSort = event.target.value;
+  renderProductList();
+});
+
+document.getElementById('resetProductFiltersBtn')?.addEventListener('click', () => {
+  st.builderFilters[st.builderPart] = {};
+  if (st.builderPart === 'gpu') st.csGpuMakers = [];
+  renderBuilderFilters();
+  renderProductList();
+});
+
 const refreshProductsBtn = document.getElementById('refreshProductsBtn');
 if (refreshProductsBtn) {
   refreshProductsBtn.addEventListener('click', () => {
+    clearTimeout(productSearchTimer);
     void refreshProductBrowserPrices({ force:true });
   });
 }

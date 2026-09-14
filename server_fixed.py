@@ -31,6 +31,7 @@ import random
 import re
 import sqlite3
 import traceback
+from market_catalog import remember_products, saved_products
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 try:
@@ -297,7 +298,7 @@ MB_DANAWA_CATEGORY_IDS = {"112751"}
 # accessories and finished PCs into the direct-spec browser.  We still fall
 # back to the visible category label when Danawa omits a category parameter.
 DANAWA_BROWSE_CATEGORY_IDS = {
-    "cpu": {"113990"},
+    "cpu": {"113990", "113973"},
     "gpu": GPU_DANAWA_CATEGORY_IDS,
     "ram": {"112752"},
     "mb": MB_DANAWA_CATEGORY_IDS,
@@ -906,7 +907,7 @@ def danawa_browse_candidate_valid(part_type: Any, product_name: Any, category: A
     # Direct product pages provide a stable SKU and product code.  Ad/bridge
     # links can change destination and are not suitable as selectable parts.
     parsed = urlparse(target_url)
-    if "prod.danawa.com" not in parsed.netloc.lower() or "/info/" not in parsed.path.lower():
+    if parsed.hostname != "prod.danawa.com" or "/info/" not in parsed.path.lower():
         return False
     if not danawa_browse_category_matches(ctype, category, target_url):
         return False
@@ -1020,89 +1021,38 @@ def infer_brand(text: Any, fallback: str = "") -> str:
     return name.split()[0] if name.split() else fallback
 
 def performance_reference_for_danawa_product(part_type: Any, product_name: Any) -> Optional[Dict[str, Any]]:
-    """Map a live retail SKU to a benchmark profile, without exposing that profile as the product list."""
+    """Use a known exact model/spec profile; unrelated model numbers are not benchmarks."""
     ctype = normalize_browse_part_type(part_type)
     pool = CATALOGS.get(ctype, [])
-    if not pool:
-        return None
     name = clean_visible_text(product_name)
-
     if ctype == "gpu":
         key = gpu_exact_model_key(name)
-        if key:
-            exact = next((part for part in pool if gpu_exact_model_key(part.get("name")) == key), None)
-            if exact:
-                return exact
-            target = re.match(r"(rtx|gtx|rx)(\d{3,5})", key, re.I)
-            if target:
-                prefix, target_number = target.group(1).lower(), safe_int(target.group(2), 0)
-                candidates = []
-                for part in pool:
-                    candidate_key = gpu_exact_model_key(part.get("name"))
-                    candidate = re.match(r"(rtx|gtx|rx)(\d{3,5})", candidate_key, re.I)
-                    if candidate and candidate.group(1).lower() == prefix:
-                        distance = abs(safe_int(candidate.group(2), 0) - target_number)
-                        if distance <= 120:
-                            candidates.append((distance, part))
-                if candidates:
-                    return min(candidates, key=lambda row: row[0])[1]
-        return None
-
-    if ctype == "ram":
-        parsed = parse_ram_metadata(name)
-        wanted_type = normalize_text(parsed.get("type"))
-        wanted_gb = safe_int(parsed.get("gb"), 0)
-        wanted_speed = safe_int(parsed.get("speed"), 0)
-        candidates = [part for part in pool if not wanted_type or normalize_text(part.get("type")) == wanted_type]
-        if candidates:
-            return min(
-                candidates,
-                key=lambda part: abs(safe_int(part.get("gb"), wanted_gb or 16) - (wanted_gb or 16)) * 20
-                + abs(safe_int(part.get("speed"), wanted_speed or 3200) - (wanted_speed or 3200)),
-            )
-        return None
-
-    wanted_models = model_tokens(name)
-    if wanted_models:
-        exact = [part for part in pool if wanted_models & model_tokens(part.get("name"))]
-        if exact:
-            # A shared model token is a stronger signal than the general name
-            # similarity used for price lookup (e.g. Ryzen 7 9800X3D).
-            return max(exact, key=lambda part: len(wanted_models & model_tokens(part.get("name"))))
-
+        vram = infer_gpu_vram(name)
+        candidates = [part for part in pool if key and gpu_exact_model_key(part.get("name")) == key]
+        if vram:
+            candidates = [part for part in candidates if safe_int(part.get("vram"), 0) == vram]
+        elif len({part.get("vram") for part in candidates}) > 1:
+            return None
+        return candidates[0] if candidates else None
     if ctype == "cpu":
+        # Preserve K/KF/F/X/X3D suffixes, including Core Ultra's three-digit models.
+        def cpu_models(value: Any) -> set:
+            return set(re.findall(r"(?<![0-9a-z])(?:[0-9]{3,5}(?:x3d|kf|k|f|x|g|u)?)(?![0-9a-z])", normalize_text(value)))
+        models = cpu_models(name)
         vendor = infer_cpu_metadata(name).get("vendor")
-        candidates = [part for part in pool if not vendor or normalize_text(part.get("vendor")) == normalize_text(vendor)]
-        target_models = [
-            token for token in wanted_models
-            if re.fullmatch(r"\d{4,5}(?:x3d|[a-z]{0,3})?", token or "")
-        ]
-        if target_models:
-            target = target_models[0]
-            target_number_match = re.match(r"(\d{4,5})", target)
-            target_number = safe_int(target_number_match.group(1), 0) if target_number_match else 0
-            if target_number:
-                nearby: List[Tuple[int, int, Dict[str, Any]]] = []
-                for part in candidates:
-                    candidate_tokens = model_tokens(part.get("name"))
-                    candidate_model = next((
-                        token for token in candidate_tokens
-                        if re.fullmatch(r"\d{4,5}(?:x3d|[a-z]{0,3})?", token or "")
-                    ), "")
-                    candidate_number_match = re.match(r"(\d{4,5})", candidate_model)
-                    candidate_number = safe_int(candidate_number_match.group(1), 0) if candidate_number_match else 0
-                    if not candidate_number:
-                        continue
-                    distance = abs(candidate_number - target_number)
-                    suffix_penalty = 0 if candidate_model.endswith("x3d") == target.endswith("x3d") else 250
-                    if distance + suffix_penalty <= 350:
-                        nearby.append((distance + suffix_penalty, distance, part))
-                if nearby:
-                    return min(nearby, key=lambda row: (row[0], row[1]))[2]
-        keys = [canonical_name(part.get("name")) for part in candidates]
-        best_key = _best_match_key(canonical_name(name), keys)
-        if best_key:
-            return next((part for part in candidates if canonical_name(part.get("name")) == best_key), None)
+        candidates = [part for part in pool
+                      if models & cpu_models(part.get("name"))
+                      and (not vendor or normalize_text(part.get("vendor")) == normalize_text(vendor))]
+        return candidates[0] if len(candidates) == 1 else None
+    if ctype == "ram":
+        specs = parse_ram_metadata(name)
+        # RAM performance is based on its capacity and speed, not the brand.
+        if not all(specs.get(key) for key in ("type", "gb", "speed")):
+            return None
+        return next((part for part in pool if all(part.get(key) == specs[key]
+                     for key in ("type", "gb", "speed"))), None)
+    # Other categories are described from the retailer's own specification;
+    # copying metadata from a loosely similar motherboard/SSD is unsafe.
     return None
 
 def danawa_browse_tier(reference: Optional[Dict[str, Any]], price: int) -> str:
@@ -1139,8 +1089,12 @@ def enrich_danawa_browse_product(
         "url": url,
         "image_url": image_url,
         "currency": "KRW",
-        "price_source": "danawa_recommend_live",
-        "price_source_label": "danawa_recommend",
+        "price_source": "danawa_live",
+        "price_status": "verified",
+        "component_type": ctype,
+        "price_checked_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        "source_url": url,
+        "price_source_label": "다나와",
         "danawa_rank": source_rank,
         "source_rank": source_rank,
         "category": clean_visible_text(category),
@@ -1165,6 +1119,8 @@ def enrich_danawa_browse_product(
                 item[field] = reference.get(field)
 
     combined_text = f"{product_name} {spec_text}"
+    # Capacity is SKU-specific; a grouped specification may list every option.
+    capacity_text = product_name
     if ctype == "cpu":
         item.update({key: value for key, value in infer_cpu_metadata(combined_text).items() if value})
     elif ctype == "gpu":
@@ -1173,7 +1129,7 @@ def enrich_danawa_browse_product(
             item["vram"] = vram
         item.setdefault("vendor", "AMD" if "radeon" in normalize_text(combined_text) or "amd" in normalize_text(combined_text) else "NVIDIA")
     elif ctype == "ram":
-        item.update(parse_ram_metadata(combined_text))
+        item.update(parse_ram_metadata(capacity_text))
         item["brand"] = infer_brand(product_name, str(item.get("brand") or ""))
     elif ctype == "mb":
         item.update(infer_mb_metadata(combined_text))
@@ -1184,7 +1140,7 @@ def enrich_danawa_browse_product(
             item["watt"] = watt
         item["brand"] = infer_brand(product_name, str(item.get("brand") or ""))
     elif ctype in {"storage", "hdd"}:
-        capacity = capacity_mb_from_text(combined_text)
+        capacity = capacity_mb_from_text(capacity_text)
         if capacity:
             item["capacity"] = capacity
         item["brand"] = infer_brand(product_name, str(item.get("brand") or ""))
@@ -1212,162 +1168,273 @@ def enrich_danawa_browse_product(
     item["value_per_10000krw"] = round(performance_index / max(1.0, price / 10_000.0), 3)
     return item
 
+def html_attribute(tag: str, attribute: str) -> str:
+    match = re.search(r"\b" + re.escape(attribute) + r"\s*=\s*([\"'])(.*?)\1", tag, re.I | re.S)
+    return unescape(match.group(2)) if match else ""
+
+
 def parse_danawa_browse_products(
-    html: str,
-    search_url: str,
-    part_type: str,
-    limit: int = 40,
+    html: str, search_url: str, part_type: str, limit: int = 40,
 ) -> List[Dict[str, Any]]:
-    """Parse standard Danawa product rows in their page order; never price-sort them."""
+    """Keep each option's own SKU, price and capacity (stdlib-only parser).
+
+    Danawa groups RAM/SSD capacities and CPU packaging under one product name.
+    Mixing the group minimum with arbitrary spec capacities misprices a build.
+    Here every displayed option is a separate selectable retail product.
+    """
     ctype = normalize_browse_part_type(part_type)
     items: List[Dict[str, Any]] = []
-    seen_codes = set()
-
-    def append_candidate(
-        product_code: str,
-        product_name: str,
-        price: Any,
-        url: str,
-        image_url: str,
-        category: str,
-        rank: Any,
-        spec_text: str = "",
-    ) -> None:
-        if len(items) >= limit or not product_code or product_code in seen_codes:
-            return
-        numeric_price = safe_int(price, 0)
-        full_url = urljoin(search_url, url) if url else ""
-        if not danawa_browse_candidate_valid(ctype, product_name, category, full_url, numeric_price):
-            return
-        seen_codes.add(product_code)
-        source_rank = safe_int(rank, 0) or len(items) + 1
-        items.append(enrich_danawa_browse_product(
-            ctype,
-            product_code,
-            clean_visible_text(product_name),
-            numeric_price,
-            full_url,
-            absolute_image_url(image_url, search_url),
-            category,
-            source_rank,
-            clean_visible_text(spec_text),
-        ))
-
-    if BeautifulSoup is not None:
-        soup = BeautifulSoup(html, "html.parser")
-        # productItem IDs belong to Danawa's standard product list.  The site
-        # can also render ad blocks, so the direct-info URL/category checks in
-        # append_candidate are intentionally strict.
-        for node in soup.select("li[id^='productItem']"):
-            product_code = danawa_product_code(node.get("id"))
-            category_el = node.select_one("input[id^='productItem_categoryInfo_']")
-            category = category_el.get("value") if category_el else ""
-            price_el = node.select_one("input[id^='min_price_']")
-            price = parse_price_value(price_el.get("value")) if price_el else None
-            if not price:
-                price_node = node.select_one(".price_sect strong, .prod_pricelist strong, .prod_price strong")
-                price = parse_price_value(price_node.get_text(" ")) if price_node else None
-            name_link = node.select_one("p.prod_name a, a[name='productName'], a.prod_name")
-            product_name = clean_visible_text(name_link.get_text(" ")) if name_link else ""
-            href = name_link.get("href") if name_link else ""
-            image_node = node.select_one("img[data-original], img[data-src], img[src]")
-            image_url = ""
-            if image_node:
-                image_url = image_node.get("data-original") or image_node.get("data-src") or image_node.get("src") or ""
-            spec_node = node.select_one(".spec_list")
-            spec_text = spec_node.get_text(" ") if spec_node else ""
-            append_candidate(product_code, product_name, price, href, image_url, category, node.get("data-product-order"), spec_text)
-        if items:
-            return items
-
-    # Fallback for installations without BeautifulSoup.  Existing result-block
-    # detection is shared with the price lookup parser and preserves source order.
+    seen = set()
     for block in danawa_candidate_blocks(html):
-        product_code = danawa_product_code(block)
         category = category_from_danawa_block(block)
-        price = price_from_danawa_block(block)
-        href, product_name = first_anchor_from_block(block)
-        rank_match = re.search(r"data-product-order=[\"'](\d+)[\"']", block, re.I)
-        spec_text = strip_html(" ".join(re.findall(r"<div[^>]+class=[\"'][^\"']*spec_list[^\"']*[\"'][^>]*>(.*?)</div>", block, re.I | re.S)))
-        append_candidate(
-            product_code,
-            product_name,
-            price,
-            href,
-            image_from_danawa_block(block, search_url),
-            category,
-            rank_match.group(1) if rank_match else 0,
-            spec_text,
-        )
+        base_url, base_name = first_anchor_from_block(block)
+        image_url = image_from_danawa_block(block, search_url)
+        spec_match = re.search(r'<div\b[^>]+class=["\'][^"\']*spec_list[^"\']*["\'][^>]*>(.*?)</div>', block, re.I | re.S)
+        spec = strip_html(spec_match.group(1)) if spec_match else ""
+        rank_match = re.search(r'data-product-order=["\'](\d+)', block, re.I)
+        rank = safe_int(rank_match.group(1), 0) if rank_match else len(items) + 1
+        options = list(re.finditer(r'<li\b[^>]+id=["\']productInfoDetail_(\d+)["\'][^>]*>(.*?)</li>', block, re.I | re.S))
+        candidates = []
+        for option in options:
+            body = option.group(2)
+            price_area = re.search(r'<p\b[^>]+class=["\'][^"\']*price_sect[^"\']*["\'][^>]*>(.*?)</p>', body, re.I | re.S)
+            memory_area = re.search(r'<p\b[^>]+class=["\'][^"\']*memory_sect[^"\']*["\'][^>]*>(.*?)</p>', body, re.I | re.S)
+            if not price_area:
+                continue
+            link = re.search(r'<a\b[^>]+href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', price_area.group(1), re.I | re.S)
+            if not link:
+                continue
+            price_text = strip_html(link.group(2))
+            price_match = re.search(r'([\d,]+)\s*원', price_text)
+            price = parse_price_value(price_match.group(1)) if price_match else None
+            label_match = re.search(r'<span\b[^>]+class=["\']text["\'][^>]*>(.*?)</span>', memory_area.group(1), re.I | re.S) if memory_area else None
+            label = strip_html(label_match.group(1)) if label_match else ""
+            label = re.sub(r'\d[\d,]*원/.*$', '', label).strip()
+            name = f"{base_name} ({label})" if label and label not in base_name else base_name
+            candidates.append((option.group(1), name, price, unescape(link.group(1))))
+        # Legacy/simple rows have no grouped option list.
+        if not options:
+            candidates.append((danawa_product_code(block), base_name, price_from_danawa_block(block), base_url))
+        for code, name, price, url in candidates:
+            target = urljoin(search_url, unescape(url))
+            if code in seen or not code or not danawa_browse_candidate_valid(ctype, name, category, target, price):
+                continue
+            seen.add(code)
+            item = enrich_danawa_browse_product(ctype, code, name, safe_int(price, 0), target, image_url, category, rank, spec)
+            item["scraped_at"] = item["price_checked_at"]
+            item["spec_text"] = spec[:2000]
+            items.append(item)
+            if len(items) >= limit:
+                return items
     return items
 
-def danawa_products_response(
-    part_type: Any,
-    query: Any = "",
-    page: Any = 1,
-    limit: Any = 40,
-    refresh: Any = False,
-) -> Dict[str, Any]:
+COMPUZONE_CATEGORY_IDS = {
+    "cpu": "1012", "mb": "1013", "ram": "1014", "storage": "1276",
+    "hdd": "1015", "gpu": "1016", "case": "1147", "psu": "1148",
+    "software": "1011",
+}
+MARKET_BROWSE_CACHE: Dict[Tuple[Any, ...], Dict[str, Any]] = {}
+
+
+def compuzone_browse_url(part_type: str, query: str = "", page: int = 1, limit: int = 40) -> str:
+    # This public endpoint renders the same product rows as the category UI.
+    # Each scroll page is 20 rows; StartNum advances the requested outer page.
+    return "https://www.compuzone.co.kr/product/product_list.php?" + urlencode({
+        "actype": "getList", "BigDivNo": "9" if part_type == "software" else "4",
+        "MediumDivNo": COMPUZONE_CATEGORY_IDS.get(part_type, ""), "DivNo": "0",
+        "PageCount": limit, "StartNum": (page - 1) * limit, "PageNum": page,
+        "ScrollPage": 1, "PreOrder": "recommand", "lvm": "L",
+        "ProductType": "list", "splist_kw": query,
+    })
+
+
+def parse_compuzone_browse_products(html: str, search_url: str, part_type: str, limit: int = 40) -> List[Dict[str, Any]]:
+    ctype = normalize_browse_part_type(part_type)
+    starts = [m.start() for m in re.finditer(r'<li\b[^>]*id=["\']li-pno-\d+["\']', html, re.I)]
+    items = []
+    seen = set()
+    for pos, start in enumerate(starts):
+        block = html[start:starts[pos + 1] if pos + 1 < len(starts) else len(html)]
+        anchor = re.search(r'<a\b(?=[^>]*class=["\'][^"\']*prdTxt)[^>]*>(.*?)</a>', block, re.I | re.S)
+        price_tag = re.search(r'<div\b(?=[^>]*class=["\']prd_price["\'])[^>]*>', block, re.I | re.S)
+        if not anchor or not price_tag:
+            continue
+        name = strip_html(anchor.group(1))
+        url = urljoin("https://www.compuzone.co.kr/product/", html_attribute(anchor.group(0).split(">", 1)[0], "href"))
+        params = dict(parse_qsl(urlparse(url).query))
+        code = params.get("ProductNo")
+        if not code or code in seen or params.get("MediumDivNo") != COMPUZONE_CATEGORY_IDS.get(ctype):
+            continue
+        if (urlparse(url).hostname or "") not in {"www.compuzone.co.kr", "compuzone.co.kr"}:
+            continue
+        # The public normal selling price excludes card/member-only discounts.
+        price = parse_price_value(html_attribute(price_tag.group(0), "data-price"))
+        if not price or not 1000 <= price <= 20_000_000:
+            continue
+        if re.search(r'class=["\'][^"\']*(?:soldout|sold_out|stock_none)', block, re.I):
+            continue
+        if not market_component_name_valid(ctype, name):
+            continue
+        image_area = re.search(r'<a\b[^>]*class=["\']prd_info_main_img["\'][^>]*>(.*?)</a>', block, re.I | re.S)
+        image_tag = re.search(r'<img\b[^>]*>', image_area.group(1), re.I | re.S) if image_area else None
+        image = absolute_image_url(html_attribute(image_tag.group(0), "src"), url) if image_tag else ""
+        spec_area = re.search(r'<div\b[^>]*class=["\']prd_subTxt["\'][^>]*>(.*?)</div>', block, re.I | re.S)
+        spec = strip_html(spec_area.group(1)) if spec_area else ""
+        item = enrich_danawa_browse_product(ctype, code, name, price, url, image, DANAWA_BROWSE_DEFAULT_QUERIES[ctype], pos + 1, spec)
+        item.update(id=f"compuzone_{ctype}_{code}", shop="Compuzone", price_source="compuzone_live",
+                    price_source_label="컴퓨존", source_url=url, tags=["compuzone_live"],
+                    spec_text=spec[:2000], scraped_at=item["price_checked_at"])
+        item.pop("danawa_rank", None)
+        items.append(item)
+        seen.add(code)
+        if len(items) >= limit:
+            break
+    return items
+
+
+def market_component_name_valid(part_type: str, name: str) -> bool:
+    lower = normalize_text(name)
+    if any(token in lower for token in ("중고", "리퍼", "refurb", "노트북용", "sodimm", "so-dimm")):
+        return False
+    if part_type == "cpu":
+        return not any(token in lower for token in ("조립pc", "본체", "데스크탑", "노트북", "브라켓"))
+    if part_type in {"ram", "storage", "hdd", "psu", "case"}:
+        accessory = ("장착가이드", "브라켓", "변환", "연장", "외장", "도킹", "하드랙", "보관함", "액세서리", "악세서리")
+        if any(token in lower for token in accessory):
+            return False
+        if part_type in {"storage", "hdd"} and any(token in lower for token in ("케이스", "enclosure", "usb")):
+            return False
+    return not danawa_name_rejected(part_type, name, DANAWA_BROWSE_DEFAULT_QUERIES.get(part_type, ""))
+
+
+def _market_fetch_html(url: str, provider: str, timeout: float = 8.0) -> str:
+    headers = {**DANAWA_HEADERS, "Referer": "https://www.compuzone.co.kr/" if provider == "compuzone" else "https://search.danawa.com/"}
+    with urlopen(Request(url, headers=headers), timeout=timeout) as response:
+        raw = response.read(8_000_000)
+        charset = response.headers.get_content_charset() or ("cp949" if provider == "compuzone" else "utf-8")
+    return raw.decode(charset, errors="replace")
+
+
+def _market_source_page(part_type: str, query: str, page: int, limit: int, provider: str, refresh: bool = False, timeout: float = 8.0) -> Dict[str, Any]:
+    key = (part_type, normalize_text(query), page, limit, provider)
+    now = datetime.utcnow()
+    cached = MARKET_BROWSE_CACHE.get(key)
+    if cached and not refresh and (now - cached["fetched_at"]).total_seconds() < DANAWA_BROWSE_CACHE_TTL_SECONDS:
+        return {**cached["payload"], "cached": True}
+    query_used = query or DANAWA_BROWSE_DEFAULT_QUERIES[part_type]
+    url = danawa_browse_url(query_used, page, limit) if provider == "danawa" else compuzone_browse_url(part_type, query, page, limit)
+    base = {"provider": provider, "page": page, "source_url": url, "items": [], "total": None, "has_more": False, "cached": False}
+    try:
+        html = _market_fetch_html(url, provider, timeout)
+        if provider == "danawa":
+            all_items = parse_danawa_browse_products(html, url, part_type, 600)
+            raw_count = len(re.findall(r'<li\b[^>]*id=["\']productItem\d+', html, re.I))
+            later_pages = [int(n) for n in re.findall(r'onclick=["\']paging\((\d+)\)', html, re.I)]
+            has_more = any(n > page for n in later_pages) or raw_count >= limit
+            recognized = bool(raw_count or 'productListArea' in html or '검색결과가 없습니다' in html)
+        else:
+            all_items = parse_compuzone_browse_products(html, url, part_type, 100)
+            raw_count = len(re.findall(r'id=["\']li-pno-\d+', html, re.I))
+            has_more = raw_count >= min(20, limit)
+            recognized = bool(raw_count or '검색된 상품이 없습니다' in html or '상품이 없습니다' in html or 'IsMaxPageing' in html)
+        if not recognized:
+            raise ValueError("upstream returned an unrecognized page")
+        items = [item for item in all_items if market_component_name_valid(part_type, item["name"])]
+        # Broad category search remains broad; explicit model/capacity constraints
+        # must not silently return a different variant from a grouped result.
+        if query and (model_tokens(query) or re.search(r'\d\s*(?:GB|TB)\b', query, re.I)):
+            items = [item for item in items if compatible_price_name(query, item["name"])]
+        payload = {**base, "status": "live" if items else "empty", "items": items, "has_more": has_more,
+                   "checked_at": now.isoformat(timespec="seconds") + "Z", "raw_count": raw_count}
+        MARKET_BROWSE_CACHE[key] = {"fetched_at": now, "payload": payload}
+        if len(MARKET_BROWSE_CACHE) > 240:
+            oldest = min(MARKET_BROWSE_CACHE, key=lambda k: MARKET_BROWSE_CACHE[k]["fetched_at"])
+            MARKET_BROWSE_CACHE.pop(oldest, None)
+        remember_products(part_type, items)
+        return payload
+    except Exception:
+        if cached and cached["payload"].get("items"):
+            old = cached["payload"]
+            items = [{**item, "price_status": "stale", "price_stale": True, "price_verified": False,
+                      "price_source": provider + "_stale"} for item in old["items"]]
+            return {**old, "status": "stale", "items": items, "cached": True, "error": "판매처 응답 지연으로 이전 확인 가격을 표시합니다."}
+        return {**base, "status": "unavailable", "error": ("다나와" if provider == "danawa" else "컴퓨존") + " 상품 목록을 불러오지 못했습니다."}
+
+
+def market_products_response(part_type: Any, query: Any = "", page: Any = 1, limit: Any = 40, refresh: Any = False, source: Any = "all") -> Dict[str, Any]:
+    ctype = normalize_browse_part_type(part_type)
+    provider = normalize_text(source) or "all"
+    if not ctype or provider not in {"all", "danawa", "compuzone"}:
+        return {"ok": False, "status": "invalid", "error": "지원하지 않는 부품 종류 또는 판매처입니다.", "items": []}
+    query = clean_visible_text(query)[:120]
+    page = max(1, min(100, safe_int(page, 1)))
+    # Compuzone serves fixed 20-row scroll batches. Use that same page size for
+    # both sources so subsequent pages do not skip products.
+    limit = 20 if provider == "compuzone" else max(8, min(40, safe_int(limit, 40)))
+    force = refresh is True or normalize_text(refresh) in {"1", "true", "yes"}
+    providers = ["danawa", "compuzone"] if provider == "all" else [provider]
+    with ThreadPoolExecutor(max_workers=len(providers)) as executor:
+        futures = [executor.submit(_market_source_page, ctype, query, page, 20 if p == "compuzone" else limit, p, force) for p in providers]
+        results = [future.result() for future in futures]
+    items = []
+    # Interleave retailers without treating two different SKUs as interchangeable.
+    for index in range(max((len(result["items"]) for result in results), default=0)):
+        items.extend(result["items"][index] for result in results if index < len(result["items"]))
+    statuses = [result["status"] for result in results]
+    status = "live" if "live" in statuses else "stale" if "stale" in statuses else "empty" if "empty" in statuses else "unavailable"
+    return {
+        "ok": status != "unavailable", "status": status, "type": ctype,
+        "query": query, "query_used": query or DANAWA_BROWSE_DEFAULT_QUERIES[ctype],
+        "page": page, "limit": limit, "items": items, "total": None,
+        "has_more": any(result["has_more"] for result in results),
+        "source": provider, "source_status": {result["provider"]: result["status"] for result in results},
+        "source_urls": {result["provider"]: result["source_url"] for result in results},
+        "cached": bool(results) and all(result["cached"] for result in results),
+        "sort": "popular", "sort_label": "판매처 인기상품순",
+        "error": next((result.get("error", "") for result in results if result.get("error")), ""),
+    }
+
+
+def danawa_products_response(part_type: Any, query: Any = "", page: Any = 1, limit: Any = 40, refresh: Any = False) -> Dict[str, Any]:
+    """Backward-compatible alias used by earlier clients."""
+    return market_products_response(part_type, query, page, limit, refresh, "danawa")
+
+
+def fetch_market_top_product(query: Any, part_type: Any = "", timeout: float = 2.5, catalog_price: Any = 0,
+                             gpu_maker_prefs: Optional[List[str]] = None, include_image_preview: bool = True,
+                             allow_relaxed_retry: bool = False, source: Any = "all") -> Optional[Dict[str, Any]]:
     ctype = normalize_browse_part_type(part_type)
     if not ctype:
-        return {"ok": False, "error": "unsupported part type", "items": []}
-    clean_query = clean_visible_text(query)[:120]
-    query_used = clean_query or DANAWA_BROWSE_DEFAULT_QUERIES[ctype]
-    page_number = max(1, min(20, safe_int(page, 1)))
-    row_limit = max(8, min(40, safe_int(limit, 40)))
-    cache_key = (ctype, normalize_text(query_used), page_number, row_limit)
-    cached = DANAWA_BROWSE_CACHE.get(cache_key)
-    now = datetime.utcnow()
-    force_refresh = normalize_text(refresh) in {"1", "true", "yes", "y"}
-    if not force_refresh and cached and isinstance(cached.get("fetched_at"), datetime):
-        age = (now - cached["fetched_at"]).total_seconds()
-        if age < DANAWA_BROWSE_CACHE_TTL_SECONDS:
-            return {**cached["payload"], "cached": True}
-
-    search_url = danawa_browse_url(query_used, page_number, row_limit)
-    try:
-        req = Request(search_url, headers=DANAWA_HEADERS)
-        with urlopen(req, timeout=8.0) as response:
-            raw = response.read()
-            charset = response.headers.get_content_charset() or "utf-8"
-        html = raw.decode(charset, errors="ignore")
-        items = parse_danawa_browse_products(html, search_url, ctype, row_limit)
-    except Exception:
-        return {
-            "ok": False,
-            "error": "다나와 상품 목록을 불러오지 못했습니다.",
-            "type": ctype,
-            "query": clean_query,
-            "query_used": query_used,
-            "page": page_number,
-            "items": [],
-        }
-
-    payload = {
-        "ok": True,
-        "type": ctype,
-        "query": clean_query,
-        "query_used": query_used,
-        "page": page_number,
-        "limit": row_limit,
-        "items": items,
-        "has_more": len(items) >= row_limit,
-        "sort": "saveDESC",
-        "sort_label": "다나와 인기상품순",
-        "source": "danawa_live_recommended",
-        "cached": False,
-    }
-    DANAWA_BROWSE_CACHE[cache_key] = {"fetched_at": now, "payload": payload}
-    # Keep memory bounded during a long-lived local server session.
-    if len(DANAWA_BROWSE_CACHE) > 160:
-        expired = [
-            key for key, value in DANAWA_BROWSE_CACHE.items()
-            if not isinstance(value.get("fetched_at"), datetime)
-            or (now - value["fetched_at"]).total_seconds() >= DANAWA_BROWSE_CACHE_TTL_SECONDS
-        ]
-        for key in expired[:80]:
-            DANAWA_BROWSE_CACHE.pop(key, None)
-    return payload
+        return None
+    provider = normalize_text(source) or "all"
+    providers = [provider] if provider in {"danawa", "compuzone"} else ["danawa", "compuzone"]
+    prefs = normalize_gpu_maker_prefs(gpu_maker_prefs)
+    search_query = query_model_name(query) if ctype == "gpu" else clean_visible_text(query)
+    # Korean retailers index CPU model numbers more consistently than English
+    # marketing prefixes. The full original query still validates every result.
+    if ctype == "cpu":
+        search_query = re.sub(r'\b(?:AMD|Intel|Core|Ryzen)\b', ' ', search_query, flags=re.I)
+        search_query = re.sub(r'\b[3579]\s+(?=\d{4,5})', '', search_query)
+        search_query = clean_visible_text(search_query)
+    with ThreadPoolExecutor(max_workers=len(providers)) as executor:
+        results = list(executor.map(lambda p: _market_source_page(ctype, search_query, 1, 20, p, False, timeout), providers))
+    matches = []
+    for response in results:
+        if response.get("status") != "live":
+            continue
+        for item in response["items"]:
+            if not compatible_price_name(query, item["name"]):
+                continue
+            if prefs and gpu_maker_normalize(item["name"]) not in prefs:
+                continue
+            if not price_sane_for_part(ctype, item["price"], query, catalog_price):
+                continue
+            matches.append(item)
+    if not matches:
+        return None
+    best = dict(min(matches, key=lambda item: item["price"]))
+    best.update(matched_by="market_exact_model", search_url=next((r["source_url"] for r in results if r["provider"] in best["price_source"]), ""))
+    return best
 
 def normalize_product_url(url: Any) -> str:
     raw = str(url or "").strip()
@@ -1448,6 +1515,10 @@ def compatible_gpu_price_name(catalog_name: Any, price_name: Any) -> bool:
         return False
     target_number = gpu_model_number_from_key(catalog_key)
     extra_numbers = gpu_model_number_mentions(price_name) - ({target_number} if target_number else set())
+    requested_vram = re.search(r"\b(\d+)\s*gb\b", canonical_name(catalog_name))
+    listed_vram = re.search(r"\b(\d+)\s*gb\b", canonical_name(price_name))
+    if requested_vram and (not listed_vram or requested_vram.group(1) != listed_vram.group(1)):
+        return False
     return not extra_numbers
 
 def variant_tokens(v: Any) -> set:
@@ -1455,14 +1526,59 @@ def variant_tokens(v: Any) -> set:
     return words & {"super", "ti", "xtx", "xt", "gre", "x3d", "kf", "f", "k", "u"}
 
 def compatible_price_name(catalog_name: Any, price_name: Any) -> bool:
+    """Reject a nearby model or a cheaper capacity/edition of the requested item.
+
+    Retail names may translate brands, so compare the model and material specs
+    instead of requiring every word in the English catalog name to appear.
+    """
+    requested = canonical_name(catalog_name)
+    listed = canonical_name(price_name)
+    if not requested or not listed:
+        return False
     if gpu_exact_model_key(catalog_name):
         return compatible_gpu_price_name(catalog_name, price_name)
-    catalog_models = model_tokens(catalog_name)
-    price_models = model_tokens(price_name)
-    if catalog_models and price_models and not (catalog_models & price_models):
+
+    def identifiers(text: str) -> set:
+        text = re.sub(r"\bi[3579][-\s]*", " ", text)
+        text = re.sub(r"\b(?:ddr\s*[45]|gddr\s*[567]|gen\s*[345]|pcie\s*[345]|atx)\b", " ", text)
+        text = re.sub(r"\b\d+(?:\.\d+)?\s*(?:gb|tb|w|mhz|mt/s)\b", " ", text)
+        # CPU numeric models, motherboard chipsets, SSD/case/PSU model codes.
+        return set(re.findall(r"\b(?:[a-z]{1,10}\d+[a-z0-9]*|\d{3,5}[a-z]{0,3}(?:3d)?)\b", text))
+
+    requested_models = identifiers(requested)
+    listed_models = identifiers(listed)
+    if requested_models and not requested_models.issubset(listed_models):
         return False
-    if catalog_models and price_models and variant_tokens(catalog_name) != variant_tokens(price_name):
+
+    requested_ram = parse_ram_metadata(requested)
+    if requested_ram.get("type"):
+        listed_ram = parse_ram_metadata(listed)
+        for spec in ("type", "gb", "speed"):
+            if requested_ram.get(spec) and requested_ram[spec] != listed_ram.get(spec):
+                return False
+    else:
+        requested_capacity = capacity_mb_from_text(requested)
+        if requested_capacity and requested_capacity != capacity_mb_from_text(listed):
+            return False
+
+    watts = re.search(r"\b(\d{3,4})\s*w\b", requested)
+    if watts and not re.search(rf"\b{watts.group(1)}\s*w\b", listed):
         return False
+
+    # Editions change price even when the principal model number is shared.
+    edition_groups = [
+        {"pro", "evo", "plus"}, {"home", "business"},
+        {"fpp", "dsp", "oem", "esd"}, {"bronze", "gold", "platinum", "titanium"},
+    ]
+    for editions in edition_groups:
+        wanted = set(re.findall(r"\b[a-z]+\b", requested)) & editions
+        found = set(re.findall(r"\b[a-z]+\b", listed)) & editions
+        if wanted and wanted != found:
+            return False
+    if "windows" in requested:
+        version = re.search(r"windows\s*(\d+)", requested)
+        if version and not re.search(rf"(?:windows|윈도우)\s*{version.group(1)}\b", listed):
+            return False
     return True
 
 def resolution_key(value: Any) -> str:
@@ -1574,13 +1690,7 @@ def summarize_part(part: Dict[str, Any], part_type: str) -> Dict[str, Any]:
     raw_price = safe_int(part.get("price"), 0)
     raw_source = normalize_text(part.get("price_source"))
     raw_url = part.get("url") or part.get("shop_url") or part.get("product_url")
-    verified_gpu_listing = (
-        part_type == "gpu"
-        and raw_price > 0
-        and raw_source not in {"", "catalog", "catalog_search", "catalog_fallback", "danawa_search"}
-        and danawa_url_category_matches("gpu", raw_url)
-        and not danawa_url_rejected("gpu", raw_url)
-    )
+    verified_gpu_listing = verified_price_info(part)
     price_info = {} if verified_gpu_listing else (db_lookup_price_info(part, part_type) or {})
     if price_info.get("stale"):
         price_info = {}
@@ -1592,10 +1702,11 @@ def summarize_part(part: Dict[str, Any], part_type: str) -> Dict[str, Any]:
     out = {
         "id": part.get("id"),
         "name": part.get("name"),
-        "product_name": part.get("product_name") or price_info.get("name") or part.get("name"),
+        "product_name": (part.get("product_name") if verified_gpu_listing else price_info.get("name")) or part.get("product_name") or part.get("name"),
         "price": price,
+        "base_price": safe_int(part.get("base_price"), 0) or raw_price,
         "tier": part.get("tier"),
-        "shop": (part.get("shop") if verified_gpu_listing else price_info.get("shop")) or part.get("shop") or "Danawa",
+        "shop": (part.get("shop") if verified_gpu_listing else price_info.get("shop")) or part.get("shop") or "Catalog",
         "url": (part.get("url") if verified_gpu_listing else price_info.get("url")) or part.get("url") or danawa_search_url(part.get("name")),
         "image_url": (part.get("image_url") if verified_gpu_listing else price_info.get("image_url")) or part.get("image_url") or part_image_endpoint(part, part_type),
         "currency": (part.get("currency") if verified_gpu_listing else price_info.get("currency")) or part.get("currency") or "KRW",
@@ -1604,6 +1715,9 @@ def summarize_part(part: Dict[str, Any], part_type: str) -> Dict[str, Any]:
         "performance_index": round(performance_index, 1),
         "performance_metric": performance_metric,
         "value_per_10000krw": value_per_10000,
+        "scraped_at": (part.get("scraped_at") if verified_gpu_listing else price_info.get("scraped_at")) or part.get("scraped_at"),
+        "verified": bool(verified_gpu_listing or price_info),
+        "price_status": "verified" if verified_gpu_listing or price_info else ("estimated" if price > 0 else "unavailable"),
     }
     if part_type == "cpu":
         out.update({
@@ -1967,17 +2081,37 @@ def price_is_fresh(scraped_at: Any, max_age_hours: int = DANAWA_PRICE_MAX_AGE_HO
     raw = str(scraped_at or "").strip()
     if not raw:
         return False
-    candidates = [
-        (raw[:19].replace("T", " "), "%Y-%m-%d %H:%M:%S"),
-        (raw[:10], "%Y-%m-%d"),
-    ]
-    for value, fmt in candidates:
-        try:
-            dt = datetime.strptime(value, fmt)
-            return datetime.utcnow() - dt <= timedelta(hours=max_age_hours)
-        except Exception:
-            continue
-    return False
+    try:
+        checked = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        now = datetime.now(checked.tzinfo) if checked.tzinfo else datetime.utcnow()
+        age = now - checked
+        return timedelta(0) <= age <= timedelta(hours=max_age_hours)
+    except (ValueError, TypeError):
+        return False
+
+def market_product_url(url: Any) -> bool:
+    try:
+        parsed = urlparse(str(url or ""))
+        host = (parsed.hostname or "").lower()
+        if parsed.scheme not in {"http", "https"}:
+            return False
+        if host == "prod.danawa.com":
+            return bool(re.search(r"(?:\?|&)pcode=\d+", parsed.query and "?" + parsed.query))
+        return (host == "compuzone.co.kr" or host.endswith(".compuzone.co.kr")) and bool(
+            re.search(r"(?:\?|&)(?:ProductNo|productno|product_no)=\d+", "?" + parsed.query)
+        )
+    except ValueError:
+        return False
+
+def verified_price_info(part: Dict[str, Any]) -> bool:
+    source = normalize_text(part.get("price_source"))
+    return (
+        safe_int(part.get("price"), 0) > 0
+        and not part.get("stale")
+        and source not in {"", "catalog", "catalog_search", "catalog_fallback", "danawa_search", "estimated", "unavailable"}
+        and market_product_url(part.get("url"))
+        and price_is_fresh(part.get("scraped_at") or part.get("checked_at"))
+    )
 
 def _best_match_key(query: str, keys: Iterable[str]) -> Optional[str]:
     q = canonical_name(query)
@@ -2114,6 +2248,10 @@ def db_lookup_price_info(part: Dict[str, Any], part_type: str) -> Optional[Dict[
                 price = 0
             if (
                 price > 0
+                and (not row.get("type") or normalize_text(row.get("type")) == part_type_key)
+                and compatible_price_name(part_name, row.get("name"))
+                and str(row.get("currency") or "KRW").upper() == "KRW"
+                and market_product_url(row.get("url") or part_url)
                 and price_sane_for_part(part_type, price, part_name, catalog_price)
                 and danawa_url_category_matches(part_type, row.get("url") or part_url)
                 and not danawa_url_rejected(part_type, row.get("url") or part_url)
@@ -2136,12 +2274,15 @@ def db_lookup_price_info(part: Dict[str, Any], part_type: str) -> Optional[Dict[
     key = canonical_name(part_name)
     type_filtered = [
         k for k, row in rows.items()
-        if not row.get("type") or normalize_text(row.get("type")) == part_type_key
+        if (not row.get("type") or normalize_text(row.get("type")) == part_type_key)
+        and compatible_price_name(part_name, row.get("name"))
     ]
-    match = _best_match_key(key, type_filtered or rows.keys())
+    match = _best_match_key(key, type_filtered)
     if not match:
         return None
     row = rows.get(match) or {}
+    if str(row.get("currency") or "KRW").upper() != "KRW" or not market_product_url(row.get("url")):
+        return None
     if not compatible_price_name(part_name, row.get("name")):
         return None
 
@@ -2185,27 +2326,36 @@ def part_image_endpoint(part: Dict[str, Any], part_type: Any) -> str:
         return ""
     return "/api/part-image?" + urlencode({"type": normalize_text(part_type), "name": name})
 
-def store_danawa_price(part: Dict[str, Any], part_type: str, live: Dict[str, Any]) -> Dict[str, Any]:
-    conn = _ensure_db_connection(create=True)
-    if conn is None:
-        return live
-    component_name = clean_visible_text(part.get("name") or live.get("name"))
-    cid = upsert_component(conn, part_type, component_name)
-    insert_price(conn, cid, safe_int(live.get("price"), 0), live.get("url") or danawa_search_url(component_name))
-    conn.close()
-    load_db_cache()
+def market_lookup_name(part: Dict[str, Any], part_type: Any) -> str:
+    name = clean_visible_text(part.get("product_name") or part.get("name"))
+    if normalize_text(part_type) == "gpu" and safe_int(part.get("vram"), 0) and not re.search(r"\b\d+\s*gb\b", name, re.I):
+        name += f" {safe_int(part.get('vram'), 0)}GB"
+    return name
 
-    saved = db_lookup_price_info({"name": component_name, "url": live.get("url")}, part_type) or {}
+def store_danawa_price(part: Dict[str, Any], part_type: str, live: Dict[str, Any]) -> Dict[str, Any]:
+    component_name = clean_visible_text(live.get("product_name") or live.get("name") or part.get("name"))
+    shop = live.get("shop") or "Danawa"
+    checked_at = live.get("scraped_at") or datetime.utcnow().isoformat(timespec="seconds") + "Z"
+    conn = _ensure_db_connection(create=True)
+    if conn is not None:
+        try:
+            cid = upsert_component(conn, part_type, component_name)
+            insert_price(conn, cid, safe_int(live.get("price"), 0), live.get("url") or "", shop=shop)
+        finally:
+            conn.close()
+        load_db_cache()
     return {
         "price": safe_int(live.get("price"), 0),
-        "shop": "Danawa",
+        "shop": shop,
         "url": live.get("url") or danawa_search_url(component_name),
         "image_url": live.get("image_url") or part.get("image_url") or part_image_endpoint({"name": component_name}, part_type),
         "currency": "KRW",
-        "scraped_at": saved.get("scraped_at"),
+        "scraped_at": checked_at,
         "stale": False,
-        "matched_by": "danawa_top",
-        "price_source": "danawa_top_live",
+        "verified": True,
+        "price_status": "verified",
+        "matched_by": live.get("matched_by") or ("compuzone_top" if shop == "Compuzone" else "danawa_top"),
+        "price_source": live.get("price_source") or ("compuzone_top_live" if shop == "Compuzone" else "danawa_top_live"),
         "name": component_name,
         "product_name": live.get("name") or component_name,
         "type": normalize_text(part_type).upper(),
@@ -2230,8 +2380,8 @@ def get_or_fetch_danawa_price(
         }
 
     try:
-        live = fetch_danawa_top_product(
-            part.get("name"),
+        live = fetch_market_top_product(
+            market_lookup_name(part, part_type),
             part_type,
             catalog_price=safe_int(part.get("base_price"), 0) or safe_int(part.get("price"), 0),
             gpu_maker_prefs=maker_prefs,
@@ -2248,6 +2398,8 @@ def get_or_fetch_danawa_price(
             "price_source": cached.get("price_source") or "db_stale",
         }
     return None
+
+GPU_MARKET_PRICE_CHECKED_AT: Dict[str, datetime] = {}
 
 def resolve_verified_gpu_market_prices(
     gpu_pref: str = "ANY",
@@ -2272,11 +2424,15 @@ def resolve_verified_gpu_market_prices(
             part_id = str(part.get("id") or canonical_name(part.get("name")))
             # A maker preference changes the actual SKU, so it cannot reuse the
             # generic chip-level cache.
-            if not maker_prefs and part_id in GPU_MARKET_PRICE_CACHE:
+            checked = GPU_MARKET_PRICE_CHECKED_AT.get(part_id)
+            cache_recent = bool(checked and datetime.utcnow() - checked < timedelta(minutes=5))
+            if not maker_prefs and part_id in GPU_MARKET_PRICE_CACHE and cache_recent:
                 cached = GPU_MARKET_PRICE_CACHE[part_id]
-                if cached:
+                if cached and verified_price_info(cached):
                     resolved[part_id] = {**part, **cached}
-                continue
+                    continue
+                if cached is None:
+                    continue
 
             cached = None if maker_prefs else db_lookup_price_info(part, "gpu")
             if cached and not cached.get("stale"):
@@ -2289,14 +2445,18 @@ def resolve_verified_gpu_market_prices(
                     "price_source": cached.get("price_source") or "db_current",
                     "price_source_label": cached.get("matched_by") or "db_current",
                     "product_name": cached.get("name") or part.get("name"),
+                    "scraped_at": cached.get("scraped_at"),
+                    "verified": True,
+                    "price_status": "verified",
                 }
                 GPU_MARKET_PRICE_CACHE[part_id] = info
+                GPU_MARKET_PRICE_CHECKED_AT[part_id] = datetime.utcnow()
                 resolved[part_id] = {**part, "base_price": safe_int(part.get("price"), 0), **info}
                 continue
 
             future = executor.submit(
-                fetch_danawa_top_product,
-                part.get("name"),
+                fetch_market_top_product,
+                market_lookup_name(part, "gpu"),
                 "gpu",
                 4.0,
                 safe_int(part.get("price"), 0),
@@ -2316,6 +2476,7 @@ def resolve_verified_gpu_market_prices(
                 if not live or safe_int(live.get("price"), 0) <= 0:
                     if not maker_prefs:
                         GPU_MARKET_PRICE_CACHE[part_id] = None
+                        GPU_MARKET_PRICE_CHECKED_AT[part_id] = datetime.utcnow()
                     continue
                 try:
                     saved = store_danawa_price(part, "gpu", live)
@@ -2324,11 +2485,12 @@ def resolve_verified_gpu_market_prices(
                         "price": safe_int(live.get("price"), 0),
                         "url": live.get("url"),
                         "image_url": live.get("image_url"),
-                        "shop": "Danawa",
+                        "shop": live.get("shop") or "Danawa",
                         "currency": "KRW",
-                        "price_source": "danawa_top_live",
+                        "price_source": live.get("price_source") or "danawa_top_live",
                         "price_source_label": "danawa_top",
                         "product_name": live.get("name") or part.get("name"),
+                        "scraped_at": live.get("scraped_at") or datetime.utcnow().isoformat(timespec="seconds") + "Z",
                     }
                 if safe_int(saved.get("price"), 0) <= 0:
                     continue
@@ -2338,12 +2500,16 @@ def resolve_verified_gpu_market_prices(
                     "image_url": saved.get("image_url") or live.get("image_url"),
                     "shop": saved.get("shop") or "Danawa",
                     "currency": saved.get("currency") or "KRW",
-                    "price_source": "danawa_top_live",
+                    "price_source": saved.get("price_source") or "danawa_top_live",
                     "price_source_label": saved.get("matched_by") or "danawa_top",
                     "product_name": saved.get("product_name") or live.get("name") or part.get("name"),
+                    "scraped_at": saved.get("scraped_at"),
+                    "verified": True,
+                    "price_status": "verified",
                 }
                 if not maker_prefs:
                     GPU_MARKET_PRICE_CACHE[part_id] = info
+                    GPU_MARKET_PRICE_CHECKED_AT[part_id] = datetime.utcnow()
                 resolved[part_id] = {**part, "base_price": safe_int(part.get("price"), 0), **info}
         except TimeoutError:
             pass
@@ -2352,14 +2518,18 @@ def resolve_verified_gpu_market_prices(
             for future, part in pending.items():
                 if future.done():
                     continue
-                GPU_MARKET_PRICE_CACHE.setdefault(str(part.get("id") or canonical_name(part.get("name"))), None)
                 future.cancel()
     finally:
         executor.shutdown(wait=False, cancel_futures=True)
     return resolved
 
 def apply_price_info_to_part(part: Dict[str, Any], info: Optional[Dict[str, Any]]) -> None:
-    if not part or not info:
+    if not part:
+        return
+    if not info:
+        part["verified"] = verified_price_info(part)
+        if not part["verified"]:
+            part["price_status"] = "estimated" if safe_int(part.get("price"), 0) > 0 else "unavailable"
         return
     price = safe_int(info.get("price"), 0)
     if price > 0:
@@ -2372,21 +2542,44 @@ def apply_price_info_to_part(part: Dict[str, Any], info: Optional[Dict[str, Any]
     part["currency"] = info.get("currency") or "KRW"
     part["price_source"] = info.get("price_source") or "danawa_top"
     part["price_source_label"] = info.get("matched_by") or "danawa_top"
+    part["stale"] = bool(info.get("stale"))
     if info.get("scraped_at"):
         part["scraped_at"] = info.get("scraped_at")
     if info.get("product_name"):
         part["product_name"] = info.get("product_name")
+    elif info.get("name"):
+        part["product_name"] = info.get("name")
+    part["verified"] = verified_price_info(part)
+    part["price_status"] = "verified" if part["verified"] else ("stale" if part["stale"] else "estimated")
 
-DISPLAY_PRICE_TYPES = {"cpu", "gpu", "ram", "storage", "psu", "hdd", "case", "software"}
+DISPLAY_PRICE_TYPES = {"cpu", "gpu", "ram", "mb", "storage", "psu", "hdd", "case", "software"}
 
 def recompute_plan_total(plan: Dict[str, Any]) -> None:
     parts = plan.get("parts") or {}
     total = sum(safe_int(part.get("price"), 0) for part in parts.values() if isinstance(part, dict))
-    if total <= 0:
-        return
     plan["totalPrice"] = total
     plan["total_price"] = total
     plan.setdefault("debug", {})["total_price"] = total
+    tier_budget = safe_int(plan.get("tierBudget"), 0)
+    max_budget = safe_int(plan.get("budget_max"), 0) or tier_budget
+    min_budget = safe_int(plan.get("budget_min"), 0)
+    overrun = max(0, total - tier_budget) if tier_budget else 0
+    plan["debug"]["overrun"] = overrun
+    if tier_budget:
+        budget_fit = max(-0.55, 1.0 - overrun / max(1.0, tier_budget * 0.16)) if overrun else 1.0 - min(0.22, (tier_budget - total) / tier_budget * 0.18)
+        plan["debug"]["budget_fit"] = round(budget_fit, 4)
+        plan.setdefault("predictions", {})["budget_fit"] = round(budget_fit, 4)
+    plan["budget_overrun"] = max(0, total - max_budget) if max_budget else 0
+    plan["budget_status"] = "over_budget" if max_budget and total > max_budget else "under_budget" if total < min_budget else "within_budget"
+    selected_parts = [part for part in parts.values() if isinstance(part, dict)]
+    verified_count = sum(1 for part in selected_parts if verified_price_info(part))
+    plan["verified_part_count"] = verified_count
+    plan["part_count"] = len(selected_parts)
+    plan["total_is_estimate"] = verified_count < len(selected_parts)
+    plan["price_status"] = "verified" if not plan["total_is_estimate"] else "estimated"
+    for part_type in ("cpu", "gpu"):
+        if isinstance(parts.get(part_type), dict) and part_type in plan.get("predictions", {}):
+            plan["predictions"][part_type]["pred_price"] = safe_int(parts[part_type].get("price"), 0)
     fps = plan.setdefault("fps", {})
     high = safe_float(fps.get("fps_by_option", {}).get("high"), 0.0)
     high_low1 = safe_float(fps.get("low1_by_option", {}).get("high"), 0.0)
@@ -2457,13 +2650,7 @@ def resolve_recommendation_price_cache(
             normalized_type = normalize_text(part_type)
             raw_source = normalize_text(part.get("price_source"))
             raw_url = part.get("url") or part.get("shop_url") or part.get("product_url")
-            if (
-                normalized_type == "gpu"
-                and safe_int(part.get("price"), 0) > 0
-                and raw_source not in {"", "catalog", "catalog_search", "catalog_fallback", "danawa_search"}
-                and danawa_url_category_matches("gpu", raw_url)
-                and not danawa_url_rejected("gpu", raw_url)
-            ):
+            if verified_price_info(part):
                 resolved[key] = {
                     "price": safe_int(part.get("price"), 0),
                     "url": raw_url,
@@ -2473,6 +2660,9 @@ def resolve_recommendation_price_cache(
                     "price_source": part.get("price_source") or "danawa_top_live",
                     "matched_by": part.get("price_source_label") or "danawa_top",
                     "product_name": part.get("product_name") or part.get("name"),
+                    "scraped_at": part.get("scraped_at"),
+                    "verified": True,
+                    "price_status": "verified",
                 }
                 continue
             cached = None if normalized_type == "gpu" and maker_prefs else db_lookup_price_info(part, part_type)
@@ -2480,8 +2670,8 @@ def resolve_recommendation_price_cache(
                 resolved[key] = cached
                 continue
             future = executor.submit(
-                fetch_danawa_top_product,
-                part.get("name"),
+                fetch_market_top_product,
+                market_lookup_name(part, part_type),
                 part_type,
                 2.5,
                 safe_int(part.get("base_price"), 0) or safe_int(part.get("price"), 0),
@@ -2626,16 +2816,27 @@ def price_lookup_response(body: Dict[str, Any]) -> Dict[str, Any]:
         body.get("gpu_brands") or body.get("gpu_makers") or body.get("gpu_brand_prefs")
     ) if isinstance(body, dict) else []
     results: List[Dict[str, Any]] = []
+    wanted = {}
+    for item in items[:20]:
+        if isinstance(item, dict) and item.get("name"):
+            part_type = normalize_text(item.get("part_type") or item.get("type") or "part")
+            # Request metadata is not evidence that the supplied price is current.
+            wanted[(part_type, canonical_name(item["name"]))] = ({**item, "price_source": ""}, part_type)
+    prices = resolve_recommendation_price_cache(wanted, maker_prefs)
     for item in items[:20]:
         if not isinstance(item, dict) or not item.get("name"):
             continue
-        part_type = normalize_text(item.get("type") or item.get("part_type") or "part")
-        info = get_or_fetch_danawa_price(
-            item,
-            part_type,
-            gpu_maker_prefs=maker_prefs if part_type == "gpu" else None,
-        )
+        part_type = normalize_text(item.get("part_type") or item.get("type") or "part")
+        info = prices.get((part_type, canonical_name(item["name"])))
         if not info:
+            results.append({
+                "id": item.get("id"), "type": part_type, "name": item.get("name"),
+                "price": None, "price_source": "unavailable", "price_status": "unavailable",
+                "verified": False, "shop": None, "currency": "KRW",
+                "url": item.get("url") or danawa_search_url(item.get("name")),
+                "image_url": item.get("image_url") or part_image_endpoint(item, part_type),
+                "scraped_at": None,
+            })
             continue
         results.append({
             "id": item.get("id"),
@@ -2649,6 +2850,8 @@ def price_lookup_response(body: Dict[str, Any]) -> Dict[str, Any]:
             "image_url": info.get("image_url") or item.get("image_url") or part_image_endpoint(item, part_type),
             "scraped_at": info.get("scraped_at"),
             "price_source": info.get("price_source") or "danawa_top",
+            "price_status": "verified" if verified_price_info(info) else "stale",
+            "verified": verified_price_info(info),
         })
 
     return {
@@ -2659,6 +2862,7 @@ def price_lookup_response(body: Dict[str, Any]) -> Dict[str, Any]:
 
 def product_search_response(body: Dict[str, Any]) -> Dict[str, Any]:
     payload = price_lookup_response(body)
+    payload["results"] = [row for row in payload.get("results", []) if safe_int(row.get("price"), 0) > 0]
     seen_ids = {row.get("id") for row in payload.get("results", []) if isinstance(row, dict)}
     items = body.get("items") if isinstance(body, dict) else []
     if isinstance(items, list):
@@ -2681,8 +2885,10 @@ def product_search_response(body: Dict[str, Any]) -> Dict[str, Any]:
                 "image_url": item.get("image_url") or part_image_endpoint(item, part_type),
                 "scraped_at": item.get("scraped_at"),
                 "price_source": "catalog_fallback",
+                "price_status": "estimated",
+                "verified": False,
             })
-    payload["source"] = "danawa_visible_catalog_lookup"
+    payload["source"] = "danawa_compuzone_lookup"
     return payload
 
 def game_key_variants(game: str) -> set:
@@ -3153,13 +3359,7 @@ def part_price(part: Dict[str, Any], part_type: str) -> int:
     raw_price = safe_int(part.get("price"), 0)
     raw_source = normalize_text(part.get("price_source"))
     raw_url = part.get("url") or part.get("shop_url") or part.get("product_url")
-    if (
-        normalize_text(part_type) == "gpu"
-        and raw_price > 0
-        and raw_source not in {"", "catalog", "catalog_search", "catalog_fallback", "danawa_search"}
-        and danawa_url_category_matches("gpu", raw_url)
-        and not danawa_url_rejected("gpu", raw_url)
-    ):
+    if verified_price_info(part):
         return raw_price
     db_price = db_lookup_price(part, part_type)
     if db_price is not None and db_price > 0:
@@ -3428,7 +3628,7 @@ def psu_candidates_for(cpu: Dict[str, Any], gpu: Dict[str, Any], psu_pool: List[
     need = recommended_psu_watt(cpu, gpu)
     compatible = [psu for psu in psu_pool if safe_int(psu.get("watt"), 0) >= need]
     if not compatible:
-        compatible = sorted(psu_pool, key=lambda p: safe_int(p.get("watt"), 0), reverse=True)[:1]
+        return []
     target_price = tier_budget * (0.07 if tier == "low" else 0.085 if tier == "mid" else 0.095)
     def psu_score(psu: Dict[str, Any]) -> float:
         price = cached_part_price(psu, "psu", price_cache)
@@ -3746,6 +3946,8 @@ def make_plan_from_raw_parts(
     plan = {
         "tier": tier,
         "tierBudget": tier_budget,
+        "budget_min": request.budget_min,
+        "budget_max": request.budget_max,
         "totalPrice": total,
         "total_price": total,
         "allocation": alloc,
@@ -3997,18 +4199,26 @@ def build_tier_candidates(user: Any, tier: str, rng: random.Random, limit: int =
         # Loosen tier pools if a very small budget made every full build exceed the target.
         if not (gpu_pool and cpu_pool and ram_pool and mb_pool and psu_pool and storage_pool):
             return []
-        fallback_parts = {
-            "gpu": min(gpu_pool, key=lambda p: cached_part_price(p, "gpu", price_cache)),
-            "cpu": min(cpu_pool, key=lambda p: cached_part_price(p, "cpu", price_cache)),
-            "ram": min(ram_pool, key=lambda p: cached_part_price(p, "ram", price_cache)),
-            "storage": min(storage_pool, key=lambda p: cached_part_price(p, "storage", price_cache)),
-        }
-        fallback_parts["mb"] = (mb_candidates_for(fallback_parts["cpu"], fallback_parts["ram"], mb_pool, tier, tier_budget, price_cache) or mb_pool)[0]
-        fallback_parts["psu"] = (psu_candidates_for(fallback_parts["cpu"], fallback_parts["gpu"], psu_pool, tier, tier_budget, price_cache) or psu_pool)[0]
-        total = price_sum_for_parts(fallback_parts, price_cache)
-        power = build_power_score(fallback_parts, resolution)
-        if budget_min <= total <= max_total:
-            scored.append((0.0, fallback_parts, total, max(-0.45, 1.0 - max(0, total - tier_budget) / max(1.0, tier_budget)), max(0, total - tier_budget), power))
+        storage = min(storage_pool, key=lambda p: cached_part_price(p, "storage", price_cache))
+        for cpu in sorted(cpu_pool, key=lambda p: cached_part_price(p, "cpu", price_cache)):
+            for gpu in sorted(gpu_pool, key=lambda p: cached_part_price(p, "gpu", price_cache)):
+                psus = psu_candidates_for(cpu, gpu, psu_pool, tier, tier_budget, price_cache)
+                if not psus:
+                    continue
+                for ram in sorted(ram_pool, key=lambda p: cached_part_price(p, "ram", price_cache)):
+                    boards = mb_candidates_for(cpu, ram, mb_pool, tier, tier_budget, price_cache)
+                    if not boards:
+                        continue
+                    fallback_parts = {"gpu": gpu, "cpu": cpu, "ram": ram, "storage": storage, "mb": boards[0], "psu": psus[0]}
+                    total = price_sum_for_parts(fallback_parts, price_cache)
+                    if budget_min <= total <= max_total:
+                        power = build_power_score(fallback_parts, resolution)
+                        scored.append((0.0, fallback_parts, total, max(-0.45, 1.0 - max(0, total - tier_budget) / max(1.0, tier_budget)), max(0, total - tier_budget), power))
+                        break
+                if scored:
+                    break
+            if scored:
+                break
 
     if not scored:
         return []
@@ -4083,7 +4293,7 @@ def recommend(user: Any) -> Dict[str, Any]:
     if not DB_CACHE.get("loaded"):
         warnings.append("SQLite DB를 찾지 못해 일부 CPU/주변 부품은 내장 카탈로그 기준으로 계산했습니다.")
     if not market_gpu_prices:
-        warnings.append("다나와에서 검증 가능한 그래픽카드 가격을 찾지 못해 GPU 후보가 제한될 수 있습니다.")
+        warnings.append("다나와·컴퓨존에서 현재 그래픽카드 가격을 확인하지 못해 카탈로그 참고 가격을 사용했습니다.")
 
     payload = {
         "input": request.as_payload(include_market_prices=False),
@@ -4098,6 +4308,14 @@ def recommend(user: Any) -> Dict[str, Any]:
         },
     }
     refresh_recommendation_prices(payload)
+    priced_plans = [plan for plan in payload["results"].values() if plan.get("parts")]
+    if any(plan.get("total_is_estimate") for plan in priced_plans):
+        warnings.append("현재 판매가를 확인하지 못한 부품은 참고 가격이며, 해당 합계는 예상 금액입니다.")
+    if any(plan.get("budget_status") == "over_budget" for plan in priced_plans):
+        warnings.append("판매가 갱신 후 예산 상한을 초과한 구성은 초과 금액을 별도로 표시합니다.")
+    if len(priced_plans) < 3:
+        warnings.append("일부 등급에서 예산과 호환성을 충족하는 구성을 찾지 못했습니다.")
+    payload["warning"] = " ".join(warnings) if warnings else None
     payload["engine"]["db_loaded"] = DB_CACHE.get("loaded", False)
     payload["engine"]["db_summary"] = DB_CACHE.get("summary", {})
     return payload
@@ -4110,7 +4328,7 @@ def catalog_response() -> Dict[str, Any]:
     def catalog_part(part: Dict[str, Any], part_type: str) -> Dict[str, Any]:
         return {**part, **summarize_part(part, part_type)}
 
-    return {
+    response = {
         "gpus": [catalog_part(p, "gpu") for p in GPU_CATALOG],
         "cpus": [catalog_part(p, "cpu") for p in CPU_CATALOG],
         "rams": [catalog_part(p, "ram") for p in RAM_CATALOG],
@@ -4129,6 +4347,20 @@ def catalog_response() -> Dict[str, Any]:
         "db_loaded": DB_CACHE.get("loaded", False),
         "db_summary": DB_CACHE.get("summary", {}),
     }
+    # Retail SKUs extend the browser while the curated reference models keep
+    # recommendation/FPS calibration stable. Saved prices retain their age.
+    catalog_keys = {
+        "gpu": "gpus", "cpu": "cpus", "ram": "rams", "storage": "storages",
+        "hdd": "hdds", "mb": "mbs", "psu": "psus", "case": "cases",
+        "software": "software",
+    }
+    for part_type, key in catalog_keys.items():
+        retail = saved_products(part_type)
+        known = {part["id"] for part in response[key]}
+        response[key].extend(part for part in retail if part["id"] not in known)
+    response["catalog_sizes"] = {kind: len(response[key]) for kind, key in catalog_keys.items()}
+    response["reference_catalog_sizes"] = {kind: len(items) for kind, items in CATALOGS.items()}
+    return response
 
 def safe_external_url(url: Any) -> str:
     raw = str(url or "").strip()
@@ -4147,7 +4379,7 @@ def resolve_part_image_url(name: Any, part_type: Any = "") -> str:
     if key in IMAGE_URL_CACHE:
         return IMAGE_URL_CACHE[key]
     try:
-        live = fetch_danawa_top_product(clean_name, part_type, timeout=3.0)
+        live = fetch_market_top_product(clean_name, part_type, timeout=3.0)
         image_url = safe_external_url((live or {}).get("image_url"))
     except Exception:
         image_url = ""
@@ -4161,7 +4393,8 @@ def placeholder_svg(name: Any) -> bytes:
 <rect x="68" y="50" width="184" height="112" rx="18" fill="#d9e6ff"/>
 <rect x="92" y="78" width="136" height="18" rx="9" fill="#0052cc" opacity=".36"/>
 <rect x="104" y="110" width="112" height="14" rx="7" fill="#0052cc" opacity=".24"/>
-<text x="160" y="198" text-anchor="middle" font-family="system-ui, sans-serif" font-size="18" font-weight="700" fill="#0052cc">{label}</text>
+<text x="160" y="191" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" font-weight="700" fill="#0052cc">{label}</text>
+<text x="160" y="218" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" fill="#526580">대표 이미지 없음</text>
 </svg>"""
     return svg.encode("utf-8")
 
@@ -4314,13 +4547,14 @@ class Handler(BaseHTTPRequestHandler):
             send_json(self, 200, catalog_response())
             return
 
-        if path == "/api/danawa-products":
-            payload = danawa_products_response(
+        if path in {"/api/products", "/api/danawa-products"}:
+            payload = market_products_response(
                 params.get("type") or params.get("part_type") or "",
                 params.get("query") or "",
                 params.get("page") or 1,
                 params.get("limit") or 40,
                 params.get("refresh") or "",
+                params.get("source") or ("danawa" if path == "/api/danawa-products" else "all"),
             )
             send_json(self, 200 if payload.get("ok") else 502, payload)
             return

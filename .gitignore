@@ -2,5 +2,6 @@ node_modules/
 __pycache__/
 .DS_Store
 .env
-
+data/market_cache.json
+data/market_cache.tmp
 

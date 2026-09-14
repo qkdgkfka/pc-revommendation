@@ -61,19 +61,38 @@
 
           <div class="builder-filter">
             <div class="product-search-row">
-              <input id="productSearchInput" class="product-search-input" type="search" placeholder="제품명, 칩셋, 소켓 검색"/>
+              <input id="productSearchInput" class="product-search-input" type="search" aria-label="부품 검색" placeholder="제품명, 칩셋, 소켓 검색"/>
               <button type="button" class="mini-btn" id="refreshProductsBtn">가격 갱신</button>
+            </div>
+            <div class="product-controls">
+              <label>가격 검색처
+                <select id="productSourceSelect" class="product-control-select">
+                  <option value="all">다나와 + 컴퓨존</option>
+                  <option value="danawa">다나와</option>
+                  <option value="compuzone">컴퓨존</option>
+                </select>
+              </label>
+              <label>불러온 제품 정렬
+                <select id="productSortSelect" class="product-control-select">
+                  <option value="popular">검색처 기본순</option>
+                  <option value="price_asc">낮은 가격순</option>
+                  <option value="price_desc">높은 가격순</option>
+                  <option value="name">제품명순</option>
+                </select>
+              </label>
+              <button type="button" class="mini-btn ghost" id="resetProductFiltersBtn">필터 초기화</button>
             </div>
             <div class="filter-grid" id="builderFilters"></div>
           </div>
 
           <div class="product-list-head">
             <span id="productListTitle">선택 가능한 제품</span>
-            <span class="product-list-meta"><span id="productOrderLabel">다나와 인기상품순</span><span id="productCount">0개</span></span>
+            <span class="product-list-meta"><span id="productOrderLabel">가격 검색 준비 중</span><span id="productCount">0개</span></span>
           </div>
-          <div class="product-list" id="productList"></div>
+          <p class="product-browse-note" id="productBrowseNote" role="status" aria-live="polite">제품에 마우스를 올리거나 키보드로 선택하면 대표 이미지를 볼 수 있어요.</p>
+          <div class="product-list" id="productList" aria-busy="false"></div>
           <div class="product-list-footer" id="productListFooter" hidden>
-            <button type="button" class="mini-btn ghost" id="loadMoreProductsBtn">다나와 결과 더 보기</button>
+            <button type="button" class="mini-btn ghost" id="loadMoreProductsBtn">제품 더 보기</button>
           </div>
         </section>
 
@@ -91,6 +110,7 @@
               <span class="spec-total-label">부품 합계</span>
               <span class="spec-total-price" id="csTotalPrice">₩0</span>
             </div>
+            <div class="build-price-note" id="csPriceNote" aria-live="polite"></div>
             <div class="build-value-summary" id="csBuildValue">부품을 선택하면 가격 대비 성능을 계산합니다.</div>
             <div class="buy-links" id="csBuyLinks"></div>
           </section>
