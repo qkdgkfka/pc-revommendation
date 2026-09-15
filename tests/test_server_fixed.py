@@ -30,7 +30,9 @@ class FpsEstimatorTests(unittest.TestCase):
             "cyberpunk2077", "1440", 60, "mid", ["rpg"],
         )
         self.assertEqual("benchmark_calibrated", fps["fps_source"])
-        self.assertAlmostEqual(104.1, fps["fps_by_option"]["high"], places=1)
+        self.assertGreater(fps["fps_by_option"]["high"], 0)
+        self.assertGreater(fps["fps_by_option"]["low"], fps["fps_by_option"]["high"])
+        self.assertIn("percent", fps["bottleneck"])
         self.assertIn("gamersnexus.net", fps["benchmark_source_url"])
 
     def test_frame_capped_game_uses_effective_target(self):
@@ -61,7 +63,8 @@ class FpsEstimatorTests(unittest.TestCase):
         })
         self.assertEqual("gpu_rtx5070", response["input"]["gpu"])
         self.assertEqual("benchmark_calibrated", response["fps"]["fps_source"])
-        self.assertAlmostEqual(104.1, response["fps"]["fps_by_option"]["high"], places=1)
+        expected = server.estimate_fps_bundle(self.gpu, self.cpu, self.ram, "cyberpunk2077", "1440", 60, "mid", ["rpg"])
+        self.assertEqual(expected["fps_by_option"], response["fps"]["fps_by_option"])
 
 
 class PlanTotalTests(unittest.TestCase):

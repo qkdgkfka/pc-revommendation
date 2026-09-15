@@ -1,0 +1,282 @@
+{
+  "source_url": "https://store.steampowered.com/hwsurvey/videocard/",
+  "survey_month": "2026-08",
+  "survey_label": "2026년 8월",
+  "population": "Steam 하드웨어 설문 참여 사용자 · 전체 그래픽카드 표",
+  "note": "전체 PC 사용자의 전수 통계가 아니며, 점유율은 성능 지표가 아닙니다. 노트북 GPU는 데스크톱 추천에서 제외합니다.",
+  "fetched_at": "2026-09-14T06:51:30.383979+00:00",
+  "cards": {
+    "rtx3060": {
+      "name": "NVIDIA GeForce RTX 3060",
+      "share_percent": 3.92
+    },
+    "rtx5070": {
+      "name": "NVIDIA GeForce RTX 5070",
+      "share_percent": 3.77
+    },
+    "rtx4060": {
+      "name": "NVIDIA GeForce RTX 4060",
+      "share_percent": 3.6
+    },
+    "rtx3050": {
+      "name": "NVIDIA GeForce RTX 3050",
+      "share_percent": 3.21
+    },
+    "rtx5060": {
+      "name": "NVIDIA GeForce RTX 5060",
+      "share_percent": 3.16
+    },
+    "rtx5060ti": {
+      "name": "NVIDIA GeForce RTX 5060 Ti",
+      "share_percent": 2.55
+    },
+    "gtx1650": {
+      "name": "NVIDIA GeForce GTX 1650",
+      "share_percent": 2.49
+    },
+    "rtx4060ti": {
+      "name": "NVIDIA GeForce RTX 4060 Ti",
+      "share_percent": 2.37
+    },
+    "rtx3060ti": {
+      "name": "NVIDIA GeForce RTX 3060 Ti",
+      "share_percent": 2.16
+    },
+    "rtx3070": {
+      "name": "NVIDIA GeForce RTX 3070",
+      "share_percent": 1.99
+    },
+    "rtx5070ti": {
+      "name": "NVIDIA GeForce RTX 5070 Ti",
+      "share_percent": 1.82
+    },
+    "rtx4070": {
+      "name": "NVIDIA GeForce RTX 4070",
+      "share_percent": 1.78
+    },
+    "rtx5080": {
+      "name": "NVIDIA GeForce RTX 5080",
+      "share_percent": 1.71
+    },
+    "rtx2060": {
+      "name": "NVIDIA GeForce RTX 2060",
+      "share_percent": 1.65
+    },
+    "gtx1060": {
+      "name": "NVIDIA GeForce GTX 1060",
+      "share_percent": 1.5
+    },
+    "rtx4070super": {
+      "name": "NVIDIA GeForce RTX 4070 SUPER",
+      "share_percent": 1.49
+    },
+    "gtx1660super": {
+      "name": "NVIDIA GeForce GTX 1660 SUPER",
+      "share_percent": 1.47
+    },
+    "rx9070xt": {
+      "name": "AMD Radeon RX 9070 XT",
+      "share_percent": 1.46
+    },
+    "rtx3080": {
+      "name": "NVIDIA GeForce RTX 3080",
+      "share_percent": 1.38
+    },
+    "gtx1050ti": {
+      "name": "NVIDIA GeForce GTX 1050 Ti",
+      "share_percent": 1.16
+    },
+    "rtx4070ti": {
+      "name": "NVIDIA GeForce RTX 4070 Ti",
+      "share_percent": 0.92
+    },
+    "rtx3070ti": {
+      "name": "NVIDIA GeForce RTX 3070 Ti",
+      "share_percent": 0.91
+    },
+    "gtx1660ti": {
+      "name": "NVIDIA GeForce GTX 1660 Ti",
+      "share_percent": 0.87
+    },
+    "rx6600": {
+      "name": "AMD Radeon RX 6600",
+      "share_percent": 0.83
+    },
+    "rx9060xt": {
+      "name": "AMD Radeon RX 9060 XT",
+      "share_percent": 0.8
+    },
+    "rtx2060super": {
+      "name": "NVIDIA GeForce RTX 2060 SUPER",
+      "share_percent": 0.75
+    },
+    "rtx4070tisuper": {
+      "name": "NVIDIA GeForce RTX 4070 Ti SUPER",
+      "share_percent": 0.74
+    },
+    "rtx4090": {
+      "name": "NVIDIA GeForce RTX 4090",
+      "share_percent": 0.71
+    },
+    "rtx2070super": {
+      "name": "NVIDIA GeForce RTX 2070 SUPER",
+      "share_percent": 0.67
+    },
+    "rtx4080": {
+      "name": "NVIDIA GeForce RTX 4080",
+      "share_percent": 0.67
+    },
+    "rtx4080super": {
+      "name": "NVIDIA GeForce RTX 4080 SUPER",
+      "share_percent": 0.63
+    },
+    "rx7800xt": {
+      "name": "AMD Radeon RX 7800 XT",
+      "share_percent": 0.63
+    },
+    "gtx1070": {
+      "name": "NVIDIA GeForce GTX 1070",
+      "share_percent": 0.61
+    },
+    "rx580": {
+      "name": "AMD Radeon RX 580 2048SP",
+      "share_percent": 0.57
+    },
+    "rx6700xt": {
+      "name": "AMD Radeon RX 6700 XT",
+      "share_percent": 0.55
+    },
+    "gtx1050": {
+      "name": "NVIDIA GeForce GTX 1050",
+      "share_percent": 0.54
+    },
+    "rtx3080ti": {
+      "name": "NVIDIA GeForce RTX 3080 Ti",
+      "share_percent": 0.54
+    },
+    "rx5700xt": {
+      "name": "AMD Radeon RX 5700 XT",
+      "share_percent": 0.54
+    },
+    "rx7600": {
+      "name": "AMD Radeon RX 7600",
+      "share_percent": 0.49
+    },
+    "rtx2050": {
+      "name": "NVIDIA GeForce RTX 2050",
+      "share_percent": 0.48
+    },
+    "gtx1660": {
+      "name": "NVIDIA GeForce GTX 1660",
+      "share_percent": 0.46
+    },
+    "rtx2070": {
+      "name": "NVIDIA GeForce RTX 2070",
+      "share_percent": 0.43
+    },
+    "rtx5090": {
+      "name": "NVIDIA GeForce RTX 5090",
+      "share_percent": 0.43
+    },
+    "rx7900xtx": {
+      "name": "AMD Radeon RX 7900 XTX",
+      "share_percent": 0.42
+    },
+    "gtx1080": {
+      "name": "NVIDIA GeForce GTX 1080",
+      "share_percent": 0.39
+    },
+    "gtx1650ti": {
+      "name": "NVIDIA GeForce GTX 1650 Ti",
+      "share_percent": 0.36
+    },
+    "rtx3090": {
+      "name": "NVIDIA GeForce RTX 3090",
+      "share_percent": 0.36
+    },
+    "rx570": {
+      "name": "AMD Radeon RX 570",
+      "share_percent": 0.35
+    },
+    "rx7900xt": {
+      "name": "AMD Radeon RX 7900 XT",
+      "share_percent": 0.33
+    },
+    "gtx1080ti": {
+      "name": "NVIDIA GeForce GTX 1080 Ti",
+      "share_percent": 0.31
+    },
+    "rx6600xt": {
+      "name": "AMD Radeon RX 6600 XT",
+      "share_percent": 0.28
+    },
+    "gtx1650super": {
+      "name": "NVIDIA GeForce GTX 1650 SUPER",
+      "share_percent": 0.27
+    },
+    "rx6650xt": {
+      "name": "AMD Radeon RX 6650 XT",
+      "share_percent": 0.26
+    },
+    "rtx2080super": {
+      "name": "NVIDIA GeForce RTX 2080 SUPER",
+      "share_percent": 0.25
+    },
+    "rx6750xt": {
+      "name": "AMD Radeon RX 6750 XT",
+      "share_percent": 0.25
+    },
+    "rx7700xt": {
+      "name": "AMD Radeon RX 7700 XT",
+      "share_percent": 0.25
+    },
+    "rx6800xt": {
+      "name": "AMD Radeon RX 6800 XT",
+      "share_percent": 0.23
+    },
+    "rtx5050": {
+      "name": "NVIDIA GeForce RTX 5050",
+      "share_percent": 0.23
+    },
+    "rtx2080ti": {
+      "name": "NVIDIA GeForce RTX 2080 Ti",
+      "share_percent": 0.22
+    },
+    "rtx2080": {
+      "name": "NVIDIA GeForce RTX 2080",
+      "share_percent": 0.22
+    },
+    "rx550": {
+      "name": "AMD Radeon RX 550",
+      "share_percent": 0.21
+    },
+    "rx9070": {
+      "name": "AMD Radeon RX 9070",
+      "share_percent": 0.2
+    },
+    "gtx1070ti": {
+      "name": "NVIDIA GeForce GTX 1070 Ti",
+      "share_percent": 0.19
+    },
+    "gtx750ti": {
+      "name": "NVIDIA GeForce GTX 750 Ti",
+      "share_percent": 0.18
+    },
+    "rx6500xt": {
+      "name": "AMD Radeon RX 6500 XT",
+      "share_percent": 0.18
+    },
+    "gtx970": {
+      "name": "NVIDIA GeForce GTX 970",
+      "share_percent": 0.18
+    },
+    "gtx960": {
+      "name": "NVIDIA GeForce GTX 960",
+      "share_percent": 0.16
+    },
+    "rx6800": {
+      "name": "AMD Radeon RX 6800",
+      "share_percent": 0.15
+    }
+  }
+}

@@ -31,9 +31,13 @@ import random
 import re
 import sqlite3
 import traceback
+import copy
+import time
 from market_catalog import remember_products, saved_products
-from game_benchmarks import estimate_from_measurements
+from game_benchmarks import estimate_from_measurements, load_measurements
+from graphics_estimates import graphics_scenarios
 from product_images import fetch_product_image, retailer_image_url
+from component_compatibility import platform_compatibility
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 try:
@@ -1863,6 +1867,13 @@ GAME_OPTIONS = [
     {"id": "cities_skylines2", "label": "시티즈 스카이라인 2", "group": "일반 게임", "category": "game", "genre": "sim"},
     {"id": "msfs2024", "label": "MS 플라이트 시뮬레이터 2024", "group": "일반 게임", "category": "game", "genre": "sim"},
     {"id": "farming_sim", "label": "파밍 시뮬레이터", "category": "game", "group": "일반 게임", "genre": "sim"},
+    {"id": "fortnite", "label": "포트나이트", "group": "FPS / 경쟁형", "category": "fps", "genre": "fps"},
+    {"id": "marvel_rivals", "label": "마블 라이벌즈", "group": "FPS / 경쟁형", "category": "fps", "genre": "fps"},
+    {"id": "cod_black_ops6", "label": "콜 오브 듀티: 블랙 옵스 6", "group": "FPS / 경쟁형", "category": "fps", "genre": "fps"},
+    {"id": "dragons_dogma2", "label": "드래곤즈 도그마 2", "group": "오픈월드", "category": "openworld", "genre": "rpg"},
+    {"id": "dying_light2", "label": "다잉 라이트 2", "group": "오픈월드", "category": "openworld", "genre": "openworld"},
+    {"id": "resident_evil4", "label": "바이오하자드 RE:4", "group": "AAA / GOTY", "category": "aaa", "genre": "aaa"},
+    {"id": "alan_wake2", "label": "앨런 웨이크 2", "group": "AAA / GOTY", "category": "aaa", "genre": "aaa"},
 ]
 
 GAME_GENRE_FACTORS = {
@@ -2401,6 +2412,12 @@ def get_or_fetch_danawa_price(
     return None
 
 GPU_MARKET_PRICE_CHECKED_AT: Dict[str, datetime] = {}
+RECOMMENDATION_CACHE: Dict[str, Tuple[float, Dict[str, Any]]] = {}
+
+def is_recommendable_gpu(part: Dict[str, Any]) -> bool:
+    """Apply exclusions to catalog, retailer and fallback paths alike."""
+    identity = " ".join(str(part.get(key) or "") for key in ("id", "performance_ref_id", "name", "product_name"))
+    return not re.search(r"rtx[\s_-]*30\d{2}", identity, re.I)
 
 def resolve_verified_gpu_market_prices(
     gpu_pref: str = "ANY",
@@ -2415,7 +2432,8 @@ def resolve_verified_gpu_market_prices(
     maker_prefs = normalize_gpu_maker_prefs(gpu_maker_prefs)
     candidates = [
         part for part in GPU_CATALOG
-        if gpu_pref == "ANY" or normalize_text(part.get("vendor")) == normalize_text(gpu_pref)
+        if is_recommendable_gpu(part)
+        and (gpu_pref == "ANY" or normalize_text(part.get("vendor")) == normalize_text(gpu_pref))
     ]
     resolved: Dict[str, Dict[str, Any]] = {}
     pending: Dict[Any, Dict[str, Any]] = {}
@@ -2467,7 +2485,7 @@ def resolve_verified_gpu_market_prices(
             pending[future] = part
 
         try:
-            for future in as_completed(pending, timeout=13.0):
+            for future in as_completed(pending, timeout=3.0):
                 part = pending[future]
                 part_id = str(part.get("id") or canonical_name(part.get("name")))
                 try:
@@ -2584,6 +2602,8 @@ def recompute_plan_total(plan: Dict[str, Any]) -> None:
     fps = plan.setdefault("fps", {})
     high = safe_float(fps.get("fps_by_option", {}).get("high"), 0.0)
     high_low1 = safe_float(fps.get("low1_by_option", {}).get("high"), 0.0)
+    plan["cost_per_frame"] = round(total / high) if total > 0 and high > 0 else None
+    fps["cost_per_frame"] = plan["cost_per_frame"]
     fps["price_per_frame_krw"] = None
     fps["price_per_frame_by_option"] = {
         option: value_metrics(value, total)["price_per_frame_krw"]
@@ -2689,7 +2709,7 @@ def resolve_recommendation_price_cache(
             pending[future] = (key, part, part_type, cached)
 
         try:
-            iterator = as_completed(pending, timeout=9.0)
+            iterator = as_completed(pending, timeout=3.0)
             for future in iterator:
                 key, part, part_type, cached = pending.pop(future)
                 try:
@@ -2802,6 +2822,7 @@ def fps_estimate_response(body: Dict[str, Any]) -> Dict[str, Any]:
         tier,
         [game_genre_for_id(game)],
     )
+    attach_graphics_modes(fps, parts["gpu"], parts["cpu"], game, resolution)
     return {
         "fps": fps,
         "input": {
@@ -3032,6 +3053,15 @@ GAME_FPS_PROFILES = {
     "default": {"scale":{"1080":1.00,"1440":0.96,"2160":0.90}, "cpu_weight":0.24, "cpu_cap":{"1080":260,"1440":230,"2160":190}, "low1":0.78},
 }
 
+# Only workload priors, not FPS observations. Actual measured rows are loaded
+# from game_benchmarks.json; uncertainty is reported when interpolation is needed.
+for _game, _weight, _low1 in [
+    ("fortnite", .48, .76), ("marvel_rivals", .40, .74),
+    ("cod_black_ops6", .32, .76), ("dragons_dogma2", .55, .68),
+    ("dying_light2", .22, .76), ("resident_evil4", .20, .78), ("alan_wake2", .16, .72),
+]:
+    GAME_FPS_PROFILES[_game] = {**GAME_FPS_PROFILES["default"], "cpu_weight": _weight, "low1": _low1, "ram_hungry": True}
+
 # Game measurements with verified settings live in data/game_benchmarks.json.
 
 # Game-engine caps should be respected before comparing a build with a monitor
@@ -3040,7 +3070,12 @@ GAME_FPS_PROFILES = {
 GAME_FRAME_CAPS = {"elden_ring": 60.0, "genshin_impact": 60.0}
 
 def normalized_game_key(game: Any) -> str:
-    return normalize_text(game).replace(" ", "_")
+    key = normalize_text(game).replace(" ", "_")
+    aliases = {"cs2": "csgo2", "cyberpunk_2077": "cyberpunk2077", "apex_legends": "apex", "final_fantasy_xiv": "ffxiv"}
+    for item in GAME_OPTIONS:
+        if key == normalize_text(item["label"]).replace(" ", "_"):
+            return item["id"]
+    return aliases.get(key, key)
 
 def game_frame_cap(game: Any) -> Optional[float]:
     return GAME_FRAME_CAPS.get(normalized_game_key(game))
@@ -3233,6 +3268,11 @@ def estimate_fps_bundle(gpu: Dict[str, Any], cpu: Dict[str, Any], ram: Dict[str,
             avg, low, evidence = measured
         else:
             avg, low = estimate_fps_from_catalog(gpu, cpu, ram, game, resolution, opt)
+            cpu_norm = clamp(safe_float(cpu.get("perf"), 0.0) / 100.0, .16, 1.08)
+            cpu_ceiling = profile["cpu_cap"][resolution] * (.48 + cpu_norm * .64) * {"low":1.18,"medium":1.08,"high":1.,"ultra":.94}[opt]
+            gpu_ceiling = max(avg, hierarchy_fps(gpu, resolution, opt) or avg) * profile["scale"][resolution]
+            cpu_penalty = max(0, 1 - avg / max(avg, gpu_ceiling)) * 100
+            gpu_penalty = max(0, 1 - avg / max(avg, cpu_ceiling)) * 100
             evidence = {
                 "method": "model_estimate", "confidence": "low", "low1_estimated": True,
                 "source_url": "", "source_title": "", "reference_gpu": "", "reference_cpu": "",
@@ -3240,7 +3280,20 @@ def estimate_fps_bundle(gpu: Dict[str, Any], cpu: Dict[str, Any], ram: Dict[str,
                 "range": {"min": round(avg * .60, 1), "max": round(avg * 1.40, 1)},
                 "range_method": "heuristic_allowance_not_statistical_interval",
                 "notes": ["해당 게임의 검증된 실측 데이터가 없어 GPU 지수와 게임 부하 모델로 추정했습니다", "1% Low는 추정치"],
+                "bottleneck": {"estimated": True, "cpu_penalty_pct": cpu_penalty,
+                               "gpu_penalty_pct": gpu_penalty, "limiting_component": "cpu" if cpu_penalty > gpu_penalty else "gpu",
+                               "method": "workload_model", "note": "게임 부하 모델 추정 · 실측 병목률 아님"},
             }
+        bottleneck = evidence.get("bottleneck") or {}
+        if "gpu_penalty_pct" not in bottleneck:
+            bottleneck["gpu_penalty_pct"] = max(0, 1 - avg / max(avg, safe_float(bottleneck.get("cpu_fps_ceiling"), avg))) * 100
+        cpu_percent = round(clamp(safe_float(bottleneck.get("cpu_penalty_pct"), 0), 0, 100), 1)
+        gpu_percent = round(clamp(safe_float(bottleneck.get("gpu_penalty_pct"), 0), 0, 100), 1)
+        bottleneck.update({"cpu_percent": cpu_percent, "gpu_percent": gpu_percent,
+                           "percent": max(cpu_percent, gpu_percent),
+                           "limiting_component": "balanced" if max(cpu_percent, gpu_percent) < 10 else "cpu" if cpu_percent >= gpu_percent else "gpu",
+                           "comparison_source_url": "https://pc-builds.com/ko/bottleneck-calculator/",
+                           "note": "선택 게임·해상도·옵션의 성능 여유 차이를 퍼센트로 보정한 자체 추정 · PC-Builds 수치와는 다를 수 있음"})
         if cap:
             avg, low = min(avg, cap), min(low, cap)
             evidence["range"] = {key: round(min(value, cap), 1) for key, value in evidence["range"].items()}
@@ -3273,7 +3326,22 @@ def estimate_fps_bundle(gpu: Dict[str, Any], cpu: Dict[str, Any], ram: Dict[str,
         "benchmark_reference_gpu": evidence["reference_gpu"], "benchmark_reference_cpu": evidence["reference_cpu"],
         "benchmark_conditions": evidence["conditions"], "estimation_notes": evidence["notes"],
         "low1_is_estimated": evidence["low1_estimated"],
+        "bottleneck": evidence.get("bottleneck", {"estimated": True, "limiting_component": "unknown", "note": "게임별 실측 자료가 없어 병목을 신뢰성 있게 계산할 수 없습니다"}),
+        "bottleneck_by_option": {opt: item.get("bottleneck") for opt, item in option_evidence.items()},
     }
+
+
+def attach_graphics_modes(fps, gpu, cpu, game, resolution):
+    def reference_native(row):
+        match = next((item for item in load_measurements() if all(item.get(key) == row.get(key)
+                     for key in ("game", "gpu_id", "cpu_id", "resolution", "preset", "source_url"))), None)
+        if match:
+            return match["avg_fps"]
+        reference_gpu = next((p for p in GPU_CATALOG if p["id"] == row["gpu_id"]), gpu)
+        reference_cpu = next((p for p in CPU_CATALOG if p["id"] == row["cpu_id"]), cpu)
+        measured = estimate_from_measurements(reference_gpu, reference_cpu, {"gb":32}, game, row["resolution"], row["preset"], GAME_FPS_PROFILES.get(game, GAME_FPS_PROFILES["default"]), CATALOGS)
+        return measured[0] if measured else fps["fps_by_option"][row["preset"]]
+    fps["graphics_modes"] = graphics_scenarios(gpu, cpu, game, resolution, fps, reference_native)
 
 # ─────────────────────────────────────────────────────────────
 # Recommendation logic
@@ -3382,14 +3450,12 @@ def score_storage(part: Dict[str, Any], budget: int, resolution: str, tier: str,
     return (0.52 * price_fit + cap_score + tier_bonus)
 
 def filter_compatible_mb(cpu_pool: List[Dict[str, Any]], mb_pool: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    cpusockets = {normalize_text(c.get("socket")) for c in cpu_pool if c.get("socket")}
-    out = [m for m in mb_pool if normalize_text(m.get("socket")) in cpusockets]
-    return out or mb_pool
+    return [board for board in mb_pool if any(platform_compatibility(cpu, board)["compatible"] for cpu in cpu_pool)]
 
 def filter_compatible_ram(mb_pool: List[Dict[str, Any]], ram_pool: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     ramtypes = {normalize_text(m.get("ram_type")) for m in mb_pool if m.get("ram_type")}
     out = [r for r in ram_pool if normalize_text(r.get("type")) in ramtypes]
-    return out or ram_pool
+    return out
 
 TIER_RANK = {"low": 0, "mid": 1, "high": 2}
 
@@ -3471,10 +3537,10 @@ def tier_component_pools(
     refresh: int,
     gpu_pref: str,
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]:
-    cpu_pool = [p for p in CPU_CATALOG if is_desktop_cpu(p)] or CPU_CATALOG[:]
-    gpu_pool = GPU_CATALOG[:]
+    cpu_pool = [p for p in CPU_CATALOG if is_desktop_cpu(p)]
+    gpu_pool = [p for p in GPU_CATALOG if is_recommendable_gpu(p)]
     ram_pool = RAM_CATALOG[:]
-    mb_pool = [p for p in MB_CATALOG if is_desktop_mb(p)] or MB_CATALOG[:]
+    mb_pool = [p for p in MB_CATALOG if is_desktop_mb(p)]
     psu_pool = PSU_CATALOG[:]
     storage_pool = STORAGE_CATALOG[:]
 
@@ -3543,8 +3609,7 @@ def mb_candidates_for(cpu: Dict[str, Any], ram: Dict[str, Any], mb_pool: List[Di
                       tier: str, tier_budget: int, price_cache: Dict[Tuple[str, str], int]) -> List[Dict[str, Any]]:
     compatible = [
         mb for mb in mb_pool
-        if normalize_text(mb.get("socket")) == normalize_text(cpu.get("socket"))
-        and normalize_text(mb.get("ram_type")) == normalize_text(ram.get("type"))
+        if platform_compatibility(cpu, mb, ram)["compatible"]
     ]
     if not compatible:
         return []
@@ -3714,7 +3779,7 @@ class RecommendationRequest:
             genres=tuple(genres_normalize(data.get("genres") or data.get("genre"))),
             gpu_pref=vendor_normalize(data.get("gpu_pref", "ANY")),
             gpu_brands=tuple(normalize_gpu_maker_prefs(data.get("gpu_brands") or data.get("gpu_makers") or data.get("gpu_brand_prefs"))),
-            game=normalize_text(data.get("game", "cyberpunk2077")).replace(" ", "_"),
+            game=normalized_game_key(data.get("game") or "cyberpunk2077"),
             mode="work" if mode == "work" else "game",
             work_profile=normalize_work_profile(data.get("work_profile") or data.get("work") or data.get("work_type")),
             gpu_market_prices=data.get("gpu_market_prices") if isinstance(data.get("gpu_market_prices"), dict) else None,
@@ -3834,6 +3899,7 @@ def make_plan_from_raw_parts(
     budget_fit: float,
     overrun: int,
     power_score: float,
+    fps_bundle: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     request = RecommendationRequest.from_payload(user)
     resolution = request.resolution
@@ -3852,7 +3918,7 @@ def make_plan_from_raw_parts(
     mb = raw_parts["mb"]
     psu = raw_parts["psu"]
     storage = raw_parts["storage"]
-    fps = estimate_fps_bundle(gpu, cpu, ram, game, resolution, refresh, tier, genres)
+    fps = dict(fps_bundle) if fps_bundle is not None else estimate_fps_bundle(gpu, cpu, ram, game, resolution, refresh, tier, genres)
     high_avg = safe_float(fps.get("fps_by_option", {}).get("high"), 0.0)
     high_low1 = safe_float(fps.get("low1_by_option", {}).get("high"), 0.0)
 
@@ -3878,6 +3944,7 @@ def make_plan_from_raw_parts(
     overall = round(clamp(score / 2.0, 0.0, 1.0), 4)
     plan = {
         "tier": tier,
+        "price_order_required": True,
         "tierBudget": tier_budget,
         "budget_min": request.budget_min,
         "budget_max": request.budget_max,
@@ -3901,6 +3968,7 @@ def make_plan_from_raw_parts(
             "overall_score": overall,
         },
         "fps": fps,
+        "compatibility": platform_compatibility(cpu, mb, ram),
         "estimatedFPS": {
             "low": fps.get("fps_by_option", {}).get("low"),
             "medium": fps.get("fps_by_option", {}).get("medium"),
@@ -3914,7 +3982,7 @@ def make_plan_from_raw_parts(
             **work_suitability(score_work_profile(gpu, cpu, ram, storage, work_profile)),
             "score": score_work_profile(gpu, cpu, ram, storage, work_profile),
         },
-        "note": "게임별 DB 실측값을 우선 사용하며, 지원 게임은 공개 실측 앵커로 GPU별 보정합니다.",
+        "note": "검증된 게임별 실측 FPS에 CPU·GPU 처리 한계를 반영합니다. 실측이 없는 옵션과 구성은 보정 추정으로 표시합니다.",
         "why": why,
         "debug": {
             "total_price": total,
@@ -3957,6 +4025,7 @@ class CandidateEvaluationCache:
         price_cache: Dict[Tuple[str, str], int],
         mb_pool: List[Dict[str, Any]],
         psu_pool: List[Dict[str, Any]],
+        shared_fps: Optional[Dict[Tuple[str, str, str], Dict[str, Any]]] = None,
     ) -> None:
         self.request = request
         self.tier = tier
@@ -3968,14 +4037,23 @@ class CandidateEvaluationCache:
         self.mb_options: Dict[Tuple[str, str], List[Dict[str, Any]]] = {}
         self.psu_options: Dict[Tuple[str, str], List[Dict[str, Any]]] = {}
         self.work_scores: Dict[Tuple[str, str, str, str], int] = {}
+        self.shared_fps = shared_fps if shared_fps is not None else {}
 
     def fps_for(self, gpu: Dict[str, Any], cpu: Dict[str, Any], ram: Dict[str, Any]) -> Dict[str, Any]:
         key = (part_cache_key(gpu), part_cache_key(cpu), part_cache_key(ram))
         if key not in self.fps_by_parts:
-            self.fps_by_parts[key] = estimate_fps_bundle(
-                gpu, cpu, ram, self.request.game, self.request.resolution,
-                self.request.refresh, self.tier, list(self.request.genres),
-            )
+            if key not in self.shared_fps:
+                self.shared_fps[key] = estimate_fps_bundle(
+                    gpu, cpu, ram, self.request.game, self.request.resolution,
+                    self.request.refresh, "mid", list(self.request.genres),
+                )
+            bundle = dict(self.shared_fps[key])
+            target = target_fps_for_game(self.tier, self.request.refresh, self.request.game)
+            target_low1 = target * low1_ratio_for_genres(list(self.request.genres) or [game_profile(self.request.game)[0]])
+            metrics = value_metrics(bundle["high_setting_avg_fps"], safe_float(gpu.get("price"), 0), target, bundle["high_setting_low1_fps"], target_low1)
+            for field in ("target_fps", "target_low1_fps", "target_coverage", "low1_target_coverage", "capacity_label"):
+                bundle[field] = metrics[field]
+            self.fps_by_parts[key] = bundle
         return self.fps_by_parts[key]
 
     def motherboards_for(self, cpu: Dict[str, Any], ram: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -4008,7 +4086,8 @@ class CandidateEvaluationCache:
             )
         return self.work_scores[key]
 
-def build_tier_candidates(user: Any, tier: str, rng: random.Random, limit: int = 36) -> List[Dict[str, Any]]:
+def build_tier_candidates(user: Any, tier: str, rng: random.Random, limit: int = 36,
+                          shared_fps: Optional[Dict[Tuple[str, str, str], Dict[str, Any]]] = None) -> List[Dict[str, Any]]:
     request = RecommendationRequest.from_payload(user)
     budget_min = request.budget_min
     budget_max = request.budget_max
@@ -4034,17 +4113,20 @@ def build_tier_candidates(user: Any, tier: str, rng: random.Random, limit: int =
             market_gpu_prices[str(part.get("id"))]
             for part in gpu_pool
             if str(part.get("id")) in market_gpu_prices
+            and is_recommendable_gpu(market_gpu_prices[str(part.get("id"))])
         ]
         if not priced_gpu_pool:
             priced_gpu_pool = [
                 part for part in market_gpu_prices.values()
-                if gpu_pref == "ANY" or normalize_text(part.get("vendor")) == normalize_text(gpu_pref)
+                if is_recommendable_gpu(part)
+                and (gpu_pref == "ANY" or normalize_text(part.get("vendor")) == normalize_text(gpu_pref))
             ]
         gpu_pool = priced_gpu_pool
-        # With current Danawa prices available, do not fall back to a static
-        # catalog GPU merely because this tier has fewer valid listings.
+        # Verified inventory is preferred, but unverified reference prices must
+        # not hide all compatible recommendations during a retailer outage.
         if not gpu_pool:
-            return []
+            gpu_pool = [p for p in GPU_CATALOG if is_recommendable_gpu(p)
+                        and (gpu_pref == "ANY" or normalize_text(p.get("vendor")) == normalize_text(gpu_pref))]
     mb_pool = filter_compatible_mb(cpu_pool, mb_pool)
     ram_pool = filter_compatible_ram(mb_pool, ram_pool)
 
@@ -4052,18 +4134,13 @@ def build_tier_candidates(user: Any, tier: str, rng: random.Random, limit: int =
     gpu_ranked = rank_parts_for_tier(gpu_pool, "gpu", tier_budget, resolution, refresh, tier, game, genres, price_cache, rng, 10)
     ram_ranked = rank_parts_for_tier(ram_pool, "ram", tier_budget, resolution, refresh, tier, game, genres, price_cache, rng, len(ram_pool))
     storage_ranked = storage_candidates_for(storage_pool, tier, tier_budget, price_cache)
-    evaluations = CandidateEvaluationCache(request, tier, tier_budget, price_cache, mb_pool, psu_pool)
+    evaluations = CandidateEvaluationCache(request, tier, tier_budget, price_cache, mb_pool, psu_pool, shared_fps)
 
     scored: List[Tuple[float, Dict[str, Any], int, float, int, float]] = []
     target_power = target_power_score(tier, resolution, refresh)
     target_fps = target_fps_for_game(tier, refresh, game)
     target_low1 = target_fps * low1_ratio_for_genres(genres or [game_class])
-    if budget_min > 0 and budget_min < budget_max:
-        span = budget_max - budget_min
-        tier_range_ceiling = budget_min + int(span * {"low": 0.50, "mid": 0.82, "high": 1.00}[tier])
-        max_total = min(budget_max, max(tier_range_ceiling, int(tier_budget * 1.08)))
-    else:
-        max_total = int(tier_budget * (1.12 if tier == "low" else 1.16 if tier == "mid" else 1.00))
+    max_total = budget_max
 
     for gpu in gpu_ranked:
         for cpu in cpu_ranked:
@@ -4139,6 +4216,11 @@ def build_tier_candidates(user: Any, tier: str, rng: random.Random, limit: int =
                                 )
                             if gpu_maker_prefs:
                                 score += 0.015
+                            if mode == "game":
+                                # Penalize wasting GPU budget above the estimated CPU
+                                # limit, while retaining real FPS and value as main scores.
+                                cpu_loss = safe_float((fps.get("bottleneck") or {}).get("cpu_penalty_pct"), 0.0) / 100.0
+                                score -= min(0.12, max(0.0, cpu_loss - 0.10) * 0.25)
                             scored.append((score, raw_parts, total, budget_fit, overrun, power))
 
     if not scored:
@@ -4157,7 +4239,7 @@ def build_tier_candidates(user: Any, tier: str, rng: random.Random, limit: int =
                         continue
                     fallback_parts = {"gpu": gpu, "cpu": cpu, "ram": ram, "storage": storage, "mb": boards[0], "psu": psus[0]}
                     total = price_sum_for_parts(fallback_parts, price_cache)
-                    if budget_min <= total <= max_total:
+                    if total > 0:
                         power = build_power_score(fallback_parts, resolution)
                         scored.append((0.0, fallback_parts, total, max(-0.45, 1.0 - max(0, total - tier_budget) / max(1.0, tier_budget)), max(0, total - tier_budget), power))
                         break
@@ -4191,7 +4273,8 @@ def build_tier_candidates(user: Any, tier: str, rng: random.Random, limit: int =
         if signature in seen:
             continue
         seen.add(signature)
-        plans.append(make_plan_from_raw_parts(request, tier, raw_parts, tier_budget, alloc, total, score, budget_fit, overrun, power))
+        plans.append(make_plan_from_raw_parts(request, tier, raw_parts, tier_budget, alloc, total, score, budget_fit, overrun, power,
+                                             evaluations.fps_for(raw_parts["gpu"], raw_parts["cpu"], raw_parts["ram"])))
         if len(plans) >= limit:
             break
     return plans
@@ -4205,11 +4288,11 @@ def plan_ordering_metrics(plan: Dict[str, Any]) -> Dict[str, float]:
     parts = plan.get("parts") or {}
     fps = plan.get("fps") or {}
     return {
-        "gpu": safe_float((parts.get("gpu") or {}).get("performance_index"), 0.0),
+        "gpu": safe_float((parts.get("gpu") or {}).get("performance_index"), gpu_base_perf(parts.get("gpu") or {}, "1080")),
         "gpu_1080": safe_float((parts.get("gpu") or {}).get("perf_1080"), 0.0),
         "gpu_1440": safe_float((parts.get("gpu") or {}).get("perf_1440"), 0.0),
         "gpu_2160": safe_float((parts.get("gpu") or {}).get("perf_2160"), 0.0),
-        "cpu": safe_float((parts.get("cpu") or {}).get("performance_index"), 0.0),
+        "cpu": safe_float((parts.get("cpu") or {}).get("performance_index"), safe_float((parts.get("cpu") or {}).get("perf"), 0.0)),
         "ram": safe_float((parts.get("ram") or {}).get("gb"), 0.0),
         "storage": safe_float((parts.get("storage") or {}).get("capacity"), 0.0),
         "power": safe_float(debug.get("power_score"), 0.0),
@@ -4227,6 +4310,15 @@ def tier_upgrade_quality(lower: Dict[str, Any], upper: Dict[str, Any]) -> int:
     """
     lower_metrics = plan_ordering_metrics(lower)
     upper_metrics = plan_ordering_metrics(upper)
+    lower_gpu = (lower.get("parts") or {}).get("gpu") or {}
+    upper_gpu = (upper.get("parts") or {}).get("gpu") or {}
+    lower_id = gpu_exact_model_key(lower_gpu.get("name")) or lower_gpu.get("performance_ref_id") or lower_gpu.get("id")
+    upper_id = gpu_exact_model_key(upper_gpu.get("name")) or upper_gpu.get("performance_ref_id") or upper_gpu.get("id")
+    if lower_id and lower_id == upper_id:
+        return -1
+    if lower.get("price_order_required") or upper.get("price_order_required"):
+        if safe_int(upper.get("totalPrice"), 0) <= safe_int(lower.get("totalPrice"), 0):
+            return -1
     if any(upper_metrics.get(key, 0.0) + 1e-6 < value for key, value in lower_metrics.items()):
         return -1
     gains = {
@@ -4278,18 +4370,55 @@ def build_tier_plan(user: Any, tier: str, used_exact: set, used_family: set, use
     candidates = build_tier_candidates(user, tier, rng, limit=1)
     return candidates[0] if candidates else {}
 
+def complete_recommendation_tiers(results, candidate_sets, request):
+    """Keep a compatible baseline visible even when no distinct upgrade exists."""
+    available = [p for plans in candidate_sets.values() for p in plans if p.get("parts")]
+    if not available:
+        return results
+    previous = None
+    for tier in ("low", "mid", "high"):
+        plan = results.get(tier) or {}
+        if not plan.get("parts") or (previous and tier_upgrade_quality(previous, plan) < 0):
+            if previous:
+                alternatives = [p for p in candidate_sets.get(tier, []) if tier_upgrade_quality(previous, p) > 0]
+                plan = max(alternatives, key=lambda p: p["debug"].get("candidate_score", 0)) if alternatives else copy.deepcopy(previous)
+                if not alternatives:
+                    plan["same_configuration"] = True
+                    plan["note"] = "조건에 맞는 추가 업그레이드가 없어 앞 등급과 동일한 호환 구성을 표시합니다."
+            else:
+                plan = copy.deepcopy(min(available, key=lambda p: p["totalPrice"]))
+        plan["tier"] = tier
+        plan["tierBudget"] = tier_budget_for_user(request.budget_max, tier, request.budget_min)
+        fps = plan.get("fps") or {}
+        fps["target_fps"] = target_fps_for_game(tier, request.refresh, request.game)
+        fps["target_low1_fps"] = fps["target_fps"] * low1_ratio_for_genres(list(request.genres) or [game_profile(request.game)[0]])
+        plan.setdefault("predictions", {}).setdefault("tier", {})["label"] = tier
+        recompute_plan_total(plan)
+        results[tier] = plan
+        previous = plan
+    return results
+
+
 def recommend(user: Any) -> Dict[str, Any]:
     request = RecommendationRequest.from_payload(user)
+    cache_key = json.dumps(request.as_payload(include_market_prices=False), sort_keys=True, ensure_ascii=False)
+    cached = RECOMMENDATION_CACHE.get(cache_key)
+    if cached and time.monotonic() - cached[0] < 60:
+        response = copy.deepcopy(cached[1])
+        response["engine"]["cached"] = True
+        return response
     market_gpu_prices = resolve_verified_gpu_market_prices(request.gpu_pref, list(request.gpu_brands))
     request = replace(request, gpu_market_prices=market_gpu_prices)
 
     seed = stable_seed(request.as_payload(include_market_prices=False))
     rng = random.Random(seed)
+    shared_fps: Dict[Tuple[str, str, str], Dict[str, Any]] = {}
     candidate_sets = {
-        tier: build_tier_candidates(request, tier, rng, limit=36)
+        tier: build_tier_candidates(request, tier, rng, limit=36, shared_fps=shared_fps)
         for tier in ["low", "mid", "high"]
     }
     results = select_ordered_tier_plans(candidate_sets)
+    results = complete_recommendation_tiers(results, candidate_sets, request)
 
     warnings: List[str] = []
     if not DB_CACHE.get("loaded"):
@@ -4310,7 +4439,13 @@ def recommend(user: Any) -> Dict[str, Any]:
         },
     }
     refresh_recommendation_prices(payload)
+    # Retail refresh may reverse totals; only retain genuine upgrades at the
+    # final displayed prices, then fill any gap with an explicitly equal build.
+    refreshed = {tier: [plan] if plan.get("parts") else [] for tier, plan in payload["results"].items()}
+    payload["results"] = complete_recommendation_tiers(payload["results"], refreshed, request)
     priced_plans = [plan for plan in payload["results"].values() if plan.get("parts")]
+    for plan in priced_plans:
+        attach_graphics_modes(plan["fps"], plan["parts"]["gpu"], plan["parts"]["cpu"], request.game, request.resolution)
     if any(plan.get("total_is_estimate") for plan in priced_plans):
         warnings.append("현재 판매가를 확인하지 못한 부품은 참고 가격이며, 해당 합계는 예상 금액입니다.")
     if any(plan.get("budget_status") == "over_budget" for plan in priced_plans):
@@ -4322,6 +4457,11 @@ def recommend(user: Any) -> Dict[str, Any]:
     payload["warning"] = " ".join(warnings) if warnings else None
     payload["engine"]["db_loaded"] = DB_CACHE.get("loaded", False)
     payload["engine"]["db_summary"] = DB_CACHE.get("summary", {})
+    payload["engine"]["evaluated_cpu_gpu_ram_combinations"] = len(shared_fps)
+    payload["engine"]["cached"] = False
+    if len(RECOMMENDATION_CACHE) >= 32:
+        RECOMMENDATION_CACHE.pop(next(iter(RECOMMENDATION_CACHE)))
+    RECOMMENDATION_CACHE[cache_key] = (time.monotonic(), copy.deepcopy(payload))
     return payload
 
 # ─────────────────────────────────────────────────────────────

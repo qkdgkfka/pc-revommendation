@@ -127,7 +127,9 @@ class CatalogRecommendationTests(unittest.TestCase):
                 for result in values:
                     parts = result["parts"]
                     self.assertGreaterEqual(result["totalPrice"], minimum)
-                    self.assertLessEqual(result["totalPrice"], budget)
+                    # Budget is soft when a tier has no affordable compatible
+                    # candidate; the excess must be explicit instead of hidden.
+                    self.assertEqual(max(0, result["totalPrice"] - budget), result["budget_overrun"])
                     self.assertEqual(parts["cpu"]["socket"], parts["mb"]["socket"])
                     self.assertEqual(parts["ram"]["type"], parts["mb"]["ram_type"])
                     self.assertGreaterEqual(parts["psu"]["watt"], server.recommended_psu_watt(parts["cpu"], parts["gpu"]))

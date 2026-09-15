@@ -110,60 +110,7 @@ let SOFTWARES = [
   { id:'sw_office_home', name:'Microsoft Office Home 2024', brand:'Microsoft', price:170000, license:'perpetual' },
 ];
 
-// ─────────────────────────────────────────────────────────────
-// BENCHMARK BASELINES
-// Source: TechPowerUp / TechSpot / Digital Foundry / Guru3D public benchmark averages
-// Each GPU has 7 entries: 1080p low/medium/high, 1440p low/medium/high, 4K high (ultra)
-// "high" = Ultra/Maximum preset, "medium" = High or Medium preset, "low" = Low/Minimum preset
-// These are raster (no RT) averages across a mixed title suite.
-// low > medium > high is ALWAYS guaranteed in the raw data.
-// ─────────────────────────────────────────────────────────────
-const BENCHMARK_FPS = {
-  // format: { l1080, m1080, h1080,  l1440, m1440, h1440,  l2160, m2160, h2160 }
-  gpu_4090:      { l1080:290, m1080:225, h1080:165,  l1440:210, m1440:165, h1440:128,  l2160:130, m2160:105, h2160:82  },
-  gpu_4080s:     { l1080:258, m1080:198, h1080:146,  l1440:188, m1440:148, h1440:112,  l2160:115, m2160: 93, h2160:70  },
-  gpu_4080:      { l1080:248, m1080:192, h1080:141,  l1440:182, m1440:143, h1440:108,  l2160:110, m2160: 89, h2160:67  },
-  gpu_rx7900xtx: { l1080:252, m1080:194, h1080:140,  l1440:182, m1440:142, h1440:106,  l2160:108, m2160: 86, h2160:64  },
-  gpu_rx7900xt:  { l1080:232, m1080:178, h1080:128,  l1440:165, m1440:128, h1440: 95,  l2160: 96, m2160: 76, h2160:56  },
-  gpu_4070tis:   { l1080:228, m1080:174, h1080:128,  l1440:162, m1440:126, h1440: 95,  l2160: 94, m2160: 75, h2160:56  },
-  gpu_4070ti:    { l1080:218, m1080:166, h1080:122,  l1440:154, m1440:120, h1440: 90,  l2160: 89, m2160: 70, h2160:52  },
-  gpu_5070ti:    { l1080:244, m1080:192, h1080:155,  l1440:185, m1440:145, h1440:117,  l2160:110, m2160: 86, h2160:69  },
-  gpu_5070:      { l1080:210, m1080:164, h1080:133,  l1440:153, m1440:120, h1440: 96,  l2160: 87, m2160: 68, h2160:54  },
-  gpu_4070s:     { l1080:205, m1080:157, h1080:115,  l1440:145, m1440:112, h1440: 84,  l2160: 83, m2160: 65, h2160:48  },
-  gpu_rx9070xt:  { l1080:246, m1080:194, h1080:157,  l1440:184, m1440:145, h1440:117,  l2160:105, m2160: 82, h2160:66  },
-  gpu_rx9070:    { l1080:222, m1080:175, h1080:141,  l1440:164, m1440:129, h1440:104,  l2160: 92, m2160: 72, h2160:58  },
-  gpu_rx7900gre: { l1080:198, m1080:152, h1080:110,  l1440:140, m1440:108, h1440: 80,  l2160: 80, m2160: 63, h2160:46  },
-  gpu_rx7800xt:  { l1080:184, m1080:140, h1080:100,  l1440:130, m1440:100, h1440: 74,  l2160: 72, m2160: 57, h2160:42  },
-  gpu_4070:      { l1080:182, m1080:138, h1080:100,  l1440:128, m1440: 98, h1440: 73,  l2160: 70, m2160: 55, h2160:41  },
-  gpu_rx7700xt:  { l1080:162, m1080:122, h1080: 88,  l1440:113, m1440: 87, h1440: 64,  l2160: 61, m2160: 48, h2160:35  },
-  gpu_4060ti:    { l1080:146, m1080:110, h1080: 80,  l1440: 98, m1440: 74, h1440: 54,  l2160: 48, m2160: 37, h2160:26  },
-  gpu_5060ti16:  { l1080:166, m1080:131, h1080:105,  l1440:116, m1440: 91, h1440: 73,  l2160: 64, m2160: 50, h2160:40  },
-  gpu_rx7600xt:  { l1080:122, m1080: 92, h1080: 65,  l1440: 84, m1440: 63, h1440: 46,  l2160: 40, m2160: 31, h2160:22  },
-  gpu_5060:      { l1080:140, m1080:110, h1080: 89,  l1440: 94, m1440: 74, h1440: 60,  l2160: 35, m2160: 27, h2160:22  },
-  gpu_4060:      { l1080:120, m1080: 90, h1080: 65,  l1440: 82, m1440: 61, h1440: 44,  l2160: 37, m2160: 29, h2160:20  },
-  gpu_3080:      { l1080:174, m1080:132, h1080: 96,  l1440:124, m1440: 95, h1440: 70,  l2160: 69, m2160: 54, h2160:40  },
-  gpu_3070:      { l1080:126, m1080: 94, h1080: 68,  l1440: 89, m1440: 67, h1440: 49,  l2160: 45, m2160: 35, h2160:25  },
-  gpu_rx6800xt:  { l1080:175, m1080:133, h1080: 96,  l1440:122, m1440: 93, h1440: 68,  l2160: 67, m2160: 53, h2160:38  },
-  gpu_3060:      { l1080:104, m1080: 78, h1080: 56,  l1440: 72, m1440: 54, h1440: 39,  l2160: 34, m2160: 26, h2160:19  },
-  gpu_rx7600:    { l1080:110, m1080: 82, h1080: 57,  l1440: 74, m1440: 55, h1440: 38,  l2160: 33, m2160: 25, h2160:17  },
-  gpu_rx6700xt:  { l1080:128, m1080: 96, h1080: 68,  l1440: 88, m1440: 66, h1440: 48,  l2160: 43, m2160: 33, h2160:24  },
-  gpu_rx6600xt:  { l1080:104, m1080: 78, h1080: 55,  l1440: 70, m1440: 52, h1440: 37,  l2160: 32, m2160: 24, h2160:17  },
-  gpu_rx6600:    { l1080: 90, m1080: 67, h1080: 46,  l1440: 60, m1440: 44, h1440: 31,  l2160: 26, m2160: 20, h2160:14  },
-  gpu_1660s:     { l1080: 72, m1080: 53, h1080: 37,  l1440: 48, m1440: 35, h1440: 25,  l2160: 20, m2160: 15, h2160:10  },
-  gpu_rx6500xt:  { l1080: 52, m1080: 38, h1080: 25,  l1440: 33, m1440: 24, h1440: 16,  l2160: 13, m2160: 10, h2160: 7  },
-};
-
-// ─────────────────────────────────────────────────────────────
-// GAME QUALITY SCALE FACTORS
-// Applied on top of BENCHMARK_FPS (raster mixed-game baseline).
-// Each game has different GPU-dependency and quality scaling.
-// Values represent how much this game's FPS deviates from the
-// mixed-title average at each quality level.
-// qLow/qMed/qHigh: multiplier vs. baseline "high" benchmark
-// cpuWeight: 0~1, how CPU-bound the game is
-// cpuCap: approximate CPU FPS ceiling at each resolution
-// ramHungry: whether <16GB RAM causes a penalty
-// ─────────────────────────────────────────────────────────────
+// Games are populated from the server catalog when available.
 const GAME_CATEGORIES = [
   { id:'fps', label:'FPS / 경쟁' },
   { id:'openworld', label:'오픈월드' },
@@ -179,10 +126,15 @@ let GAME_OPTIONS = [
   { id:'apex', label:'에이펙스 레전드', group:'FPS / 경쟁형', category:'fps' },
   { id:'rainbow6', label:'레인보우 식스 시즈', group:'FPS / 경쟁형', category:'fps' },
   { id:'pubg', label:'배틀그라운드', group:'FPS / 경쟁형', category:'fps' },
+  { id:'fortnite', label:'포트나이트', group:'FPS / 경쟁형', category:'fps' },
+  { id:'marvel_rivals', label:'마블 라이벌즈', group:'FPS / 경쟁형', category:'fps' },
+  { id:'cod_black_ops6', label:'콜 오브 듀티: 블랙 옵스 6', group:'FPS / 경쟁형', category:'fps' },
   { id:'cyberpunk2077', label:'사이버펑크 2077', group:'AAA / GOTY', category:'aaa' },
   { id:'baldurs_gate3', label:'발더스 게이트 3', group:'AAA / GOTY', category:'aaa' },
   { id:'god_of_war_ragnarok', label:'갓 오브 워 라그나로크', group:'AAA / GOTY', category:'aaa' },
   { id:'black_myth_wukong', label:'검은 신화: 오공', group:'AAA / GOTY', category:'aaa' },
+  { id:'resident_evil4', label:'바이오하자드 RE:4', group:'AAA / GOTY', category:'aaa' },
+  { id:'alan_wake2', label:'앨런 웨이크 2', group:'AAA / GOTY', category:'aaa' },
   { id:'witcher3', label:'더 위쳐 3', group:'오픈월드', category:'openworld' },
   { id:'elden_ring', label:'엘든 링', group:'오픈월드', category:'openworld' },
   { id:'ghost_of_tsushima', label:'고스트 오브 쓰시마', group:'오픈월드', category:'openworld' },
@@ -190,6 +142,8 @@ let GAME_OPTIONS = [
   { id:'horizon_forbidden_west', label:'호라이즌 포비든 웨스트', category:'openworld' },
   { id:'hogwarts_legacy', label:'호그와트 레거시', category:'openworld' },
   { id:'starfield', label:'스타필드', category:'openworld' },
+  { id:'dragons_dogma2', label:'드래곤즈 도그마 2', group:'오픈월드', category:'openworld' },
+  { id:'dying_light2', label:'다잉 라이트 2', group:'오픈월드', category:'openworld' },
   { id:'genshin_impact', label:'원신', group:'일반 게임', category:'game' },
   { id:'wuthering_waves', label:'명조: 워더링 웨이브', group:'일반 게임', category:'game' },
   { id:'zenless_zone_zero', label:'젠레스 존 제로', group:'일반 게임', category:'game' },
@@ -200,38 +154,6 @@ let GAME_OPTIONS = [
   { id:'msfs2024', label:'MS 플라이트 시뮬레이터 2024', group:'일반 게임', category:'game' },
   { id:'farming_sim', label:'파밍 시뮬레이터', group:'일반 게임', category:'game' },
 ];
-
-const GAME_PROFILES = {
-  //                    qLow  qMed  qHigh  cpuW  cpuCap{1080,1440,2160}   ramHungry
-  valorant:        { qLow:2.20, qMed:1.55, qHigh:1.00, cpuWeight:.58, cpuCap:{1080:620,1440:560,2160:500} },
-  csgo2:           { qLow:1.85, qMed:1.38, qHigh:1.00, cpuWeight:.52, cpuCap:{1080:520,1440:470,2160:410} },
-  csgo:            { qLow:2.10, qMed:1.50, qHigh:1.00, cpuWeight:.55, cpuCap:{1080:650,1440:590,2160:520} },
-  overwatch2:      { qLow:1.70, qMed:1.28, qHigh:1.00, cpuWeight:.34, cpuCap:{1080:410,1440:360,2160:300} },
-  apex:            { qLow:1.60, qMed:1.22, qHigh:1.00, cpuWeight:.30, cpuCap:{1080:330,1440:290,2160:240} },
-  rainbow6:        { qLow:1.75, qMed:1.32, qHigh:1.00, cpuWeight:.38, cpuCap:{1080:480,1440:420,2160:350} },
-  pubg:            { qLow:1.65, qMed:1.28, qHigh:1.00, cpuWeight:.46, cpuCap:{1080:360,1440:320,2160:265}, ramHungry:true },
-  cyberpunk2077:   { qLow:1.90, qMed:1.42, qHigh:1.00, cpuWeight:.10, cpuCap:{1080:210,1440:185,2160:155}, ramHungry:true },
-  witcher3:        { qLow:1.55, qMed:1.22, qHigh:1.00, cpuWeight:.16, cpuCap:{1080:260,1440:230,2160:190} },
-  elden_ring:      { qLow:1.45, qMed:1.18, qHigh:1.00, cpuWeight:.22, cpuCap:{1080:180,1440:160,2160:140} },
-  baldurs_gate3:   { qLow:1.62, qMed:1.26, qHigh:1.00, cpuWeight:.28, cpuCap:{1080:220,1440:195,2160:165}, ramHungry:true },
-  ghost_of_tsushima:{ qLow:1.52, qMed:1.22, qHigh:1.00, cpuWeight:.18, cpuCap:{1080:260,1440:230,2160:190}, ramHungry:true },
-  red_dead_redemption2:{ qLow:1.46, qMed:1.18, qHigh:1.00, cpuWeight:.20, cpuCap:{1080:245,1440:215,2160:178}, ramHungry:true },
-  horizon_forbidden_west:{ qLow:1.44, qMed:1.16, qHigh:1.00, cpuWeight:.16, cpuCap:{1080:230,1440:205,2160:170}, ramHungry:true },
-  god_of_war_ragnarok:{ qLow:1.48, qMed:1.20, qHigh:1.00, cpuWeight:.18, cpuCap:{1080:250,1440:220,2160:180}, ramHungry:true },
-  black_myth_wukong:{ qLow:1.55, qMed:1.22, qHigh:1.00, cpuWeight:.14, cpuCap:{1080:210,1440:185,2160:150}, ramHungry:true },
-  hogwarts_legacy: { qLow:1.60, qMed:1.24, qHigh:1.00, cpuWeight:.24, cpuCap:{1080:220,1440:195,2160:160}, ramHungry:true },
-  starfield:       { qLow:1.42, qMed:1.15, qHigh:1.00, cpuWeight:.40, cpuCap:{1080:150,1440:130,2160:105}, ramHungry:true },
-  genshin_impact:  { qLow:1.42, qMed:1.16, qHigh:1.00, cpuWeight:.24, cpuCap:{1080:240,1440:210,2160:180} },
-  wuthering_waves: { qLow:1.50, qMed:1.20, qHigh:1.00, cpuWeight:.30, cpuCap:{1080:260,1440:225,2160:185}, ramHungry:true },
-  zenless_zone_zero:{ qLow:1.44, qMed:1.17, qHigh:1.00, cpuWeight:.24, cpuCap:{1080:260,1440:225,2160:185} },
-  lostark:         { qLow:1.68, qMed:1.28, qHigh:1.00, cpuWeight:.42, cpuCap:{1080:370,1440:320,2160:270} },
-  wow:             { qLow:1.72, qMed:1.30, qHigh:1.00, cpuWeight:.48, cpuCap:{1080:360,1440:310,2160:260}, ramHungry:true },
-  ffxiv:           { qLow:1.58, qMed:1.24, qHigh:1.00, cpuWeight:.30, cpuCap:{1080:310,1440:270,2160:225} },
-  cities_skylines2:{ qLow:1.75, qMed:1.32, qHigh:1.00, cpuWeight:.50, cpuCap:{1080:110,1440:95, 2160:78 }, ramHungry:true },
-  msfs2024:        { qLow:1.80, qMed:1.35, qHigh:1.00, cpuWeight:.55, cpuCap:{1080:105,1440:90, 2160:75 }, ramHungry:true },
-  farming_sim:     { qLow:1.55, qMed:1.22, qHigh:1.00, cpuWeight:.28, cpuCap:{1080:240,1440:205,2160:170} },
-  default:         { qLow:1.60, qMed:1.25, qHigh:1.00, cpuWeight:.24, cpuCap:{1080:260,1440:230,2160:190} },
-};
 
 let WORK_PROFILES = {
   video_1080p: { name:'FHD 영상 편집', group:'영상 편집', w:{ gpu:0.22, cpu:0.42, ram:0.22, storage:0.14 }, req:{ gpu:35, cpu:45, ramGb:16, storageTb:1 } },
@@ -249,22 +171,6 @@ let WORK_PROFILES = {
 };
 
 const MAX_GPU_PERF = 3000, MAX_CPU_PERF = 1720, MAX_RAM_PERF = 680;
-const GPU_ID_ALIASES = {
-  gpu_rtx4090:'gpu_4090',
-  gpu_rtx4080super:'gpu_4080s',
-  gpu_rtx4070tisuper:'gpu_4070tis',
-  gpu_rtx4070super:'gpu_4070s',
-  gpu_rtx4070:'gpu_4070',
-  gpu_rtx5070ti:'gpu_5070ti',
-  gpu_rtx5070:'gpu_5070',
-  gpu_rtx5060ti16:'gpu_5060ti16',
-  gpu_rtx5060:'gpu_5060',
-  gpu_rtx4060ti:'gpu_4060ti',
-  gpu_rtx4060:'gpu_4060',
-  gpu_rx9070xt:'gpu_rx9070xt',
-  gpu_rx9070:'gpu_rx9070',
-};
-
 function numeric(v, fallback = null) {
   const n = Number(v);
   return Number.isFinite(n) ? n : fallback;
@@ -383,93 +289,7 @@ function componentValueText(part, type, compact = false) {
   return `${prefix}1만원당 ${metric.ratio.toFixed(2)} 지수 · ${metric.grade}`;
 }
 
-// ─────────────────────────────────────────────────────────────
-// FPS ESTIMATION
-// Step 1: Look up the per-GPU raster baseline for resolution+quality
-// Step 2: Apply game-specific quality multiplier (qLow/qMed/qHigh)
-//         relative to the "high" baseline
-// Step 3: Apply CPU bottleneck factor
-// Step 4: Apply RAM penalty for hungry games
-// Guarantee: low > medium > high always holds because
-//   profile.qLow > profile.qMed > profile.qHigh (enforced by data)
-// ─────────────────────────────────────────────────────────────
-
-function baselineFPS(gpu, res, quality) {
-  const row = BENCHMARK_FPS[gpu.id] || BENCHMARK_FPS[GPU_ID_ALIASES[gpu.id]];
-  if (!row) return null;
-  const k = quality[0] + res; // 'l1080', 'm1440', 'h2160' etc.
-  return row[k] ?? null;
-}
-
-function fallbackFPS(gpu, res, quality) {
-  // Fallback for GPUs without benchmark data (uses perf score)
-  const resDiv = res === '2160' ? 3.8 : res === '1440' ? 1.65 : 1.0;
-  const qMult  = quality === 'low' ? 1.55 : quality === 'medium' ? 1.22 : 1.0;
-  return (gpuPerfValue(gpu, res) * 0.075 * qMult) / resDiv;
-}
-
-function cpuFpsFactor(cpu, gameKey, res, rawFps) {
-  const profile = GAME_PROFILES[gameKey] || GAME_PROFILES.default;
-  const cpuNorm = Math.max(0.15, Math.min(1.08, cpuPerfValue(cpu) / MAX_CPU_PERF));
-  const baseCap = profile.cpuCap[res] || GAME_PROFILES.default.cpuCap[res];
-  // Effective CPU cap scales with CPU quality
-  const cpuCap = baseCap * (0.48 + cpuNorm * 0.64);
-  if (rawFps <= cpuCap) return 1.0;
-  const bottleneck = Math.max(0.38, cpuCap / rawFps);
-  return 1.0 - profile.cpuWeight * (1.0 - bottleneck);
-}
-
-function ramFpsFactor(ram, gameKey) {
-  const profile = GAME_PROFILES[gameKey] || GAME_PROFILES.default;
-  const gb = ramGbValue(ram);
-  const type = String(ram?.type || ram?.name || '').toUpperCase();
-  const speed = numeric(ram?.speed, 0);
-  if (gb <= 8) return profile.ramHungry ? 0.87 : 0.93;
-  if (profile.ramHungry && gb < 32) return 0.96;
-  let factor = 1.0;
-  if (gb >= 32) factor += profile.ramHungry ? 0.015 : 0.006;
-  if (type.includes('DDR5')) factor += speed >= 5600 ? 0.012 : 0.006;
-  else if (speed >= 3200) factor += 0.004;
-  return Math.min(1.035, factor);
-}
-
-function estFPS(gpu, cpu, ram, gameKey, res, quality) {
-  const profile = GAME_PROFILES[gameKey] || GAME_PROFILES.default;
-
-  // 1. Get GPU raster baseline at this res+quality
-  const base = baselineFPS(gpu, res, quality) ?? fallbackFPS(gpu, res, quality);
-
-  // 2. Apply game-specific quality multiplier relative to "high" baseline
-  //    (the benchmark suite already has low/med/high baked in,
-  //     but we still apply game deviation from the mixed-title average)
-  const qMult = quality === 'low'    ? profile.qLow
-              : quality === 'medium' ? profile.qMed
-              : profile.qHigh; // 1.00
-  // The baseline already encodes quality levels, so qMult adjusts for
-  // how this specific game's quality scaling differs from the average.
-  // Dampen the adjustment to avoid double-counting (baseline has ~40%
-  // of the quality effect, qMult adds the remaining game-specific delta).
-  const dampened = 1.0 + (qMult - 1.0) * 0.30;
-  const gameAdjusted = base * dampened;
-
-  // 3. CPU bottleneck (computed against the high-quality baseline so that
-  //    all three qualities share the same CPU cap check)
-  const highBase = baselineFPS(gpu, res, 'high') ?? fallbackFPS(gpu, res, 'high');
-  const cpuFactor = cpuFpsFactor(cpu, gameKey, res, highBase * dampened);
-
-  // 4. RAM penalty
-  const ramFactor = ramFpsFactor(ram, gameKey);
-
-  const result = Math.max(2, Math.round(gameAdjusted * cpuFactor * ramFactor));
-  return result;
-}
-
-function enforceFpsOrder(values) {
-  const out = { ...values };
-  if (out.medium <= out.high) out.medium = Math.round(out.high * 1.05);
-  if (out.low <= out.medium) out.low = Math.round(out.medium * 1.05);
-  return out;
-}
+// FPS values and evidence are supplied by the server benchmark engine.
 function suitabilityFromScore(score) {
   const value = Number(score) || 0;
   if (value >= 85) return { label:'매우 적합', level:'excellent' };
@@ -2142,6 +1962,17 @@ function fpsSourceLabel(fps) {
   return fps?.fps_source_label || labels[fps?.fps_source] || '성능 모델 추정';
 }
 
+function benchmarkOptionHtml(option, label) {
+  if (!option) return '';
+  const method = option.method === 'measured_benchmark' ? '동일 CPU·GPU 실측 참고'
+    : option.method === 'model_estimate' ? '실측 자료 없음 · 계산 모델 추정' : '실측 자료에서 보정한 추정값';
+  const average = Number(option.reference_avg_fps);
+  const observed = Number.isFinite(average) && average > 0 ? ` · 원문 ${average.toLocaleString('ko-KR')} FPS` : '';
+  const conditions = option.conditions || [option.reference_resolution ? `${option.reference_resolution}p` : '', option.reference_preset].filter(Boolean).join(' · ');
+  const source = /^https?:\/\//i.test(option.source_url || '') ? `<a href="${escapeHtml(option.source_url)}" target="_blank" rel="noopener noreferrer">측정 원문</a>` : '';
+  return `<p><strong>${label} · ${method}</strong>${conditions ? `<br>${escapeHtml(conditions)}${observed}` : ''}${source ? `<br>${source}` : ''}</p>`;
+}
+
 function fpsEvidenceHtml(fps) {
   if (!fps) return '';
   const confidence = { high:'높음', medium:'보통', low:'낮음' }[fps.confidence];
@@ -2152,13 +1983,49 @@ function fpsEvidenceHtml(fps) {
     ? `고옵 예상 범위 ${Number(range.min).toLocaleString('ko-KR')}–${Number(range.max).toLocaleString('ko-KR')} FPS` : '';
   const notes = Array.isArray(fps.estimation_notes) ? fps.estimation_notes.filter(Boolean) : [];
   const reference = [fps.benchmark_reference_gpu, fps.benchmark_reference_cpu].filter(Boolean).join(' + ');
+  const options = [['low', '저옵'], ['medium', '중옵'], ['high', '고옵']]
+    .map(([key, label]) => benchmarkOptionHtml(fps.option_evidence?.[key], label)).join('');
   return `<div class="benchmark-evidence">
     <span class="evidence-label">${escapeHtml(fpsSourceLabel(fps))}${confidence ? ` · 신뢰도 ${confidence}` : ''}</span>
     ${rangeText ? `<span>${rangeText}</span>` : ''}
     ${source ? `<span>${source}</span>` : ''}
     ${fps.benchmark_conditions ? `<span>원문 측정 조건 · ${escapeHtml(fps.benchmark_conditions)}</span>` : ''}
-    ${reference || notes.length ? `<details><summary>추정 기준 보기</summary>${reference ? `<p>기준 구성 · ${escapeHtml(reference)}</p>` : ''}${notes.map(note => `<p>${escapeHtml(note)}</p>`).join('')}</details>` : ''}
+    ${reference || notes.length || options ? `<details><summary>원문 수치·옵션별 추정 기준</summary>${reference ? `<p>기준 구성 · ${escapeHtml(reference)}</p>` : ''}${options}${notes.map(note => `<p>${escapeHtml(note)}</p>`).join('')}</details>` : ''}
   </div>`;
+}
+
+function bottleneckHtml(fps) {
+  const estimate = fps?.bottleneck;
+  if (!estimate || estimate.estimated !== true) return '';
+  const labels = { cpu:'CPU', gpu:'GPU', balanced:'균형 범위' };
+  const percent = Number(estimate.percent);
+  const display = Number.isFinite(percent) ? `약 ${Math.min(100, Math.max(0, percent)).toFixed(1)}%` : '자료 부족';
+  return `<div class="bottleneck-summary">
+    <div class="build-check-heading"><strong>예상 병목 · ${labels[estimate.limiting_component] || '분석 중'}</strong><b>${display}</b></div>
+    <small>선택 게임 · 해상도 · 고옵 기준 추정</small>
+    <details><summary>계산 기준</summary><p>${escapeHtml(estimate.note || '게임별 벤치마크와 CPU·GPU 성능 차이로 보정한 추정치입니다.')}</p><a href="https://pc-builds.com/ko/bottleneck-calculator/" target="_blank" rel="noopener noreferrer">PC-Builds 표시 방식 참고</a></details>
+  </div>`;
+}
+
+function compatibilityHtml(compatibility) {
+  if (!compatibility || typeof compatibility !== 'object') return '';
+  const ok = compatibility.compatible === true;
+  const bios = compatibility.status === 'bios_check_required' ? ' · 출고 BIOS 확인' : '';
+  return `<div class="build-compatibility ${ok ? 'compatible' : 'incompatible'}"><div class="build-check-heading"><strong>CPU · 메인보드</strong><span class="compatibility-badge">${ok ? '✓ 플랫폼 호환' : '호환 정보 부족'}${bios}</span></div></div>`;
+}
+
+function graphicsModesHtml(fps) {
+  if (!Array.isArray(fps?.graphics_modes) || !fps.graphics_modes.length) return '';
+  const rows = fps.graphics_modes.map(mode => {
+    const value = Number(mode.avg_fps);
+    const available = mode.supported && mode.avg_fps != null && Number.isFinite(value) && value > 0;
+    const range = mode.range;
+    const rangeText = range && Number.isFinite(Number(range.min)) && Number.isFinite(Number(range.max)) ? `예상 ${Math.round(range.min)}–${Math.round(range.max)} FPS` : '';
+    const source = /^https?:\/\//i.test(mode.source_url || '') ? `<a href="${escapeHtml(mode.source_url)}" target="_blank" rel="noopener noreferrer">${mode.method === 'workload_estimate' ? '기능 지원 정보' : '측정 출처'}</a>` : '';
+    const measured = ['mode_measurement', 'measured_benchmark'].includes(mode.method) ? '원문 구성 실측' : '추정';
+    return `<div class="graphics-mode"><div><strong>${escapeHtml(mode.label)}</strong><b>${available ? `${value.toLocaleString('ko-KR')} FPS` : '자료 없음'}</b></div><small>${available ? `${measured}${mode.generated ? ' · 생성 프레임 포함' : ''}${rangeText ? ` · ${rangeText}` : ''}` : ''}${mode.generated && Number(mode.render_fps) > 0 ? ` · 실제 렌더 약 ${Math.round(mode.render_fps)} FPS` : ''}</small><p>${escapeHtml(mode.note || '')}${source ? ` · ${source}` : ''}</p></div>`;
+  }).join('');
+  return `<details class="graphics-modes"><summary>RT · DLSS/FSR · 프레임 생성 FPS 비교</summary>${rows}<small>생성 프레임은 표시를 부드럽게 하며 입력 응답성은 실제 렌더 FPS에 따라 달라집니다.</small></details>`;
 }
 
 function fpsRequestPart(part) {
@@ -2245,7 +2112,7 @@ function renderCustomGameChart(gpu, cpu, ram, benchmark = null, loading = false)
   }).join('');
 
   const capNote = benchmark?.frame_cap ? ` · 게임 기본 ${benchmark.frame_cap}fps 제한 반영` : '';
-  chart.innerHTML = `<div class="chart-wrap">${html}<div class="chart-note">${res}p · 네이티브 래스터 · RT / 프레임 생성 끔${capNote}</div>${fpsEvidenceHtml(benchmark)}</div>`;
+  chart.innerHTML = `<div class="chart-wrap">${html}<div class="chart-note">${res}p · 네이티브 예상 FPS · RT / 프레임 생성 끔${capNote}</div>${fpsEvidenceHtml(benchmark)}${bottleneckHtml(benchmark)}${graphicsModesHtml(benchmark)}</div>`;
 }
 
 function renderCustomWorkChart(gpu, cpu, ram, storage) {
@@ -2532,7 +2399,8 @@ function renderResults(data) {
       const hzCov    = Number(fps.target_coverage || fps.hz_coverage || 0);
       const vLabel   = fps.value_label || '–';
       const capacityLabel = fps.capacity_label || vLabel;
-      const gameName = fps.game || st.game;
+      const gameId = fps.game || st.game;
+      const gameName = GAME_OPTIONS.find(game => game.id === gameId)?.label || gameId;
 
       const fpsRows = [
         { label:'저옵', key:'low'    },
@@ -2561,9 +2429,11 @@ function renderResults(data) {
             <span class="fps-title">예상 FPS · ${st.resolution}p @ ${displayTarget}fps 목표</span>
             <span class="fps-tag">${escapeHtml(gameName)}</span>
           </div>
-          <div class="fps-bars">${fpsRows}</div>
+          <div class="fps-bars">${fpsRows || '<p class="chart-note">해당 구성의 FPS 자료를 확인하지 못했습니다.</p>'}</div>
           <div class="chart-note" style="margin-top:7px">네이티브 래스터 · RT / 프레임 생성 끔${frameCap ? ` · 게임 기본 ${frameCap}fps 제한 반영` : ''}</div>
           ${fpsEvidenceHtml(fps)}
+          ${bottleneckHtml(fps)}
+          ${graphicsModesHtml(fps)}
           <div class="val-row">
             <span class="val-icon">${valueIcon(capacityLabel)}</span>
             <div class="val-info">
@@ -2626,6 +2496,8 @@ function renderResults(data) {
         ${partRowHtml('MB', mb, 'mb')}
         ${partRowHtml('SSD', stor, 'storage')}
         ${partRowHtml('PSU', psu.name ? psu : { name: psu.recommendedWatt+'W 파워', recommendedWatt: psu.recommendedWatt }, 'psu')}
+        ${compatibilityHtml(r.compatibility)}
+        ${r.same_configuration ? '<p class="chart-note">추가 업그레이드 후보가 없어 앞 등급과 동일한 구성입니다.</p>' : ''}
 
         <div class="divider"></div>
 
