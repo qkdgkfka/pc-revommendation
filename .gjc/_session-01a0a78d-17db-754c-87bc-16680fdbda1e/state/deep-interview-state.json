@@ -1,0 +1,2798 @@
+{
+  "state": {
+    "intent_contract": {
+      "version": 1,
+      "items": [
+        {
+          "id": "artifact:recommendation-spec",
+          "category": "artifact",
+          "statement": "추천 개선 요구사항 명세를 산출한다."
+        },
+        {
+          "id": "artifact:regression-tests",
+          "category": "artifact",
+          "statement": "등급 차별화와 입력 조건 반영을 검증하는 회귀 테스트 범위를 산출한다."
+        },
+        {
+          "id": "constraint:no-direct-execution-during-interview",
+          "category": "constraint",
+          "statement": "deep-interview 중에는 구현하지 않고 명세만 확정한다."
+        },
+        {
+          "id": "constraint:preserve-python-structure",
+          "category": "constraint",
+          "statement": "기존 Flask/Python으로 표현한 Python 서버 구조를 유지한다."
+        },
+        {
+          "id": "integration:local-data",
+          "category": "integration",
+          "statement": "로컬 부품 카탈로그·벤치마크·가격 데이터를 추천 판단에 사용한다."
+        },
+        {
+          "id": "integration:python-server",
+          "category": "integration",
+          "statement": "기존 Python 서버 추천 엔진(`server_fixed.py`) 안에서 통합한다."
+        },
+        {
+          "id": "surface:recommend-api",
+          "category": "surface",
+          "statement": "`/api/recommend` 추천 응답의 등급별 후보 선택이 개선 대상이다."
+        },
+        {
+          "id": "surface:recommendation-results",
+          "category": "surface",
+          "statement": "LOW/MID/HIGH 추천 결과와 설명이 사용자에게 명확히 달라져 보이게 한다."
+        }
+      ],
+      "digest": "d65f7feff915be3dee3448ed25ea757fac6d2dea70583c849ec1b5b3e4fd69ae",
+      "confirmation_round": 0,
+      "confirmation_answer_hash": "34decd8c499ec4508ac9d0d287933906dff73614f9c9994c7aea80707d526606",
+      "confirmation_evidence": "answer_hash:34decd8c499ec4508ac9d0d287933906dff73614f9c9994c7aea80707d526606"
+    },
+    "intent_contract_required": true,
+    "rounds": [
+      {
+        "round_key": "574a7a53-e5d1-4e7b-b409-9126f1b1ff7e::rid:round-0-topology",
+        "round_id": "round-0-topology",
+        "round": 0,
+        "question_id": "round0_topology",
+        "question_text": "Deep Interview threshold: 5% (source: default)\n\nStarting deep interview. I'll ask targeted questions to understand your idea thoroughly before building anything. After each answer, I'll show your clarity score. We'll proceed to execution once ambiguity drops below 5%.\n\n**Your idea:** \"PC 부품 추천 웹앱을 개선한다. 현재 LOW/MID/HIGH 추천 결과가 서로 너무 비슷하게 나오며, CPU/GPU/예산/해상도/주사율을 반영해 추천 등급이 확실히 달라지게 만들고 싶다. 기존 Python 서버 구조는 유지한다.\"\n**Project type:** brownfield\n**Current ambiguity:** 100% (we haven't started yet)\n\nRound 0 | Topology confirmation | Ambiguity: not scored yet\n\n제가 이해한 최상위 컴포넌트는 3개입니다:\n1. 추천 등급 차별화: LOW/MID/HIGH가 같은 구성이나 체감상 비슷한 구성으로 수렴하지 않고, 등급별로 명확히 다른 CPU/GPU/FPS/가격 특성을 갖게 합니다.\n2. 입력 조건 반영 강화: CPU/GPU 성능, 예산 범위, 해상도, 주사율이 추천 후보 점수와 등급 선택에 실질적으로 영향을 주게 합니다.\n3. 기존 구조 내 통합과 회귀 안전성: 현재 Python 서버 구조와 기존 추천 API/UI 흐름을 유지하면서, `server_fixed.py`의 추천 엔진과 관련 테스트를 중심으로 변경합니다.\n\nLocked intent:\n- Artifacts: artifact:recommendation-spec — 추천 개선 요구사항 명세; artifact:regression-tests — 등급 차별화와 입력 조건 반영을 검증하는 회귀 테스트\n- Surfaces: surface:recommendation-results — LOW/MID/HIGH 추천 결과와 설명; surface:recommend-api — `/api/recommend` 추천 응답\n- Integrations: integration:python-server — 기존 Python 서버 추천 엔진(`server_fixed.py`); integration:local-data — 로컬 부품 카탈로그·벤치마크·가격 데이터\n- Constraints: constraint:preserve-python-structure — 기존 Flask/Python으로 표현한 Python 서버 구조를 유지; constraint:no-direct-execution-during-interview — deep-interview 중에는 구현하지 않고 명세만 확정\n\n이 토폴로지와 잠긴 의도가 맞나요? 추가, 제거, 병합, 분리, 또는 명시적으로 미룰 컴포넌트가 있나요?",
+        "question_hash": "c3a502867b01b4ca915e2c83c2dc1a6c",
+        "answer_hash": "34decd8c499ec4508ac9d0d287933906dff73614f9c9994c7aea80707d526606",
+        "selected_options": [
+          "맞습니다"
+        ],
+        "component": "review-topology",
+        "dimension": "topology",
+        "ambiguity_at_ask": 1,
+        "lifecycle": "answered",
+        "answered_at": "2026-09-16T00:17:09.969Z"
+      },
+      {
+        "round_key": "574a7a53-e5d1-4e7b-b409-9126f1b1ff7e::rid:round-1-tier-difference",
+        "round_id": "round-1-tier-difference",
+        "round": 1,
+        "question_id": "round1_tier_difference",
+        "question_text": "Round 1 | Component: 추천 등급 차별화 | Targeting: Success Criteria | Why now: ‘확실히 달라짐’의 판정 기준이 아직 0점이라, 추천 로직을 바꿔도 성공 여부를 테스트할 수 없습니다. | Ambiguity: 100%\n\nLOW/MID/HIGH가 “충분히 다르다”고 인정하려면 가장 중요한 기준은 무엇이어야 하나요?",
+        "question_hash": "782d282216a86b93a8a23b1b059a8521",
+        "answer_hash": "5e238743d53e63d072479d7d7200b69394b5d7aca078ee7c38b5d4a57561d258",
+        "selected_options": [
+          "총 가격대와 성능이 함께 단계적으로 올라야 한다"
+        ],
+        "component": "tier-differentiation",
+        "dimension": "criteria",
+        "ambiguity_at_ask": 1,
+        "lifecycle": "scored",
+        "answered_at": "2026-09-16T00:18:20.818Z",
+        "ambiguity": 0.64,
+        "scores": {
+          "goal": 0.45,
+          "constraints": 0.2,
+          "criteria": 0.25,
+          "context": 0.6
+        },
+        "weakest_component_id": "input-sensitivity",
+        "weakest_dimension": "constraints",
+        "component_scores": {
+          "tier-differentiation": {
+            "goal": 0.55,
+            "constraints": 0.25,
+            "criteria": 0.45,
+            "context": 0.65,
+            "gaps": {
+              "goal": "정확한 사용자 체감 목표와 우선순위가 아직 부분적으로만 정의됨",
+              "constraints": "허용할 예산 초과, 동일 구성 허용 여부, 구조 변경 한계가 아직 부족함",
+              "criteria": "검증할 대표 입력 케이스와 최소 차이 기준이 아직 수치화되지 않음",
+              "context": "관련 코드 위치는 파악됐지만 변경 범위와 API/UI 영향은 더 확인 필요"
+            }
+          },
+          "input-sensitivity": {
+            "goal": 0.45,
+            "constraints": 0.2,
+            "criteria": 0.25,
+            "context": 0.6,
+            "gaps": {
+              "goal": "정확한 사용자 체감 목표와 우선순위가 아직 부분적으로만 정의됨",
+              "constraints": "허용할 예산 초과, 동일 구성 허용 여부, 구조 변경 한계가 아직 부족함",
+              "criteria": "검증할 대표 입력 케이스와 최소 차이 기준이 아직 수치화되지 않음",
+              "context": "관련 코드 위치는 파악됐지만 변경 범위와 API/UI 영향은 더 확인 필요"
+            }
+          },
+          "brownfield-integration": {
+            "goal": 0.5,
+            "constraints": 0.55,
+            "criteria": 0.25,
+            "context": 0.7,
+            "gaps": {
+              "goal": "정확한 사용자 체감 목표와 우선순위가 아직 부분적으로만 정의됨",
+              "constraints": "허용할 예산 초과, 동일 구성 허용 여부, 구조 변경 한계가 아직 부족함",
+              "criteria": "검증할 대표 입력 케이스와 최소 차이 기준이 아직 수치화되지 않음",
+              "context": "관련 코드 위치는 파악됐지만 변경 범위와 API/UI 영향은 더 확인 필요"
+            }
+          }
+        },
+        "structured_scorer_output": {
+          "triggers": [],
+          "trigger_status": "none",
+          "affected_component": "tier-differentiation",
+          "affected_dimension": "criteria",
+          "prior_dimension_score": null,
+          "new_dimension_score": 0.45,
+          "prior_ambiguity": 1,
+          "new_ambiguity": 0.64,
+          "evidence": "사용자가 LOW/MID/HIGH의 성공 기준을 총 가격대와 성능의 단계적 상승으로 선택함.",
+          "contradicted_established_fact": null,
+          "disputed_unresolved_rationale": null
+        },
+        "ontology": {
+          "entities": [
+            {
+              "name": "RecommendationTier",
+              "type": "core domain",
+              "fields": [
+                "low",
+                "mid",
+                "high",
+                "totalPrice",
+                "performance"
+              ],
+              "relationships": [
+                "RecommendationTier contains PCBuild"
+              ]
+            },
+            {
+              "name": "PCBuild",
+              "type": "core domain",
+              "fields": [
+                "cpu",
+                "gpu",
+                "budget",
+                "fps",
+                "resolution",
+                "refresh"
+              ],
+              "relationships": [
+                "PCBuild belongs to RecommendationTier"
+              ]
+            },
+            {
+              "name": "RecommendationInput",
+              "type": "supporting",
+              "fields": [
+                "budget",
+                "resolution",
+                "refresh",
+                "cpu",
+                "gpu"
+              ],
+              "relationships": [
+                "RecommendationInput influences RecommendationTier selection"
+              ]
+            }
+          ]
+        },
+        "ontology_stability": {
+          "stability_ratio": null,
+          "matching_reasoning": "Round 1이므로 이전 엔티티와 비교하지 않음.",
+          "new_entities": [
+            "RecommendationTier",
+            "PCBuild",
+            "RecommendationInput"
+          ],
+          "changed_entities": [],
+          "stable_entities": [],
+          "removed_entities": []
+        }
+      },
+      {
+        "round_key": "574a7a53-e5d1-4e7b-b409-9126f1b1ff7e::rid:round-2-input-tradeoff",
+        "round_id": "round-2-input-tradeoff",
+        "round": 2,
+        "question_id": "round2_input_tradeoff",
+        "question_text": "Round 1 complete.\n\n| Dimension | Score | Weight | Weighted | Gap |\n|-----------|-------|--------|----------|-----|\n| Goal | 0.45 | 0.35 | 0.16 | 사용자 체감 목표와 우선순위가 아직 부분적으로만 정의됨 |\n| Constraints | 0.20 | 0.25 | 0.05 | 예산 초과, 동일 구성 허용 여부, 입력 충돌 처리 기준이 부족함 |\n| Success Criteria | 0.25 | 0.25 | 0.06 | 대표 입력 케이스와 최소 차이 기준이 아직 수치화되지 않음 |\n| Context (brownfield) | 0.60 | 0.15 | 0.09 | 관련 코드 위치는 파악됐지만 API/UI 영향 범위는 더 확인 필요 |\n| **Ambiguity** | | | **100% -> 64% down** | |\n\n**Topology:** Targeted 추천 등급 차별화 | Active: 3 | Deferred: 0 | Next rotation after: tier-differentiation\n\n**Ontology:** 3 entities | Stability: N/A | New: RecommendationTier, PCBuild, RecommendationInput | Changed: none | Stable: none\n**Milestone:** initial → initial\n\n**Next target:** 입력 조건 반영 강화 / constraints — 예산·해상도·주사율이 충돌할 때 어떤 조건을 우선할지 정해야 추천 결과가 일관되게 달라질 수 있습니다.\n\nRound 2 | Component: 입력 조건 반영 강화 | Targeting: Constraints | Why now: constraints 점수가 0.20으로 가장 낮고, 예산과 목표 성능이 충돌할 때의 경계가 없으면 추천 엔진이 다시 비슷한 안전한 구성으로 수렴할 수 있습니다. | Ambiguity: 64%\n\n예산, 해상도, 주사율이 서로 충돌할 때 추천은 무엇을 가장 엄격하게 지켜야 하나요?",
+        "question_hash": "e70de9cdbabe120ef79b1fbdc98be1db",
+        "answer_hash": "a094709e63ac838f0304f2df7327339142a96197d08002076c421a2ac87e393f",
+        "selected_options": [
+          "목표 해상도·주사율을 가장 엄격히 지키고, 필요하면 예산 초과를 허용한다"
+        ],
+        "component": "input-sensitivity",
+        "dimension": "constraints",
+        "ambiguity_at_ask": 0.64,
+        "lifecycle": "scored",
+        "answered_at": "2026-09-16T00:20:30.316Z",
+        "ambiguity": 0.519,
+        "scores": {
+          "goal": 0.53,
+          "constraints": 0.45,
+          "criteria": 0.33,
+          "context": 0.67
+        },
+        "weakest_component_id": "brownfield-integration",
+        "weakest_dimension": "criteria",
+        "component_scores": {
+          "tier-differentiation": {
+            "goal": 0.58,
+            "constraints": 0.38,
+            "criteria": 0.45,
+            "context": 0.68,
+            "gaps": {
+              "goal": "목표 방향은 잡혔지만 등급별 사용자 체감 차이의 구체 수준은 더 필요함",
+              "constraints": "성능 우선 결정은 생겼지만 예산 초과 한도와 동일 구성 허용 조건은 더 필요함",
+              "criteria": "대표 요청별 기대 출력과 테스트 기준이 아직 수치화되지 않음",
+              "context": "주요 코드 위치는 확인됐지만 변경 허용 범위와 UI 영향은 더 좁혀야 함"
+            }
+          },
+          "input-sensitivity": {
+            "goal": 0.58,
+            "constraints": 0.65,
+            "criteria": 0.35,
+            "context": 0.66,
+            "gaps": {
+              "goal": "목표 방향은 잡혔지만 등급별 사용자 체감 차이의 구체 수준은 더 필요함",
+              "constraints": "성능 우선 결정은 생겼지만 예산 초과 한도와 동일 구성 허용 조건은 더 필요함",
+              "criteria": "대표 요청별 기대 출력과 테스트 기준이 아직 수치화되지 않음",
+              "context": "주요 코드 위치는 확인됐지만 변경 허용 범위와 UI 영향은 더 좁혀야 함"
+            }
+          },
+          "brownfield-integration": {
+            "goal": 0.5,
+            "constraints": 0.55,
+            "criteria": 0.25,
+            "context": 0.72,
+            "gaps": {
+              "goal": "목표 방향은 잡혔지만 등급별 사용자 체감 차이의 구체 수준은 더 필요함",
+              "constraints": "성능 우선 결정은 생겼지만 예산 초과 한도와 동일 구성 허용 조건은 더 필요함",
+              "criteria": "대표 요청별 기대 출력과 테스트 기준이 아직 수치화되지 않음",
+              "context": "주요 코드 위치는 확인됐지만 변경 허용 범위와 UI 영향은 더 좁혀야 함"
+            }
+          }
+        },
+        "structured_scorer_output": {
+          "triggers": [],
+          "trigger_status": "none",
+          "affected_component": "input-sensitivity",
+          "affected_dimension": "constraints",
+          "prior_dimension_score": 0.2,
+          "new_dimension_score": 0.65,
+          "prior_ambiguity": 0.64,
+          "new_ambiguity": 0.519,
+          "evidence": "사용자가 목표 해상도·주사율을 가장 엄격히 지키고 필요하면 예산 초과를 허용한다고 선택함.",
+          "contradicted_established_fact": null,
+          "disputed_unresolved_rationale": null
+        },
+        "ontology": {
+          "entities": [
+            {
+              "name": "RecommendationTier",
+              "type": "core domain",
+              "fields": [
+                "low",
+                "mid",
+                "high",
+                "totalPrice",
+                "performance"
+              ],
+              "relationships": [
+                "RecommendationTier contains PCBuild"
+              ]
+            },
+            {
+              "name": "PCBuild",
+              "type": "core domain",
+              "fields": [
+                "cpu",
+                "gpu",
+                "budget",
+                "fps",
+                "resolution",
+                "refresh"
+              ],
+              "relationships": [
+                "PCBuild belongs to RecommendationTier"
+              ]
+            },
+            {
+              "name": "RecommendationInput",
+              "type": "supporting",
+              "fields": [
+                "budget",
+                "resolution",
+                "refresh",
+                "cpu",
+                "gpu"
+              ],
+              "relationships": [
+                "RecommendationInput influences RecommendationTier selection"
+              ]
+            },
+            {
+              "name": "PerformanceTarget",
+              "type": "constraint",
+              "fields": [
+                "resolution",
+                "refresh",
+                "targetFps"
+              ],
+              "relationships": [
+                "PerformanceTarget outranks Budget when they conflict"
+              ]
+            }
+          ]
+        },
+        "ontology_stability": {
+          "stability_ratio": 0.75,
+          "matching_reasoning": "RecommendationTier, PCBuild, RecommendationInput은 이름 기준으로 유지됨. PerformanceTarget은 Round 2에서 새로 분리된 제약 엔티티임.",
+          "new_entities": [
+            "PerformanceTarget"
+          ],
+          "changed_entities": [],
+          "stable_entities": [
+            "RecommendationTier",
+            "PCBuild",
+            "RecommendationInput"
+          ],
+          "removed_entities": []
+        }
+      },
+      {
+        "round_key": "574a7a53-e5d1-4e7b-b409-9126f1b1ff7e::rid:round-3-integration-success",
+        "round_id": "round-3-integration-success",
+        "round": 3,
+        "question_id": "round3_integration_success",
+        "question_text": "Round 2 complete.\n\n| Dimension | Score | Weight | Weighted | Gap |\n|-----------|-------|--------|----------|-----|\n| Goal | 0.53 | 0.35 | 0.19 | 등급별 체감 목표의 구체 수준이 아직 부족함 |\n| Constraints | 0.45 | 0.25 | 0.11 | 성능 우선 결정은 생겼지만 예산 초과 한도와 동일 구성 허용 조건은 더 필요함 |\n| Success Criteria | 0.33 | 0.25 | 0.08 | 대표 요청별 기대 출력과 테스트 기준이 아직 수치화되지 않음 |\n| Context (brownfield) | 0.67 | 0.15 | 0.10 | 주요 코드 위치는 확인됐지만 UI/API 영향 범위는 더 좁혀야 함 |\n| **Ambiguity** | | | **64% -> 51.9% down** | |\n\n**Topology:** Targeted 입력 조건 반영 강화 | Active: 3 | Deferred: 0 | Next rotation after: input-sensitivity\n\n**Ontology:** 4 entities | Stability: 75% | New: PerformanceTarget | Changed: none | Stable: RecommendationTier, PCBuild, RecommendationInput\n**Milestone:** initial → progress — lateral panel convened\n\n**Next target:** 기존 구조 내 통합과 회귀 안전성 / Success Criteria — 기존 `/api/recommend`, 화면 카드, 테스트 중 어디까지가 합격 증거인지 정해야 안전하게 통합할 수 있습니다.\n\nRound 3 | Component: 기존 구조 내 통합과 회귀 안전성 | Targeting: Success Criteria | Why now: Success Criteria가 0.33으로 낮고, 패널도 “기존 API/UI/테스트 중 무엇이 성공을 증명해야 하는지”가 통합 리스크의 핵심이라고 지적했습니다. | Ambiguity: 51.9%\n\n이번 개선의 최소 합격 기준은 어디까지여야 하나요?",
+        "question_hash": "afd4c7694e9756e3c641b68f67a58fc7",
+        "answer_hash": "5cf807ff343ee6a67f92a4e232105ba5a3f6b6ea9efde0649715c0c17e6b5317",
+        "selected_options": [
+          "API·화면·회귀 테스트까지 모두 필요하다"
+        ],
+        "component": "brownfield-integration",
+        "dimension": "criteria",
+        "ambiguity_at_ask": 0.519,
+        "lifecycle": "scored",
+        "answered_at": "2026-09-16T00:24:36.647Z",
+        "ambiguity": 0.3925,
+        "scores": {
+          "goal": 0.62,
+          "constraints": 0.58,
+          "criteria": 0.55,
+          "context": 0.72
+        },
+        "weakest_component_id": "tier-differentiation",
+        "weakest_dimension": "constraints",
+        "component_scores": {
+          "tier-differentiation": {
+            "goal": 0.62,
+            "constraints": 0.42,
+            "criteria": 0.5,
+            "context": 0.7,
+            "gaps": {
+              "goal": "구성 차이가 사용자에게 어떤 가치로 보일지 아직 완전히 고정되지 않음",
+              "constraints": "불가피한 동일 구성 허용 조건과 예산 초과 한도가 아직 부족함",
+              "criteria": "API/UI/테스트 범위는 정해졌지만 대표 입력별 수치 기준은 더 필요함",
+              "context": "코드와 테스트 표면은 확인됐으나 실제 변경 허용선은 더 좁힐 수 있음"
+            }
+          },
+          "input-sensitivity": {
+            "goal": 0.6,
+            "constraints": 0.65,
+            "criteria": 0.4,
+            "context": 0.68,
+            "gaps": {
+              "goal": "구성 차이가 사용자에게 어떤 가치로 보일지 아직 완전히 고정되지 않음",
+              "constraints": "불가피한 동일 구성 허용 조건과 예산 초과 한도가 아직 부족함",
+              "criteria": "API/UI/테스트 범위는 정해졌지만 대표 입력별 수치 기준은 더 필요함",
+              "context": "코드와 테스트 표면은 확인됐으나 실제 변경 허용선은 더 좁힐 수 있음"
+            }
+          },
+          "brownfield-integration": {
+            "goal": 0.65,
+            "constraints": 0.68,
+            "criteria": 0.75,
+            "context": 0.78,
+            "gaps": {
+              "goal": "구성 차이가 사용자에게 어떤 가치로 보일지 아직 완전히 고정되지 않음",
+              "constraints": "불가피한 동일 구성 허용 조건과 예산 초과 한도가 아직 부족함",
+              "criteria": "API/UI/테스트 범위는 정해졌지만 대표 입력별 수치 기준은 더 필요함",
+              "context": "코드와 테스트 표면은 확인됐으나 실제 변경 허용선은 더 좁힐 수 있음"
+            }
+          }
+        },
+        "structured_scorer_output": {
+          "triggers": [],
+          "trigger_status": "none",
+          "affected_component": "brownfield-integration",
+          "affected_dimension": "criteria",
+          "prior_dimension_score": 0.25,
+          "new_dimension_score": 0.75,
+          "prior_ambiguity": 0.519,
+          "new_ambiguity": 0.3925,
+          "evidence": "사용자가 API·화면·회귀 테스트까지 모두 합격 기준에 포함한다고 선택함.",
+          "contradicted_established_fact": null,
+          "disputed_unresolved_rationale": null
+        },
+        "ontology": {
+          "entities": [
+            {
+              "name": "RecommendationTier",
+              "type": "core domain",
+              "fields": [
+                "low",
+                "mid",
+                "high",
+                "totalPrice",
+                "performance"
+              ],
+              "relationships": [
+                "RecommendationTier contains PCBuild"
+              ]
+            },
+            {
+              "name": "PCBuild",
+              "type": "core domain",
+              "fields": [
+                "cpu",
+                "gpu",
+                "budget",
+                "fps",
+                "resolution",
+                "refresh"
+              ],
+              "relationships": [
+                "PCBuild belongs to RecommendationTier"
+              ]
+            },
+            {
+              "name": "RecommendationInput",
+              "type": "supporting",
+              "fields": [
+                "budget",
+                "resolution",
+                "refresh",
+                "cpu",
+                "gpu"
+              ],
+              "relationships": [
+                "RecommendationInput influences RecommendationTier selection"
+              ]
+            },
+            {
+              "name": "PerformanceTarget",
+              "type": "constraint",
+              "fields": [
+                "resolution",
+                "refresh",
+                "targetFps"
+              ],
+              "relationships": [
+                "PerformanceTarget outranks Budget when they conflict"
+              ]
+            },
+            {
+              "name": "VerificationSurface",
+              "type": "supporting",
+              "fields": [
+                "api",
+                "ui",
+                "regressionTests"
+              ],
+              "relationships": [
+                "VerificationSurface proves recommendation change success"
+              ]
+            }
+          ]
+        },
+        "ontology_stability": {
+          "stability_ratio": 0.8,
+          "matching_reasoning": "이전 4개 엔티티는 이름 기준으로 유지됨. VerificationSurface는 API·화면·테스트 합격 기준 때문에 신규 추가됨.",
+          "new_entities": [
+            "VerificationSurface"
+          ],
+          "changed_entities": [],
+          "stable_entities": [
+            "RecommendationTier",
+            "PCBuild",
+            "RecommendationInput",
+            "PerformanceTarget"
+          ],
+          "removed_entities": []
+        }
+      },
+      {
+        "round_key": "574a7a53-e5d1-4e7b-b409-9126f1b1ff7e::rid:round-4-similarity-exception",
+        "round_id": "round-4-similarity-exception",
+        "round": 4,
+        "question_id": "round4_similarity_exception",
+        "question_text": "Round 3 complete.\n\n| Dimension | Score | Weight | Weighted | Gap |\n|-----------|-------|--------|----------|-----|\n| Goal | 0.62 | 0.35 | 0.22 | 구성 차이가 사용자에게 어떤 가치로 보일지 아직 완전히 고정되지 않음 |\n| Constraints | 0.58 | 0.25 | 0.15 | 불가피한 동일 구성 허용 조건과 예산 초과 한도가 아직 부족함 |\n| Success Criteria | 0.55 | 0.25 | 0.14 | API/UI/테스트 범위는 정해졌지만 대표 입력별 수치 기준은 더 필요함 |\n| Context (brownfield) | 0.72 | 0.15 | 0.11 | 코드와 테스트 표면은 확인됐으나 실제 변경 허용선은 더 좁힐 수 있음 |\n| **Ambiguity** | | | **51.9% -> 39.25% down** | |\n\n**Topology:** Targeted 기존 구조 내 통합과 회귀 안전성 | Active: 3 | Deferred: 0 | Next rotation after: brownfield-integration\n\n**Ontology:** 5 entities | Stability: 80% | New: VerificationSurface | Changed: none | Stable: RecommendationTier, PCBuild, RecommendationInput, PerformanceTarget\n**Milestone:** progress → progress\n\n**Next target:** 추천 등급 차별화 / constraints — 동일 구성이 언제 버그이고 언제 정직한 한계 표시인지 정해야 등급 차별화를 과하게 만들지 않습니다.\n\nRound 4 | Component: 추천 등급 차별화 | Targeting: Constraints | Why now: constraints 점수가 0.58로 남아 있고, 무조건 다른 부품을 강제하면 LOW를 과소추천하거나 HIGH를 과대추천할 수 있어 동일 구성 허용 경계를 정해야 합니다. | Ambiguity: 39.25%\n\n재고·예산·성능 목표 때문에 LOW/MID/HIGH 중 일부가 비슷해질 때, 어떤 경우를 허용해야 하나요?",
+        "question_hash": "f340f148c507c13758d76c593abc360f",
+        "answer_hash": "cf8bdc46445605fadd04f39e8338091f2b1eb90298636dcc7dd01b0836ee9e8a",
+        "selected_options": [
+          "부품 차이보다 사용자 체감 지표(FPS 여유, 1% Low, 예산 초과액)가 다르면 충분하다"
+        ],
+        "component": "tier-differentiation",
+        "dimension": "constraints",
+        "ambiguity_at_ask": 0.3925,
+        "lifecycle": "scored",
+        "answered_at": "2026-09-16T00:27:36.146Z",
+        "ambiguity": 0.295,
+        "scores": {
+          "goal": 0.72,
+          "constraints": 0.73,
+          "criteria": 0.65,
+          "context": 0.75
+        },
+        "weakest_component_id": "input-sensitivity",
+        "weakest_dimension": "criteria",
+        "component_scores": {
+          "tier-differentiation": {
+            "goal": 0.78,
+            "constraints": 0.78,
+            "criteria": 0.65,
+            "context": 0.74,
+            "gaps": {
+              "goal": "대표 입력별로 어떤 체감 지표가 얼마나 달라져야 하는지는 더 필요함",
+              "constraints": "동일 부품은 허용 가능해졌지만 예산 초과 허용폭은 아직 미정",
+              "criteria": "FPS 여유, 1% Low, 예산 초과액의 최소 차이 수치가 아직 없음",
+              "context": "테스트 대상 함수와 UI 표시 항목은 더 구체화 가능"
+            }
+          },
+          "input-sensitivity": {
+            "goal": 0.67,
+            "constraints": 0.68,
+            "criteria": 0.55,
+            "context": 0.7,
+            "gaps": {
+              "goal": "대표 입력별로 어떤 체감 지표가 얼마나 달라져야 하는지는 더 필요함",
+              "constraints": "동일 부품은 허용 가능해졌지만 예산 초과 허용폭은 아직 미정",
+              "criteria": "FPS 여유, 1% Low, 예산 초과액의 최소 차이 수치가 아직 없음",
+              "context": "테스트 대상 함수와 UI 표시 항목은 더 구체화 가능"
+            }
+          },
+          "brownfield-integration": {
+            "goal": 0.7,
+            "constraints": 0.72,
+            "criteria": 0.78,
+            "context": 0.8,
+            "gaps": {
+              "goal": "대표 입력별로 어떤 체감 지표가 얼마나 달라져야 하는지는 더 필요함",
+              "constraints": "동일 부품은 허용 가능해졌지만 예산 초과 허용폭은 아직 미정",
+              "criteria": "FPS 여유, 1% Low, 예산 초과액의 최소 차이 수치가 아직 없음",
+              "context": "테스트 대상 함수와 UI 표시 항목은 더 구체화 가능"
+            }
+          }
+        },
+        "structured_scorer_output": {
+          "triggers": [],
+          "trigger_status": "none",
+          "affected_component": "tier-differentiation",
+          "affected_dimension": "constraints",
+          "prior_dimension_score": 0.42,
+          "new_dimension_score": 0.78,
+          "prior_ambiguity": 0.3925,
+          "new_ambiguity": 0.295,
+          "evidence": "사용자가 부품 차이보다 FPS 여유, 1% Low, 예산 초과액 같은 사용자 체감 지표가 다르면 충분하다고 선택함.",
+          "contradicted_established_fact": null,
+          "disputed_unresolved_rationale": null
+        },
+        "ontology": {
+          "entities": [
+            {
+              "name": "RecommendationTier",
+              "type": "core domain",
+              "fields": [
+                "low",
+                "mid",
+                "high",
+                "totalPrice",
+                "performance"
+              ],
+              "relationships": [
+                "RecommendationTier contains PCBuild"
+              ]
+            },
+            {
+              "name": "PCBuild",
+              "type": "core domain",
+              "fields": [
+                "cpu",
+                "gpu",
+                "budget",
+                "fps",
+                "resolution",
+                "refresh"
+              ],
+              "relationships": [
+                "PCBuild belongs to RecommendationTier"
+              ]
+            },
+            {
+              "name": "RecommendationInput",
+              "type": "supporting",
+              "fields": [
+                "budget",
+                "resolution",
+                "refresh",
+                "cpu",
+                "gpu"
+              ],
+              "relationships": [
+                "RecommendationInput influences RecommendationTier selection"
+              ]
+            },
+            {
+              "name": "PerformanceTarget",
+              "type": "constraint",
+              "fields": [
+                "resolution",
+                "refresh",
+                "targetFps"
+              ],
+              "relationships": [
+                "PerformanceTarget outranks Budget when they conflict"
+              ]
+            },
+            {
+              "name": "VerificationSurface",
+              "type": "supporting",
+              "fields": [
+                "api",
+                "ui",
+                "regressionTests"
+              ],
+              "relationships": [
+                "VerificationSurface proves recommendation change success"
+              ]
+            },
+            {
+              "name": "UserPerceivedMetric",
+              "type": "success metric",
+              "fields": [
+                "fpsHeadroom",
+                "onePercentLow",
+                "budgetOverrun"
+              ],
+              "relationships": [
+                "UserPerceivedMetric differentiates RecommendationTier"
+              ]
+            }
+          ]
+        },
+        "ontology_stability": {
+          "stability_ratio": 0.8333,
+          "matching_reasoning": "이전 5개 엔티티는 유지됨. UserPerceivedMetric은 부품 차이 대신 체감 지표 차이를 인정한 답변에서 신규 추가됨.",
+          "new_entities": [
+            "UserPerceivedMetric"
+          ],
+          "changed_entities": [],
+          "stable_entities": [
+            "RecommendationTier",
+            "PCBuild",
+            "RecommendationInput",
+            "PerformanceTarget",
+            "VerificationSurface"
+          ],
+          "removed_entities": []
+        }
+      },
+      {
+        "round_key": "574a7a53-e5d1-4e7b-b409-9126f1b1ff7e::rid:round-5-representative-cases",
+        "round_id": "round-5-representative-cases",
+        "round": 5,
+        "question_id": "round5_representative_cases",
+        "question_text": "Round 4 complete.\n\n| Dimension | Score | Weight | Weighted | Gap |\n|-----------|-------|--------|----------|-----|\n| Goal | 0.72 | 0.35 | 0.25 | 대표 입력별로 어떤 체감 지표가 얼마나 달라져야 하는지 더 필요함 |\n| Constraints | 0.73 | 0.25 | 0.18 | 동일 부품은 허용 가능해졌지만 예산 초과 허용폭은 아직 미정 |\n| Success Criteria | 0.65 | 0.25 | 0.16 | FPS 여유, 1% Low, 예산 초과액의 최소 차이 수치가 아직 없음 |\n| Context (brownfield) | 0.75 | 0.15 | 0.11 | 테스트 대상 함수와 UI 표시 항목은 더 구체화 가능 |\n| **Ambiguity** | | | **39.25% -> 29.5% down** | |\n\n**Topology:** Targeted 추천 등급 차별화 | Active: 3 | Deferred: 0 | Next rotation after: tier-differentiation\n\n**Ontology:** 6 entities | Stability: 83.33% | New: UserPerceivedMetric | Changed: none | Stable: RecommendationTier, PCBuild, RecommendationInput, PerformanceTarget, VerificationSurface\n**Milestone:** progress → refined — lateral panel convened\n\n**Next target:** 입력 조건 반영 강화 / Success Criteria — 대표 입력 케이스와 수치성 판정 기준이 있어야 CPU/GPU/예산/해상도/주사율 반영을 테스트할 수 있습니다.\n\nRound 5 | Component: 입력 조건 반영 강화 | Targeting: Success Criteria | Why now: Success Criteria가 0.65로 가장 낮고, 패널도 “대표 입력 2~3개와 숫자성 판정 기준” 없이는 입력 민감도를 검증할 수 없다고 지적했습니다. | Ambiguity: 29.5%\n\n대표 입력과 합격 판정은 어느 형태로 고정할까요?",
+        "question_hash": "1c3c0757c1a1f581f1721294bb560179",
+        "answer_hash": "25a4f0e0197d01b339ac50fc59e3863c94e6660146c94984bb9704dddb3b16a0",
+        "selected_options": [
+          "사용자가 직접 예산·해상도·주사율 조합을 지정해야 한다"
+        ],
+        "component": "input-sensitivity",
+        "dimension": "criteria",
+        "ambiguity_at_ask": 0.295,
+        "lifecycle": "scored",
+        "answered_at": "2026-09-16T00:31:42.542Z",
+        "ambiguity": 0.284,
+        "scores": {
+          "goal": 0.73,
+          "constraints": 0.73,
+          "criteria": 0.68,
+          "context": 0.76
+        },
+        "weakest_component_id": "input-sensitivity",
+        "weakest_dimension": "criteria",
+        "component_scores": {
+          "tier-differentiation": {
+            "goal": 0.78,
+            "constraints": 0.78,
+            "criteria": 0.68,
+            "context": 0.74,
+            "gaps": {
+              "goal": "사용자가 직접 지정할 대표 조합의 실제 값이 아직 없음",
+              "constraints": "예산 초과 허용폭이 아직 수치화되지 않음",
+              "criteria": "예산·해상도·주사율 대표 조합 자체가 아직 비어 있음",
+              "context": "테스트와 UI 검증 표면은 정해졌지만 케이스 데이터가 필요함"
+            }
+          },
+          "input-sensitivity": {
+            "goal": 0.7,
+            "constraints": 0.7,
+            "criteria": 0.6,
+            "context": 0.72,
+            "gaps": {
+              "goal": "사용자가 직접 지정할 대표 조합의 실제 값이 아직 없음",
+              "constraints": "예산 초과 허용폭이 아직 수치화되지 않음",
+              "criteria": "예산·해상도·주사율 대표 조합 자체가 아직 비어 있음",
+              "context": "테스트와 UI 검증 표면은 정해졌지만 케이스 데이터가 필요함"
+            }
+          },
+          "brownfield-integration": {
+            "goal": 0.72,
+            "constraints": 0.72,
+            "criteria": 0.78,
+            "context": 0.8,
+            "gaps": {
+              "goal": "사용자가 직접 지정할 대표 조합의 실제 값이 아직 없음",
+              "constraints": "예산 초과 허용폭이 아직 수치화되지 않음",
+              "criteria": "예산·해상도·주사율 대표 조합 자체가 아직 비어 있음",
+              "context": "테스트와 UI 검증 표면은 정해졌지만 케이스 데이터가 필요함"
+            }
+          }
+        },
+        "structured_scorer_output": {
+          "triggers": [],
+          "trigger_status": "none",
+          "affected_component": "input-sensitivity",
+          "affected_dimension": "criteria",
+          "prior_dimension_score": 0.55,
+          "new_dimension_score": 0.6,
+          "prior_ambiguity": 0.295,
+          "new_ambiguity": 0.284,
+          "evidence": "사용자가 대표 입력 조합을 기본값으로 정하지 말고 직접 지정해야 한다고 선택함. 조합 값 자체는 아직 미정임.",
+          "contradicted_established_fact": null,
+          "disputed_unresolved_rationale": null
+        },
+        "ontology": {
+          "entities": [
+            {
+              "name": "RecommendationTier",
+              "type": "core domain",
+              "fields": [
+                "low",
+                "mid",
+                "high",
+                "totalPrice",
+                "performance"
+              ],
+              "relationships": [
+                "RecommendationTier contains PCBuild"
+              ]
+            },
+            {
+              "name": "PCBuild",
+              "type": "core domain",
+              "fields": [
+                "cpu",
+                "gpu",
+                "budget",
+                "fps",
+                "resolution",
+                "refresh"
+              ],
+              "relationships": [
+                "PCBuild belongs to RecommendationTier"
+              ]
+            },
+            {
+              "name": "RecommendationInput",
+              "type": "supporting",
+              "fields": [
+                "budget",
+                "resolution",
+                "refresh",
+                "cpu",
+                "gpu"
+              ],
+              "relationships": [
+                "RecommendationInput influences RecommendationTier selection"
+              ]
+            },
+            {
+              "name": "PerformanceTarget",
+              "type": "constraint",
+              "fields": [
+                "resolution",
+                "refresh",
+                "targetFps"
+              ],
+              "relationships": [
+                "PerformanceTarget outranks Budget when they conflict"
+              ]
+            },
+            {
+              "name": "VerificationSurface",
+              "type": "supporting",
+              "fields": [
+                "api",
+                "ui",
+                "regressionTests"
+              ],
+              "relationships": [
+                "VerificationSurface proves recommendation change success"
+              ]
+            },
+            {
+              "name": "UserPerceivedMetric",
+              "type": "success metric",
+              "fields": [
+                "fpsHeadroom",
+                "onePercentLow",
+                "budgetOverrun"
+              ],
+              "relationships": [
+                "UserPerceivedMetric differentiates RecommendationTier"
+              ]
+            },
+            {
+              "name": "RepresentativeCase",
+              "type": "test fixture",
+              "fields": [
+                "budget",
+                "resolution",
+                "refresh"
+              ],
+              "relationships": [
+                "RepresentativeCase validates RecommendationInput sensitivity"
+              ]
+            }
+          ]
+        },
+        "ontology_stability": {
+          "stability_ratio": 0.8571,
+          "matching_reasoning": "기존 6개 엔티티는 유지됨. RepresentativeCase는 사용자가 직접 지정해야 하는 테스트 입력으로 신규 추가됨.",
+          "new_entities": [
+            "RepresentativeCase"
+          ],
+          "changed_entities": [],
+          "stable_entities": [
+            "RecommendationTier",
+            "PCBuild",
+            "RecommendationInput",
+            "PerformanceTarget",
+            "VerificationSurface",
+            "UserPerceivedMetric"
+          ],
+          "removed_entities": []
+        }
+      },
+      {
+        "round_key": "574a7a53-e5d1-4e7b-b409-9126f1b1ff7e::rid:round-6-case-values",
+        "round_id": "round-6-case-values",
+        "round": 6,
+        "question_id": "round6_case_values",
+        "question_text": "Round 5 complete.\n\n| Dimension | Score | Weight | Weighted | Gap |\n|-----------|-------|--------|----------|-----|\n| Goal | 0.73 | 0.35 | 0.26 | 사용자가 직접 지정할 대표 조합의 실제 값이 아직 없음 |\n| Constraints | 0.73 | 0.25 | 0.18 | 예산 초과 허용폭이 아직 수치화되지 않음 |\n| Success Criteria | 0.68 | 0.25 | 0.17 | 예산·해상도·주사율 대표 조합 자체가 아직 비어 있음 |\n| Context (brownfield) | 0.76 | 0.15 | 0.11 | 테스트와 UI 검증 표면은 정해졌지만 케이스 데이터가 필요함 |\n| **Ambiguity** | | | **29.5% -> 28.4% down** | |\n\n**Topology:** Targeted 입력 조건 반영 강화 | Active: 3 | Deferred: 0 | Next rotation after: input-sensitivity\n\n**Ontology:** 7 entities | Stability: 85.71% | New: RepresentativeCase | Changed: none | Stable: RecommendationTier, PCBuild, RecommendationInput, PerformanceTarget, VerificationSurface, UserPerceivedMetric\n**Milestone:** refined → refined\n\n**Next target:** 입력 조건 반영 강화 / Success Criteria — 대표 조합을 직접 지정하기로 했으므로, 실제 예산·해상도·주사율 값이 필요합니다.\n\nRound 6 | Component: 입력 조건 반영 강화 | Targeting: Success Criteria | Why now: Success Criteria의 남은 핵심 공백은 대표 입력값 자체입니다. 이 값이 없으면 API·화면·회귀 테스트가 무엇을 검증해야 하는지 확정할 수 없습니다. | Ambiguity: 28.4%\n\n대표 검증 조합을 예산 / 해상도 / 주사율 형식으로 적어 주세요. 예: `90만원 / 1080p / 60Hz`, `150만원 / 1440p / 144Hz`, `250만원 / 4K / 144Hz`.",
+        "question_hash": "0dac6202e8632c7dd9fca808466ab4e5",
+        "answer_hash": "70b4af9cfd167e63cd5d87960b815ccbbf96c25afb708a78032953f60262c5e1",
+        "selected_options": [
+          "대표 케이스는 3개만 둔다"
+        ],
+        "component": "input-sensitivity",
+        "dimension": "criteria",
+        "ambiguity_at_ask": 0.284,
+        "lifecycle": "scored",
+        "answered_at": "2026-09-16T00:32:56.310Z",
+        "ambiguity": 0.275,
+        "scores": {
+          "goal": 0.74,
+          "constraints": 0.73,
+          "criteria": 0.7,
+          "context": 0.76
+        },
+        "weakest_component_id": "input-sensitivity",
+        "weakest_dimension": "criteria",
+        "component_scores": {
+          "tier-differentiation": {
+            "goal": 0.78,
+            "constraints": 0.78,
+            "criteria": 0.68,
+            "context": 0.74,
+            "gaps": {
+              "goal": "대표 케이스 수는 3개로 정해졌지만 실제 조합은 아직 없음",
+              "constraints": "예산 초과 허용폭이 아직 수치화되지 않음",
+              "criteria": "3개 대표 조합의 예산·해상도·주사율 값이 필요함",
+              "context": "테스트 fixture 값이 필요함"
+            }
+          },
+          "input-sensitivity": {
+            "goal": 0.72,
+            "constraints": 0.7,
+            "criteria": 0.63,
+            "context": 0.72,
+            "gaps": {
+              "goal": "대표 케이스 수는 3개로 정해졌지만 실제 조합은 아직 없음",
+              "constraints": "예산 초과 허용폭이 아직 수치화되지 않음",
+              "criteria": "3개 대표 조합의 예산·해상도·주사율 값이 필요함",
+              "context": "테스트 fixture 값이 필요함"
+            }
+          },
+          "brownfield-integration": {
+            "goal": 0.72,
+            "constraints": 0.72,
+            "criteria": 0.78,
+            "context": 0.8,
+            "gaps": {
+              "goal": "대표 케이스 수는 3개로 정해졌지만 실제 조합은 아직 없음",
+              "constraints": "예산 초과 허용폭이 아직 수치화되지 않음",
+              "criteria": "3개 대표 조합의 예산·해상도·주사율 값이 필요함",
+              "context": "테스트 fixture 값이 필요함"
+            }
+          }
+        },
+        "structured_scorer_output": {
+          "triggers": [],
+          "trigger_status": "none",
+          "affected_component": "input-sensitivity",
+          "affected_dimension": "criteria",
+          "prior_dimension_score": 0.6,
+          "new_dimension_score": 0.63,
+          "prior_ambiguity": 0.284,
+          "new_ambiguity": 0.275,
+          "evidence": "사용자가 대표 케이스 수를 3개로 제한한다고 선택함. 실제 케이스 값은 아직 미정임.",
+          "contradicted_established_fact": null,
+          "disputed_unresolved_rationale": null
+        },
+        "ontology": {
+          "entities": [
+            {
+              "name": "RecommendationTier",
+              "type": "core domain",
+              "fields": [
+                "low",
+                "mid",
+                "high",
+                "totalPrice",
+                "performance"
+              ],
+              "relationships": [
+                "RecommendationTier contains PCBuild"
+              ]
+            },
+            {
+              "name": "PCBuild",
+              "type": "core domain",
+              "fields": [
+                "cpu",
+                "gpu",
+                "budget",
+                "fps",
+                "resolution",
+                "refresh"
+              ],
+              "relationships": [
+                "PCBuild belongs to RecommendationTier"
+              ]
+            },
+            {
+              "name": "RecommendationInput",
+              "type": "supporting",
+              "fields": [
+                "budget",
+                "resolution",
+                "refresh",
+                "cpu",
+                "gpu"
+              ],
+              "relationships": [
+                "RecommendationInput influences RecommendationTier selection"
+              ]
+            },
+            {
+              "name": "PerformanceTarget",
+              "type": "constraint",
+              "fields": [
+                "resolution",
+                "refresh",
+                "targetFps"
+              ],
+              "relationships": [
+                "PerformanceTarget outranks Budget when they conflict"
+              ]
+            },
+            {
+              "name": "VerificationSurface",
+              "type": "supporting",
+              "fields": [
+                "api",
+                "ui",
+                "regressionTests"
+              ],
+              "relationships": [
+                "VerificationSurface proves recommendation change success"
+              ]
+            },
+            {
+              "name": "UserPerceivedMetric",
+              "type": "success metric",
+              "fields": [
+                "fpsHeadroom",
+                "onePercentLow",
+                "budgetOverrun"
+              ],
+              "relationships": [
+                "UserPerceivedMetric differentiates RecommendationTier"
+              ]
+            },
+            {
+              "name": "RepresentativeCase",
+              "type": "test fixture",
+              "fields": [
+                "budget",
+                "resolution",
+                "refresh",
+                "count=3"
+              ],
+              "relationships": [
+                "RepresentativeCase validates RecommendationInput sensitivity"
+              ]
+            }
+          ]
+        },
+        "ontology_stability": {
+          "stability_ratio": 1,
+          "matching_reasoning": "모든 엔티티가 이름 기준으로 유지됨. RepresentativeCase 필드만 3개 기준으로 구체화됨.",
+          "new_entities": [],
+          "changed_entities": [],
+          "stable_entities": [
+            "RecommendationTier",
+            "PCBuild",
+            "RecommendationInput",
+            "PerformanceTarget",
+            "VerificationSurface",
+            "UserPerceivedMetric",
+            "RepresentativeCase"
+          ],
+          "removed_entities": []
+        }
+      },
+      {
+        "round_key": "574a7a53-e5d1-4e7b-b409-9126f1b1ff7e::rid:round-7-case-triplets",
+        "round_id": "round-7-case-triplets",
+        "round": 7,
+        "question_id": "round7_case_triplets",
+        "question_text": "Round 6 complete.\n\n| Dimension | Score | Weight | Weighted | Gap |\n|-----------|-------|--------|----------|-----|\n| Goal | 0.74 | 0.35 | 0.26 | 대표 케이스 수는 3개로 정해졌지만 실제 조합은 아직 없음 |\n| Constraints | 0.73 | 0.25 | 0.18 | 예산 초과 허용폭이 아직 수치화되지 않음 |\n| Success Criteria | 0.70 | 0.25 | 0.18 | 3개 대표 조합의 예산·해상도·주사율 값이 필요함 |\n| Context (brownfield) | 0.76 | 0.15 | 0.11 | 테스트 fixture 값이 필요함 |\n| **Ambiguity** | | | **28.4% -> 27.5% down** | |\n\n**Topology:** Targeted 입력 조건 반영 강화 | Active: 3 | Deferred: 0 | Next rotation after: input-sensitivity\n\n**Ontology:** 7 entities | Stability: 100% | New: none | Changed: none | Stable: RecommendationTier, PCBuild, RecommendationInput, PerformanceTarget, VerificationSurface, UserPerceivedMetric, RepresentativeCase\n**Milestone:** refined → refined\n\n**Next target:** 입력 조건 반영 강화 / Success Criteria — 대표 케이스가 3개라는 사실만으로는 테스트를 쓸 수 없으므로 구체 조합이 필요합니다.\n\nRound 7 | Component: 입력 조건 반영 강화 | Targeting: Success Criteria | Why now: Success Criteria의 핵심 공백은 3개 대표 케이스의 실제 값입니다. 값을 확정해야 `/api/recommend`, UI 카드, 회귀 테스트가 같은 기준을 검증할 수 있습니다. | Ambiguity: 27.5%\n\n3개 대표 검증 조합을 어떤 값으로 둘까요?",
+        "question_hash": "05645ea83a9148edb82570573d3ca2d1",
+        "answer_hash": "e2037b16dca67ae905d23240f97517d8b2792e5d56891ab7b0a7f739a991745d",
+        "selected_options": [
+          "90만원 / 1080p / 60Hz, 150만원 / 1440p / 144Hz, 250만원 / 4K / 144Hz"
+        ],
+        "component": "input-sensitivity",
+        "dimension": "criteria",
+        "ambiguity_at_ask": 0.275,
+        "lifecycle": "scored",
+        "answered_at": "2026-09-16T00:34:48.158Z",
+        "ambiguity": 0.221,
+        "scores": {
+          "goal": 0.79,
+          "constraints": 0.75,
+          "criteria": 0.8,
+          "context": 0.78
+        },
+        "weakest_component_id": "input-sensitivity",
+        "weakest_dimension": "constraints",
+        "component_scores": {
+          "tier-differentiation": {
+            "goal": 0.8,
+            "constraints": 0.78,
+            "criteria": 0.78,
+            "context": 0.76,
+            "gaps": {
+              "goal": "목표는 거의 명확하지만 예산 초과 정책이 남아 있음",
+              "constraints": "목표 우선 시 허용 가능한 예산 초과 상한이 아직 없음",
+              "criteria": "대표 케이스는 확정됐지만 통과 수치 기준은 조금 더 필요함",
+              "context": "테스트 함수/화면 표시 항목 매핑은 명시 가능"
+            }
+          },
+          "input-sensitivity": {
+            "goal": 0.82,
+            "constraints": 0.72,
+            "criteria": 0.82,
+            "context": 0.76,
+            "gaps": {
+              "goal": "목표는 거의 명확하지만 예산 초과 정책이 남아 있음",
+              "constraints": "목표 우선 시 허용 가능한 예산 초과 상한이 아직 없음",
+              "criteria": "대표 케이스는 확정됐지만 통과 수치 기준은 조금 더 필요함",
+              "context": "테스트 함수/화면 표시 항목 매핑은 명시 가능"
+            }
+          },
+          "brownfield-integration": {
+            "goal": 0.76,
+            "constraints": 0.74,
+            "criteria": 0.8,
+            "context": 0.82,
+            "gaps": {
+              "goal": "목표는 거의 명확하지만 예산 초과 정책이 남아 있음",
+              "constraints": "목표 우선 시 허용 가능한 예산 초과 상한이 아직 없음",
+              "criteria": "대표 케이스는 확정됐지만 통과 수치 기준은 조금 더 필요함",
+              "context": "테스트 함수/화면 표시 항목 매핑은 명시 가능"
+            }
+          }
+        },
+        "structured_scorer_output": {
+          "triggers": [],
+          "trigger_status": "none",
+          "affected_component": "input-sensitivity",
+          "affected_dimension": "criteria",
+          "prior_dimension_score": 0.63,
+          "new_dimension_score": 0.82,
+          "prior_ambiguity": 0.275,
+          "new_ambiguity": 0.221,
+          "evidence": "사용자가 대표 검증 조합을 90만원/1080p/60Hz, 150만원/1440p/144Hz, 250만원/4K/144Hz로 확정함.",
+          "contradicted_established_fact": null,
+          "disputed_unresolved_rationale": null
+        },
+        "ontology": {
+          "entities": [
+            {
+              "name": "RecommendationTier",
+              "type": "core domain",
+              "fields": [
+                "low",
+                "mid",
+                "high",
+                "totalPrice",
+                "performance"
+              ],
+              "relationships": [
+                "RecommendationTier contains PCBuild"
+              ]
+            },
+            {
+              "name": "PCBuild",
+              "type": "core domain",
+              "fields": [
+                "cpu",
+                "gpu",
+                "budget",
+                "fps",
+                "resolution",
+                "refresh"
+              ],
+              "relationships": [
+                "PCBuild belongs to RecommendationTier"
+              ]
+            },
+            {
+              "name": "RecommendationInput",
+              "type": "supporting",
+              "fields": [
+                "budget",
+                "resolution",
+                "refresh",
+                "cpu",
+                "gpu"
+              ],
+              "relationships": [
+                "RecommendationInput influences RecommendationTier selection"
+              ]
+            },
+            {
+              "name": "PerformanceTarget",
+              "type": "constraint",
+              "fields": [
+                "resolution",
+                "refresh",
+                "targetFps"
+              ],
+              "relationships": [
+                "PerformanceTarget outranks Budget when they conflict"
+              ]
+            },
+            {
+              "name": "VerificationSurface",
+              "type": "supporting",
+              "fields": [
+                "api",
+                "ui",
+                "regressionTests"
+              ],
+              "relationships": [
+                "VerificationSurface proves recommendation change success"
+              ]
+            },
+            {
+              "name": "UserPerceivedMetric",
+              "type": "success metric",
+              "fields": [
+                "fpsHeadroom",
+                "onePercentLow",
+                "budgetOverrun"
+              ],
+              "relationships": [
+                "UserPerceivedMetric differentiates RecommendationTier"
+              ]
+            },
+            {
+              "name": "RepresentativeCase",
+              "type": "test fixture",
+              "fields": [
+                "900000/1080p/60Hz",
+                "1500000/1440p/144Hz",
+                "2500000/4K/144Hz"
+              ],
+              "relationships": [
+                "RepresentativeCase validates RecommendationInput sensitivity"
+              ]
+            }
+          ]
+        },
+        "ontology_stability": {
+          "stability_ratio": 1,
+          "matching_reasoning": "모든 엔티티가 유지됨. RepresentativeCase 필드가 실제 값으로 구체화됨.",
+          "new_entities": [],
+          "changed_entities": [],
+          "stable_entities": [
+            "RecommendationTier",
+            "PCBuild",
+            "RecommendationInput",
+            "PerformanceTarget",
+            "VerificationSurface",
+            "UserPerceivedMetric",
+            "RepresentativeCase"
+          ],
+          "removed_entities": []
+        }
+      },
+      {
+        "round_key": "574a7a53-e5d1-4e7b-b409-9126f1b1ff7e::rid:round-8-overrun-cap",
+        "round_id": "round-8-overrun-cap",
+        "round": 8,
+        "question_id": "round8_overrun_cap",
+        "question_text": "Round 7 complete.\n\n| Dimension | Score | Weight | Weighted | Gap |\n|-----------|-------|--------|----------|-----|\n| Goal | 0.79 | 0.35 | 0.28 | 목표는 거의 명확하지만 예산 초과 정책이 남아 있음 |\n| Constraints | 0.75 | 0.25 | 0.19 | 목표 우선 시 허용 가능한 예산 초과 상한이 아직 없음 |\n| Success Criteria | 0.80 | 0.25 | 0.20 | 대표 케이스는 확정됐지만 통과 수치 기준은 조금 더 필요함 |\n| Context (brownfield) | 0.78 | 0.15 | 0.12 | 테스트 함수/화면 표시 항목 매핑은 명시 가능 |\n| **Ambiguity** | | | **27.5% -> 22.1% down** | |\n\n**Topology:** Targeted 입력 조건 반영 강화 | Active: 3 | Deferred: 0 | Next rotation after: input-sensitivity\n\n**Ontology:** 7 entities | Stability: 100% | New: none | Changed: none | Stable: RecommendationTier, PCBuild, RecommendationInput, PerformanceTarget, VerificationSurface, UserPerceivedMetric, RepresentativeCase\n**Milestone:** refined → refined\n\n**Next target:** 입력 조건 반영 강화 / Constraints — 해상도·주사율을 우선하기로 했지만, 예산 초과가 어디까지 허용되는지 정해야 추천이 신뢰를 잃지 않습니다.\n\nRound 8 | Component: 입력 조건 반영 강화 | Targeting: Constraints | Why now: constraints 점수의 가장 큰 공백은 예산 초과 상한입니다. 상한이 없으면 목표 성능을 맞춘다는 명목으로 HIGH가 과하게 비싸질 수 있습니다. | Ambiguity: 22.1%\n\n목표 해상도·주사율을 맞추기 위해 예산을 넘겨야 할 때, 허용 가능한 초과 폭은 어디까지인가요?",
+        "question_hash": "b6efd2fb9ba2230d4dd40f89f5df0e16",
+        "answer_hash": "45ae4961a768ee873aa0a77b3d451756ce3d074c72a6b078494aef785c11d522",
+        "selected_options": [
+          "초과 상한은 두지 않지만 예산 대비 효율이 나쁘면 경고한다"
+        ],
+        "component": "input-sensitivity",
+        "dimension": "constraints",
+        "ambiguity_at_ask": 0.221,
+        "lifecycle": "scored",
+        "answered_at": "2026-09-16T00:35:54.923Z",
+        "ambiguity": 0.183,
+        "scores": {
+          "goal": 0.8,
+          "constraints": 0.8,
+          "criteria": 0.8,
+          "context": 0.78
+        },
+        "weakest_component_id": "brownfield-integration",
+        "weakest_dimension": "goal",
+        "component_scores": {
+          "tier-differentiation": {
+            "goal": 0.8,
+            "constraints": 0.8,
+            "criteria": 0.78,
+            "context": 0.76,
+            "gaps": {
+              "goal": "효율 경고가 사용자에게 어떤 의미인지 조금 더 구체화 필요",
+              "constraints": "예산 초과 상한은 없지만 예산 대비 효율 경고 기준이 아직 모호함",
+              "criteria": "경고 표시 기준과 검증 지표가 아직 덜 수치화됨",
+              "context": "기존 price_per_frame/target_coverage 표시와 어떻게 연결할지 명확화 필요"
+            }
+          },
+          "input-sensitivity": {
+            "goal": 0.82,
+            "constraints": 0.82,
+            "criteria": 0.82,
+            "context": 0.76,
+            "gaps": {
+              "goal": "효율 경고가 사용자에게 어떤 의미인지 조금 더 구체화 필요",
+              "constraints": "예산 초과 상한은 없지만 예산 대비 효율 경고 기준이 아직 모호함",
+              "criteria": "경고 표시 기준과 검증 지표가 아직 덜 수치화됨",
+              "context": "기존 price_per_frame/target_coverage 표시와 어떻게 연결할지 명확화 필요"
+            }
+          },
+          "brownfield-integration": {
+            "goal": 0.76,
+            "constraints": 0.78,
+            "criteria": 0.8,
+            "context": 0.82,
+            "gaps": {
+              "goal": "효율 경고가 사용자에게 어떤 의미인지 조금 더 구체화 필요",
+              "constraints": "예산 초과 상한은 없지만 예산 대비 효율 경고 기준이 아직 모호함",
+              "criteria": "경고 표시 기준과 검증 지표가 아직 덜 수치화됨",
+              "context": "기존 price_per_frame/target_coverage 표시와 어떻게 연결할지 명확화 필요"
+            }
+          }
+        },
+        "structured_scorer_output": {
+          "triggers": [],
+          "trigger_status": "none",
+          "affected_component": "input-sensitivity",
+          "affected_dimension": "constraints",
+          "prior_dimension_score": 0.72,
+          "new_dimension_score": 0.82,
+          "prior_ambiguity": 0.221,
+          "new_ambiguity": 0.183,
+          "evidence": "사용자가 예산 초과 상한은 두지 않지만 예산 대비 효율이 나쁘면 경고한다고 선택함.",
+          "contradicted_established_fact": null,
+          "disputed_unresolved_rationale": null
+        },
+        "ontology": {
+          "entities": [
+            {
+              "name": "RecommendationTier",
+              "type": "core domain",
+              "fields": [
+                "low",
+                "mid",
+                "high",
+                "totalPrice",
+                "performance"
+              ],
+              "relationships": [
+                "RecommendationTier contains PCBuild"
+              ]
+            },
+            {
+              "name": "PCBuild",
+              "type": "core domain",
+              "fields": [
+                "cpu",
+                "gpu",
+                "budget",
+                "fps",
+                "resolution",
+                "refresh"
+              ],
+              "relationships": [
+                "PCBuild belongs to RecommendationTier"
+              ]
+            },
+            {
+              "name": "RecommendationInput",
+              "type": "supporting",
+              "fields": [
+                "budget",
+                "resolution",
+                "refresh",
+                "cpu",
+                "gpu"
+              ],
+              "relationships": [
+                "RecommendationInput influences RecommendationTier selection"
+              ]
+            },
+            {
+              "name": "PerformanceTarget",
+              "type": "constraint",
+              "fields": [
+                "resolution",
+                "refresh",
+                "targetFps"
+              ],
+              "relationships": [
+                "PerformanceTarget outranks Budget when they conflict"
+              ]
+            },
+            {
+              "name": "VerificationSurface",
+              "type": "supporting",
+              "fields": [
+                "api",
+                "ui",
+                "regressionTests"
+              ],
+              "relationships": [
+                "VerificationSurface proves recommendation change success"
+              ]
+            },
+            {
+              "name": "UserPerceivedMetric",
+              "type": "success metric",
+              "fields": [
+                "fpsHeadroom",
+                "onePercentLow",
+                "budgetOverrun",
+                "pricePerFrame"
+              ],
+              "relationships": [
+                "UserPerceivedMetric differentiates RecommendationTier"
+              ]
+            },
+            {
+              "name": "RepresentativeCase",
+              "type": "test fixture",
+              "fields": [
+                "900000/1080p/60Hz",
+                "1500000/1440p/144Hz",
+                "2500000/4K/144Hz"
+              ],
+              "relationships": [
+                "RepresentativeCase validates RecommendationInput sensitivity"
+              ]
+            }
+          ]
+        },
+        "ontology_stability": {
+          "stability_ratio": 1,
+          "matching_reasoning": "모든 엔티티가 유지됨. UserPerceivedMetric 필드에 pricePerFrame이 추가됐지만 같은 엔티티로 유지됨.",
+          "new_entities": [],
+          "changed_entities": [],
+          "stable_entities": [
+            "RecommendationTier",
+            "PCBuild",
+            "RecommendationInput",
+            "PerformanceTarget",
+            "VerificationSurface",
+            "UserPerceivedMetric",
+            "RepresentativeCase"
+          ],
+          "removed_entities": []
+        }
+      },
+      {
+        "round_key": "574a7a53-e5d1-4e7b-b409-9126f1b1ff7e::rid:round-9-efficiency-warning",
+        "round_id": "round-9-efficiency-warning",
+        "round": 9,
+        "question_id": "round9_efficiency_warning",
+        "question_text": "Round 8 complete.\n\n| Dimension | Score | Weight | Weighted | Gap |\n|-----------|-------|--------|----------|-----|\n| Goal | 0.80 | 0.35 | 0.28 | 효율 경고가 사용자에게 어떤 의미인지 조금 더 구체화 필요 |\n| Constraints | 0.80 | 0.25 | 0.20 | 예산 초과 상한은 없지만 예산 대비 효율 경고 기준이 아직 모호함 |\n| Success Criteria | 0.80 | 0.25 | 0.20 | 경고 표시 기준과 검증 지표가 아직 덜 수치화됨 |\n| Context (brownfield) | 0.78 | 0.15 | 0.12 | 기존 price_per_frame/target_coverage 표시와 어떻게 연결할지 명확화 필요 |\n| **Ambiguity** | | | **22.1% -> 18.3% down** | |\n\n**Topology:** Targeted 입력 조건 반영 강화 | Active: 3 | Deferred: 0 | Next rotation after: input-sensitivity\n\n**Ontology:** 7 entities | Stability: 100% | New: none | Changed: none | Stable: RecommendationTier, PCBuild, RecommendationInput, PerformanceTarget, VerificationSurface, UserPerceivedMetric, RepresentativeCase\n**Milestone:** refined → refined\n\n**Next target:** 기존 구조 내 통합과 회귀 안전성 / Goal — ‘효율이 나쁘면 경고’가 사용자의 의사결정에 어떤 의미를 가져야 하는지 정해야 기존 UI/API에 안전하게 녹일 수 있습니다.\n\nRound 9 | Component: 기존 구조 내 통합과 회귀 안전성 | Targeting: Goal | Why now: Goal 점수가 0.80으로 가장 낮은 축이고, 경고의 목적이 불명확하면 API 필드와 화면 문구가 단순한 숫자 노출에 그칠 수 있습니다. | Ambiguity: 18.3%\n\n“예산 대비 효율이 나쁘다”는 경고는 무엇을 사용자에게 말해 줘야 하나요?",
+        "question_hash": "96b7b3d119939f232ab5a339a73d8cca",
+        "answer_hash": "f0ae3c633e4a9df9a17c8b11abc204aa61ec4d4b6f882a0ba14e19aa70e16110",
+        "selected_options": [
+          "1프레임당 가격이 이전 티어보다 악화되면, 성능 향상 대비 비용 증가가 크다고 알린다"
+        ],
+        "component": "brownfield-integration",
+        "dimension": "goal",
+        "ambiguity_at_ask": 0.183,
+        "lifecycle": "scored",
+        "answered_at": "2026-09-16T00:37:12.123Z",
+        "ambiguity": 0.159,
+        "scores": {
+          "goal": 0.85,
+          "constraints": 0.83,
+          "criteria": 0.83,
+          "context": 0.82
+        },
+        "weakest_component_id": "tier-differentiation",
+        "weakest_dimension": "context",
+        "component_scores": {
+          "tier-differentiation": {
+            "goal": 0.84,
+            "constraints": 0.84,
+            "criteria": 0.82,
+            "context": 0.8,
+            "gaps": {
+              "goal": "대부분 명확함",
+              "constraints": "구조 유지의 정확한 변경 허용선과 테스트 갱신 범위가 조금 남음",
+              "criteria": "통과 규칙은 선명하지만 구체 함수/UI 항목 매핑이 필요함",
+              "context": "기존 코드의 어떤 지점을 바꾸고 어떤 지점은 보존할지 확정 필요"
+            }
+          },
+          "input-sensitivity": {
+            "goal": 0.84,
+            "constraints": 0.84,
+            "criteria": 0.84,
+            "context": 0.8,
+            "gaps": {
+              "goal": "대부분 명확함",
+              "constraints": "구조 유지의 정확한 변경 허용선과 테스트 갱신 범위가 조금 남음",
+              "criteria": "통과 규칙은 선명하지만 구체 함수/UI 항목 매핑이 필요함",
+              "context": "기존 코드의 어떤 지점을 바꾸고 어떤 지점은 보존할지 확정 필요"
+            }
+          },
+          "brownfield-integration": {
+            "goal": 0.88,
+            "constraints": 0.82,
+            "criteria": 0.84,
+            "context": 0.84,
+            "gaps": {
+              "goal": "대부분 명확함",
+              "constraints": "구조 유지의 정확한 변경 허용선과 테스트 갱신 범위가 조금 남음",
+              "criteria": "통과 규칙은 선명하지만 구체 함수/UI 항목 매핑이 필요함",
+              "context": "기존 코드의 어떤 지점을 바꾸고 어떤 지점은 보존할지 확정 필요"
+            }
+          }
+        },
+        "structured_scorer_output": {
+          "triggers": [],
+          "trigger_status": "none",
+          "affected_component": "brownfield-integration",
+          "affected_dimension": "goal",
+          "prior_dimension_score": 0.76,
+          "new_dimension_score": 0.88,
+          "prior_ambiguity": 0.183,
+          "new_ambiguity": 0.159,
+          "evidence": "사용자가 1프레임당 가격이 이전 티어보다 악화될 때 성능 향상 대비 비용 증가가 크다고 알리는 경고를 선택함.",
+          "contradicted_established_fact": null,
+          "disputed_unresolved_rationale": null
+        },
+        "ontology": {
+          "entities": [
+            {
+              "name": "RecommendationTier",
+              "type": "core domain",
+              "fields": [
+                "low",
+                "mid",
+                "high",
+                "totalPrice",
+                "performance"
+              ],
+              "relationships": [
+                "RecommendationTier contains PCBuild"
+              ]
+            },
+            {
+              "name": "PCBuild",
+              "type": "core domain",
+              "fields": [
+                "cpu",
+                "gpu",
+                "budget",
+                "fps",
+                "resolution",
+                "refresh"
+              ],
+              "relationships": [
+                "PCBuild belongs to RecommendationTier"
+              ]
+            },
+            {
+              "name": "RecommendationInput",
+              "type": "supporting",
+              "fields": [
+                "budget",
+                "resolution",
+                "refresh",
+                "cpu",
+                "gpu"
+              ],
+              "relationships": [
+                "RecommendationInput influences RecommendationTier selection"
+              ]
+            },
+            {
+              "name": "PerformanceTarget",
+              "type": "constraint",
+              "fields": [
+                "resolution",
+                "refresh",
+                "targetFps"
+              ],
+              "relationships": [
+                "PerformanceTarget outranks Budget when they conflict"
+              ]
+            },
+            {
+              "name": "VerificationSurface",
+              "type": "supporting",
+              "fields": [
+                "api",
+                "ui",
+                "regressionTests"
+              ],
+              "relationships": [
+                "VerificationSurface proves recommendation change success"
+              ]
+            },
+            {
+              "name": "UserPerceivedMetric",
+              "type": "success metric",
+              "fields": [
+                "fpsHeadroom",
+                "onePercentLow",
+                "budgetOverrun",
+                "pricePerFrame"
+              ],
+              "relationships": [
+                "UserPerceivedMetric differentiates RecommendationTier"
+              ]
+            },
+            {
+              "name": "RepresentativeCase",
+              "type": "test fixture",
+              "fields": [
+                "900000/1080p/60Hz",
+                "1500000/1440p/144Hz",
+                "2500000/4K/144Hz"
+              ],
+              "relationships": [
+                "RepresentativeCase validates RecommendationInput sensitivity"
+              ]
+            },
+            {
+              "name": "EfficiencyWarning",
+              "type": "user-facing signal",
+              "fields": [
+                "pricePerFrameRegression",
+                "message"
+              ],
+              "relationships": [
+                "EfficiencyWarning appears on VerificationSurface"
+              ]
+            }
+          ]
+        },
+        "ontology_stability": {
+          "stability_ratio": 0.875,
+          "matching_reasoning": "기존 7개 엔티티는 유지됨. EfficiencyWarning은 경고 목적이 확정되며 신규 추가됨.",
+          "new_entities": [
+            "EfficiencyWarning"
+          ],
+          "changed_entities": [],
+          "stable_entities": [
+            "RecommendationTier",
+            "PCBuild",
+            "RecommendationInput",
+            "PerformanceTarget",
+            "VerificationSurface",
+            "UserPerceivedMetric",
+            "RepresentativeCase"
+          ],
+          "removed_entities": []
+        }
+      },
+      {
+        "round_key": "574a7a53-e5d1-4e7b-b409-9126f1b1ff7e::rid:round-10-change-boundary",
+        "round_id": "round-10-change-boundary",
+        "round": 10,
+        "question_id": "round10_change_boundary",
+        "question_text": "Round 9 complete.\n\n| Dimension | Score | Weight | Weighted | Gap |\n|-----------|-------|--------|----------|-----|\n| Goal | 0.85 | 0.35 | 0.30 | 대부분 명확함 |\n| Constraints | 0.83 | 0.25 | 0.21 | 구조 유지의 정확한 변경 허용선과 테스트 갱신 범위가 조금 남음 |\n| Success Criteria | 0.83 | 0.25 | 0.21 | 통과 규칙은 선명하지만 구체 함수/UI 항목 매핑이 필요함 |\n| Context (brownfield) | 0.82 | 0.15 | 0.12 | 기존 코드의 어떤 지점을 바꾸고 어떤 지점은 보존할지 확정 필요 |\n| **Ambiguity** | | | **18.3% -> 15.9% down** | |\n\n**Topology:** Targeted 기존 구조 내 통합과 회귀 안전성 | Active: 3 | Deferred: 0 | Next rotation after: brownfield-integration\n\n**Ontology:** 8 entities | Stability: 87.5% | New: EfficiencyWarning | Changed: none | Stable: RecommendationTier, PCBuild, RecommendationInput, PerformanceTarget, VerificationSurface, UserPerceivedMetric, RepresentativeCase\n**Milestone:** refined → refined\n\n**Next target:** 추천 등급 차별화 / Context — 기존 추천 엔진에서 변경해도 되는 지점과 보존해야 하는 지점을 확정해야 실제 구현 계획이 안전해집니다.\n\nRound 10 | Component: 추천 등급 차별화 | Targeting: Context | Why now: Context 점수가 0.82로 가장 낮고, repo에서는 `build_tier_candidates`, `select_ordered_tier_plans`, `complete_recommendation_tiers`, UI 카드가 모두 관련되어 있어 변경 경계를 정해야 합니다. | Ambiguity: 15.9%\n\n기존 구조를 유지한다는 조건에서, 변경 허용 범위는 어디까지인가요?",
+        "question_hash": "7a997fff91e68b82ea0d3487198e9205",
+        "answer_hash": "c33c783b477dc7294e993f134b26e7342746b4a3ba958b59f99cefde6f59d35a",
+        "selected_options": [
+          "추천 엔진·API 설명 필드·UI 카드 표시까지 바꿔도 된다"
+        ],
+        "component": "tier-differentiation",
+        "dimension": "context",
+        "ambiguity_at_ask": 0.159,
+        "lifecycle": "scored",
+        "answered_at": "2026-09-16T00:38:30.977Z",
+        "ambiguity": 0.118,
+        "scores": {
+          "goal": 0.89,
+          "constraints": 0.87,
+          "criteria": 0.86,
+          "context": 0.89
+        },
+        "weakest_component_id": "tier-differentiation",
+        "weakest_dimension": "criteria",
+        "component_scores": {
+          "tier-differentiation": {
+            "goal": 0.88,
+            "constraints": 0.88,
+            "criteria": 0.84,
+            "context": 0.9,
+            "gaps": {
+              "goal": "거의 명확함",
+              "constraints": "테스트 합격의 수치성 규칙을 한 번 더 고정하면 충분함",
+              "criteria": "LOW→MID→HIGH 통과 조건의 exact rule을 확정할 필요가 있음",
+              "context": "변경 범위는 명확함"
+            }
+          },
+          "input-sensitivity": {
+            "goal": 0.88,
+            "constraints": 0.86,
+            "criteria": 0.86,
+            "context": 0.88,
+            "gaps": {
+              "goal": "거의 명확함",
+              "constraints": "테스트 합격의 수치성 규칙을 한 번 더 고정하면 충분함",
+              "criteria": "LOW→MID→HIGH 통과 조건의 exact rule을 확정할 필요가 있음",
+              "context": "변경 범위는 명확함"
+            }
+          },
+          "brownfield-integration": {
+            "goal": 0.9,
+            "constraints": 0.88,
+            "criteria": 0.88,
+            "context": 0.9,
+            "gaps": {
+              "goal": "거의 명확함",
+              "constraints": "테스트 합격의 수치성 규칙을 한 번 더 고정하면 충분함",
+              "criteria": "LOW→MID→HIGH 통과 조건의 exact rule을 확정할 필요가 있음",
+              "context": "변경 범위는 명확함"
+            }
+          }
+        },
+        "structured_scorer_output": {
+          "triggers": [],
+          "trigger_status": "none",
+          "affected_component": "tier-differentiation",
+          "affected_dimension": "context",
+          "prior_dimension_score": 0.8,
+          "new_dimension_score": 0.9,
+          "prior_ambiguity": 0.159,
+          "new_ambiguity": 0.118,
+          "evidence": "사용자가 추천 엔진, API 설명 필드, UI 카드 표시까지 변경 가능하다고 선택함.",
+          "contradicted_established_fact": null,
+          "disputed_unresolved_rationale": null
+        },
+        "ontology": {
+          "entities": [
+            {
+              "name": "RecommendationTier",
+              "type": "core domain",
+              "fields": [
+                "low",
+                "mid",
+                "high",
+                "totalPrice",
+                "performance"
+              ],
+              "relationships": [
+                "RecommendationTier contains PCBuild"
+              ]
+            },
+            {
+              "name": "PCBuild",
+              "type": "core domain",
+              "fields": [
+                "cpu",
+                "gpu",
+                "budget",
+                "fps",
+                "resolution",
+                "refresh"
+              ],
+              "relationships": [
+                "PCBuild belongs to RecommendationTier"
+              ]
+            },
+            {
+              "name": "RecommendationInput",
+              "type": "supporting",
+              "fields": [
+                "budget",
+                "resolution",
+                "refresh",
+                "cpu",
+                "gpu"
+              ],
+              "relationships": [
+                "RecommendationInput influences RecommendationTier selection"
+              ]
+            },
+            {
+              "name": "PerformanceTarget",
+              "type": "constraint",
+              "fields": [
+                "resolution",
+                "refresh",
+                "targetFps"
+              ],
+              "relationships": [
+                "PerformanceTarget outranks Budget when they conflict"
+              ]
+            },
+            {
+              "name": "VerificationSurface",
+              "type": "supporting",
+              "fields": [
+                "api",
+                "ui",
+                "regressionTests"
+              ],
+              "relationships": [
+                "VerificationSurface proves recommendation change success"
+              ]
+            },
+            {
+              "name": "UserPerceivedMetric",
+              "type": "success metric",
+              "fields": [
+                "fpsHeadroom",
+                "onePercentLow",
+                "budgetOverrun",
+                "pricePerFrame"
+              ],
+              "relationships": [
+                "UserPerceivedMetric differentiates RecommendationTier"
+              ]
+            },
+            {
+              "name": "RepresentativeCase",
+              "type": "test fixture",
+              "fields": [
+                "900000/1080p/60Hz",
+                "1500000/1440p/144Hz",
+                "2500000/4K/144Hz"
+              ],
+              "relationships": [
+                "RepresentativeCase validates RecommendationInput sensitivity"
+              ]
+            },
+            {
+              "name": "EfficiencyWarning",
+              "type": "user-facing signal",
+              "fields": [
+                "pricePerFrameRegression",
+                "message"
+              ],
+              "relationships": [
+                "EfficiencyWarning appears on VerificationSurface"
+              ]
+            },
+            {
+              "name": "ChangeBoundary",
+              "type": "constraint",
+              "fields": [
+                "recommendationEngine",
+                "apiExplanationFields",
+                "uiCards",
+                "tests"
+              ],
+              "relationships": [
+                "ChangeBoundary limits implementation scope"
+              ]
+            }
+          ]
+        },
+        "ontology_stability": {
+          "stability_ratio": 0.8889,
+          "matching_reasoning": "기존 8개 엔티티는 유지됨. ChangeBoundary는 변경 허용 범위 결정으로 신규 추가됨.",
+          "new_entities": [
+            "ChangeBoundary"
+          ],
+          "changed_entities": [],
+          "stable_entities": [
+            "RecommendationTier",
+            "PCBuild",
+            "RecommendationInput",
+            "PerformanceTarget",
+            "VerificationSurface",
+            "UserPerceivedMetric",
+            "RepresentativeCase",
+            "EfficiencyWarning"
+          ],
+          "removed_entities": []
+        }
+      },
+      {
+        "round_key": "574a7a53-e5d1-4e7b-b409-9126f1b1ff7e::rid:round-11-exact-pass-rule",
+        "round_id": "round-11-exact-pass-rule",
+        "round": 11,
+        "question_id": "round11_exact_pass_rule",
+        "question_text": "Round 10 complete.\n\n| Dimension | Score | Weight | Weighted | Gap |\n|-----------|-------|--------|----------|-----|\n| Goal | 0.89 | 0.35 | 0.31 | 거의 명확함 |\n| Constraints | 0.87 | 0.25 | 0.22 | 테스트 합격의 수치성 규칙을 한 번 더 고정하면 충분함 |\n| Success Criteria | 0.86 | 0.25 | 0.22 | LOW→MID→HIGH 통과 조건의 exact rule을 확정할 필요가 있음 |\n| Context (brownfield) | 0.89 | 0.15 | 0.13 | 변경 범위는 명확함 |\n| **Ambiguity** | | | **15.9% -> 11.8% down** | |\n\n**Topology:** Targeted 추천 등급 차별화 | Active: 3 | Deferred: 0 | Next rotation after: tier-differentiation\n\n**Ontology:** 9 entities | Stability: 88.89% | New: ChangeBoundary | Changed: none | Stable: RecommendationTier, PCBuild, RecommendationInput, PerformanceTarget, VerificationSurface, UserPerceivedMetric, RepresentativeCase, EfficiencyWarning\n**Milestone:** refined → refined\n\n**Next target:** 추천 등급 차별화 / Success Criteria — 마지막 큰 공백은 회귀 테스트가 LOW→MID→HIGH를 어떤 정확한 규칙으로 통과시킬지입니다.\n\nRound 11 | Component: 추천 등급 차별화 | Targeting: Success Criteria | Why now: Success Criteria가 0.86으로 가장 낮고, 실행 가능한 명세가 되려면 추천 결과의 단조 증가 규칙과 예외 표시 규칙이 정확해야 합니다. | Ambiguity: 11.8%\n\n대표 3개 케이스에서 LOW→MID→HIGH 합격 규칙을 어떻게 고정할까요?",
+        "question_hash": "ba4035ffb4512419102fd9b1eb3235cb",
+        "answer_hash": "b60a65db87749b5e6d68208dfd8a590a7b72a1e28f99eea8c1664ce9dfe89066",
+        "selected_options": [
+          "성능 수치는 비감소면 충분하고, UI에서 등급별 차이 설명이 보이면 통과한다"
+        ],
+        "component": "tier-differentiation",
+        "dimension": "criteria",
+        "ambiguity_at_ask": 0.118,
+        "lifecycle": "scored",
+        "answered_at": "2026-09-16T00:40:07.747Z",
+        "ambiguity": 0.078,
+        "scores": {
+          "goal": 0.94,
+          "constraints": 0.9,
+          "criteria": 0.93,
+          "context": 0.91
+        },
+        "weakest_component_id": "brownfield-integration",
+        "weakest_dimension": "constraints",
+        "component_scores": {
+          "tier-differentiation": {
+            "goal": 0.94,
+            "constraints": 0.9,
+            "criteria": 0.94,
+            "context": 0.91,
+            "gaps": {
+              "goal": "Clear",
+              "constraints": "남은 비목표/금지 변경 범위를 한 번 더 확인하면 완결 가능",
+              "criteria": "Clear",
+              "context": "Clear"
+            }
+          },
+          "input-sensitivity": {
+            "goal": 0.93,
+            "constraints": 0.9,
+            "criteria": 0.93,
+            "context": 0.9,
+            "gaps": {
+              "goal": "Clear",
+              "constraints": "남은 비목표/금지 변경 범위를 한 번 더 확인하면 완결 가능",
+              "criteria": "Clear",
+              "context": "Clear"
+            }
+          },
+          "brownfield-integration": {
+            "goal": 0.94,
+            "constraints": 0.9,
+            "criteria": 0.92,
+            "context": 0.92,
+            "gaps": {
+              "goal": "Clear",
+              "constraints": "남은 비목표/금지 변경 범위를 한 번 더 확인하면 완결 가능",
+              "criteria": "Clear",
+              "context": "Clear"
+            }
+          }
+        },
+        "structured_scorer_output": {
+          "triggers": [],
+          "trigger_status": "none",
+          "affected_component": "tier-differentiation",
+          "affected_dimension": "criteria",
+          "prior_dimension_score": 0.84,
+          "new_dimension_score": 0.94,
+          "prior_ambiguity": 0.118,
+          "new_ambiguity": 0.078,
+          "evidence": "사용자가 성능 수치는 비감소면 충분하고 UI에서 등급별 차이 설명이 보이면 통과한다고 선택함.",
+          "contradicted_established_fact": null,
+          "disputed_unresolved_rationale": null
+        },
+        "ontology": {
+          "entities": [
+            {
+              "name": "RecommendationTier",
+              "type": "core domain",
+              "fields": [
+                "low",
+                "mid",
+                "high",
+                "totalPrice",
+                "performance"
+              ],
+              "relationships": [
+                "RecommendationTier contains PCBuild"
+              ]
+            },
+            {
+              "name": "PCBuild",
+              "type": "core domain",
+              "fields": [
+                "cpu",
+                "gpu",
+                "budget",
+                "fps",
+                "resolution",
+                "refresh"
+              ],
+              "relationships": [
+                "PCBuild belongs to RecommendationTier"
+              ]
+            },
+            {
+              "name": "RecommendationInput",
+              "type": "supporting",
+              "fields": [
+                "budget",
+                "resolution",
+                "refresh",
+                "cpu",
+                "gpu"
+              ],
+              "relationships": [
+                "RecommendationInput influences RecommendationTier selection"
+              ]
+            },
+            {
+              "name": "PerformanceTarget",
+              "type": "constraint",
+              "fields": [
+                "resolution",
+                "refresh",
+                "targetFps"
+              ],
+              "relationships": [
+                "PerformanceTarget outranks Budget when they conflict"
+              ]
+            },
+            {
+              "name": "VerificationSurface",
+              "type": "supporting",
+              "fields": [
+                "api",
+                "ui",
+                "regressionTests"
+              ],
+              "relationships": [
+                "VerificationSurface proves recommendation change success"
+              ]
+            },
+            {
+              "name": "UserPerceivedMetric",
+              "type": "success metric",
+              "fields": [
+                "fpsHeadroom",
+                "onePercentLow",
+                "budgetOverrun",
+                "pricePerFrame"
+              ],
+              "relationships": [
+                "UserPerceivedMetric differentiates RecommendationTier"
+              ]
+            },
+            {
+              "name": "RepresentativeCase",
+              "type": "test fixture",
+              "fields": [
+                "900000/1080p/60Hz",
+                "1500000/1440p/144Hz",
+                "2500000/4K/144Hz"
+              ],
+              "relationships": [
+                "RepresentativeCase validates RecommendationInput sensitivity"
+              ]
+            },
+            {
+              "name": "EfficiencyWarning",
+              "type": "user-facing signal",
+              "fields": [
+                "pricePerFrameRegression",
+                "message"
+              ],
+              "relationships": [
+                "EfficiencyWarning appears on VerificationSurface"
+              ]
+            },
+            {
+              "name": "ChangeBoundary",
+              "type": "constraint",
+              "fields": [
+                "recommendationEngine",
+                "apiExplanationFields",
+                "uiCards",
+                "tests"
+              ],
+              "relationships": [
+                "ChangeBoundary limits implementation scope"
+              ]
+            },
+            {
+              "name": "PassRule",
+              "type": "acceptance rule",
+              "fields": [
+                "nonDecreasingPerformance",
+                "tierExplanationVisible"
+              ],
+              "relationships": [
+                "PassRule validates RecommendationTier"
+              ]
+            }
+          ]
+        },
+        "ontology_stability": {
+          "stability_ratio": 0.9,
+          "matching_reasoning": "기존 9개 엔티티는 유지됨. PassRule은 정확한 합격 규칙 결정으로 신규 추가됨.",
+          "new_entities": [
+            "PassRule"
+          ],
+          "changed_entities": [],
+          "stable_entities": [
+            "RecommendationTier",
+            "PCBuild",
+            "RecommendationInput",
+            "PerformanceTarget",
+            "VerificationSurface",
+            "UserPerceivedMetric",
+            "RepresentativeCase",
+            "EfficiencyWarning",
+            "ChangeBoundary"
+          ],
+          "removed_entities": []
+        }
+      },
+      {
+        "round_key": "574a7a53-e5d1-4e7b-b409-9126f1b1ff7e::rid:round-12-non-goals",
+        "round_id": "round-12-non-goals",
+        "round": 12,
+        "question_id": "round12_non_goals",
+        "question_text": "Round 11 complete.\n\n| Dimension | Score | Weight | Weighted | Gap |\n|-----------|-------|--------|----------|-----|\n| Goal | 0.94 | 0.35 | 0.33 | Clear |\n| Constraints | 0.90 | 0.25 | 0.23 | 남은 비목표/금지 변경 범위를 한 번 더 확인하면 완결 가능 |\n| Success Criteria | 0.93 | 0.25 | 0.23 | Clear |\n| Context (brownfield) | 0.91 | 0.15 | 0.14 | Clear |\n| **Ambiguity** | | | **11.8% -> 7.8% down** | |\n\n**Topology:** Targeted 추천 등급 차별화 | Active: 3 | Deferred: 0 | Next rotation after: tier-differentiation\n\n**Ontology:** 10 entities | Stability: 90% | New: PassRule | Changed: none | Stable: RecommendationTier, PCBuild, RecommendationInput, PerformanceTarget, VerificationSurface, UserPerceivedMetric, RepresentativeCase, EfficiencyWarning, ChangeBoundary\n**Milestone:** refined → refined\n\n**Next target:** 기존 구조 내 통합과 회귀 안전성 / Constraints — 합격 기준은 충분히 명확해졌고, 마지막 공백은 구현 시 건드리지 말아야 할 범위입니다.\n\nRound 12 | Component: 기존 구조 내 통합과 회귀 안전성 | Targeting: Constraints | Why now: Constraints 점수가 0.90으로 가장 낮고, 비목표를 확정해야 기존 구조 유지 조건을 실행자가 오해하지 않습니다. | Ambiguity: 7.8%\n\n이번 명세에서 명시적으로 제외해야 할 범위는 무엇인가요?",
+        "question_hash": "480d99b17ed385e3d94e6eeaae679f00",
+        "answer_hash": "de044f75d646c54660a4d14d4163b28627ea5cd5ca166f48d71ceb7abf8a7045",
+        "selected_options": [
+          "위 세 가지를 모두 제외한다"
+        ],
+        "component": "brownfield-integration",
+        "dimension": "constraints",
+        "ambiguity_at_ask": 0.078,
+        "lifecycle": "scored",
+        "answered_at": "2026-09-16T00:41:51.274Z",
+        "ambiguity": 0.033,
+        "scores": {
+          "goal": 0.97,
+          "constraints": 0.97,
+          "criteria": 0.97,
+          "context": 0.96
+        },
+        "weakest_component_id": "brownfield-integration",
+        "weakest_dimension": "criteria",
+        "component_scores": {
+          "tier-differentiation": {
+            "goal": 0.97,
+            "constraints": 0.96,
+            "criteria": 0.97,
+            "context": 0.96,
+            "gaps": {
+              "goal": "Clear",
+              "constraints": "Clear",
+              "criteria": "Clear",
+              "context": "Clear"
+            }
+          },
+          "input-sensitivity": {
+            "goal": 0.97,
+            "constraints": 0.96,
+            "criteria": 0.97,
+            "context": 0.96,
+            "gaps": {
+              "goal": "Clear",
+              "constraints": "Clear",
+              "criteria": "Clear",
+              "context": "Clear"
+            }
+          },
+          "brownfield-integration": {
+            "goal": 0.97,
+            "constraints": 0.98,
+            "criteria": 0.96,
+            "context": 0.97,
+            "gaps": {
+              "goal": "Clear",
+              "constraints": "Clear",
+              "criteria": "Clear",
+              "context": "Clear"
+            }
+          }
+        },
+        "structured_scorer_output": {
+          "triggers": [],
+          "trigger_status": "none",
+          "affected_component": "brownfield-integration",
+          "affected_dimension": "constraints",
+          "prior_dimension_score": 0.9,
+          "new_dimension_score": 0.98,
+          "prior_ambiguity": 0.078,
+          "new_ambiguity": 0.033,
+          "evidence": "사용자가 외부 크롤러/가격 수집, 부품 카탈로그 데이터 자체, 새 프레임워크/대규모 서버 구조 변경을 모두 제외한다고 선택함.",
+          "contradicted_established_fact": null,
+          "disputed_unresolved_rationale": null
+        },
+        "ontology": {
+          "entities": [
+            {
+              "name": "RecommendationTier",
+              "type": "core domain",
+              "fields": [
+                "low",
+                "mid",
+                "high",
+                "totalPrice",
+                "performance"
+              ],
+              "relationships": [
+                "RecommendationTier contains PCBuild"
+              ]
+            },
+            {
+              "name": "PCBuild",
+              "type": "core domain",
+              "fields": [
+                "cpu",
+                "gpu",
+                "budget",
+                "fps",
+                "resolution",
+                "refresh"
+              ],
+              "relationships": [
+                "PCBuild belongs to RecommendationTier"
+              ]
+            },
+            {
+              "name": "RecommendationInput",
+              "type": "supporting",
+              "fields": [
+                "budget",
+                "resolution",
+                "refresh",
+                "cpu",
+                "gpu"
+              ],
+              "relationships": [
+                "RecommendationInput influences RecommendationTier selection"
+              ]
+            },
+            {
+              "name": "PerformanceTarget",
+              "type": "constraint",
+              "fields": [
+                "resolution",
+                "refresh",
+                "targetFps"
+              ],
+              "relationships": [
+                "PerformanceTarget outranks Budget when they conflict"
+              ]
+            },
+            {
+              "name": "VerificationSurface",
+              "type": "supporting",
+              "fields": [
+                "api",
+                "ui",
+                "regressionTests"
+              ],
+              "relationships": [
+                "VerificationSurface proves recommendation change success"
+              ]
+            },
+            {
+              "name": "UserPerceivedMetric",
+              "type": "success metric",
+              "fields": [
+                "fpsHeadroom",
+                "onePercentLow",
+                "budgetOverrun",
+                "pricePerFrame"
+              ],
+              "relationships": [
+                "UserPerceivedMetric differentiates RecommendationTier"
+              ]
+            },
+            {
+              "name": "RepresentativeCase",
+              "type": "test fixture",
+              "fields": [
+                "900000/1080p/60Hz",
+                "1500000/1440p/144Hz",
+                "2500000/4K/144Hz"
+              ],
+              "relationships": [
+                "RepresentativeCase validates RecommendationInput sensitivity"
+              ]
+            },
+            {
+              "name": "EfficiencyWarning",
+              "type": "user-facing signal",
+              "fields": [
+                "pricePerFrameRegression",
+                "message"
+              ],
+              "relationships": [
+                "EfficiencyWarning appears on VerificationSurface"
+              ]
+            },
+            {
+              "name": "ChangeBoundary",
+              "type": "constraint",
+              "fields": [
+                "recommendationEngine",
+                "apiExplanationFields",
+                "uiCards",
+                "tests"
+              ],
+              "relationships": [
+                "ChangeBoundary limits implementation scope"
+              ]
+            },
+            {
+              "name": "PassRule",
+              "type": "acceptance rule",
+              "fields": [
+                "nonDecreasingPerformance",
+                "tierExplanationVisible"
+              ],
+              "relationships": [
+                "PassRule validates RecommendationTier"
+              ]
+            },
+            {
+              "name": "NonGoal",
+              "type": "constraint",
+              "fields": [
+                "crawlerLogic",
+                "catalogData",
+                "frameworkRewrite"
+              ],
+              "relationships": [
+                "NonGoal limits ChangeBoundary"
+              ]
+            }
+          ]
+        },
+        "ontology_stability": {
+          "stability_ratio": 0.9091,
+          "matching_reasoning": "기존 10개 엔티티는 유지됨. NonGoal은 제외 범위 확정으로 신규 추가됨.",
+          "new_entities": [
+            "NonGoal"
+          ],
+          "changed_entities": [],
+          "stable_entities": [
+            "RecommendationTier",
+            "PCBuild",
+            "RecommendationInput",
+            "PerformanceTarget",
+            "VerificationSurface",
+            "UserPerceivedMetric",
+            "RepresentativeCase",
+            "EfficiencyWarning",
+            "ChangeBoundary",
+            "PassRule"
+          ],
+          "removed_entities": []
+        }
+      },
+      {
+        "round_key": "574a7a53-e5d1-4e7b-b409-9126f1b1ff7e::rid:restate-goal",
+        "round_id": "restate-goal",
+        "round": 13,
+        "question_id": "restate_goal",
+        "question_text": "기존 Python 서버 구조를 유지하면서 PC 부품 추천 웹앱의 LOW/MID/HIGH 추천이 대표 3개 입력(90만원/1080p/60Hz, 150만원/1440p/144Hz, 250만원/4K/144Hz)에서 해상도·주사율 목표를 우선 반영하고, 성능 수치 비감소·등급별 설명·예산 초과 및 1프레임당 가격 악화 경고를 `/api/recommend`, UI 카드, 회귀 테스트로 검증 가능하게 개선한다.\n\nIf someone read only this line, would they reach the same outcome you have in mind?\n\nRound 12 complete.\n\n| Dimension | Score | Weight | Weighted | Gap |\n|-----------|-------|--------|----------|-----|\n| Goal | 0.97 | 0.35 | 0.34 | Clear |\n| Constraints | 0.97 | 0.25 | 0.24 | Clear |\n| Success Criteria | 0.97 | 0.25 | 0.24 | Clear |\n| Context (brownfield) | 0.96 | 0.15 | 0.14 | Clear |\n| **Ambiguity** | | | **7.8% -> 3.3% down** | |\n\n**Topology:** Targeted 기존 구조 내 통합과 회귀 안전성 | Active: 3 | Deferred: 0 | Next rotation after: brownfield-integration\n\n**Ontology:** 11 entities | Stability: 90.91% | New: NonGoal | Changed: none | Stable: RecommendationTier, PCBuild, RecommendationInput, PerformanceTarget, VerificationSurface, UserPerceivedMetric, RepresentativeCase, EfficiencyWarning, ChangeBoundary, PassRule\n**Milestone:** refined → ready — lateral panel convened\n\nClarity threshold met. Closure audit passed after folding the ready-panel warning into the spec constraints: budget must be treated as scoring/annotation rather than a hard filter, and price-per-frame regression must be exposed as structured API/UI warning evidence.",
+        "question_hash": "f3ae0bdf743e75b103b16c32663a3ad7",
+        "answer_hash": "f7e2e045c247f456a0dc973c68f364499366e953e5a5e7c95e8931b39b44c5dd",
+        "selected_options": [
+          "Yes, crystallize"
+        ],
+        "component": "closure",
+        "dimension": "goal",
+        "ambiguity_at_ask": 0.033,
+        "lifecycle": "answered",
+        "answered_at": "2026-09-16T00:46:35.341Z"
+      },
+      {
+        "round_key": "574a7a53-e5d1-4e7b-b409-9126f1b1ff7e::rid:intent-review-coverage",
+        "round_id": "intent-review-coverage",
+        "round": 14,
+        "question_id": "intent_review",
+        "question_text": "최종 spec에 Round 0 locked intent ID 8개를 모두 그대로 포함했습니다: artifact:recommendation-spec, artifact:regression-tests, surface:recommendation-results, surface:recommend-api, integration:python-server, integration:local-data, constraint:preserve-python-structure, constraint:no-direct-execution-during-interview.\n\n의도 축소 없이 이 coverage로 spec을 저장해도 되나요?",
+        "question_hash": "4239d3401bce84336fcfc5c3847f2eda",
+        "answer_hash": "5faf3daa2aa57497537cafae51c8544427d61ac213263c75eb234855886f6b9f",
+        "selected_options": [
+          "Approve coverage"
+        ],
+        "component": "intent-review",
+        "dimension": "criteria",
+        "ambiguity_at_ask": 0.033,
+        "lifecycle": "answered",
+        "answered_at": "2026-09-16T00:48:51.957Z"
+      },
+      {
+        "round_key": "574a7a53-e5d1-4e7b-b409-9126f1b1ff7e::rid:intent-review-coverage-refresh",
+        "round_id": "intent-review-coverage-refresh",
+        "round": 15,
+        "question_id": "intent_review_refresh",
+        "question_text": "Intent review를 새로 고칩니다. 최종 spec은 locked intent 8개를 줄이지 않고 그대로 보존합니다.\n\n- artifact:recommendation-spec\n- artifact:regression-tests\n- constraint:no-direct-execution-during-interview\n- constraint:preserve-python-structure\n- integration:local-data\n- integration:python-server\n- surface:recommend-api\n- surface:recommendation-results\n\n이 보존 상태로 spec 저장을 승인하나요?",
+        "question_hash": "011310a01825d392559f7b07d4210ef5",
+        "answer_hash": "5faf3daa2aa57497537cafae51c8544427d61ac213263c75eb234855886f6b9f",
+        "selected_options": [
+          "Approve coverage"
+        ],
+        "component": "intent-review",
+        "dimension": "criteria",
+        "ambiguity_at_ask": 0.033,
+        "lifecycle": "answered",
+        "answered_at": "2026-09-16T00:55:51.141Z"
+      }
+    ],
+    "established_facts": [
+      {
+        "id": "fact-tier-success-price-performance-staircase",
+        "statement": "LOW/MID/HIGH가 충분히 다르려면 총 가격대와 성능이 함께 단계적으로 올라야 한다.",
+        "round": 1,
+        "disputed": false,
+        "evidence": "사용자가 Round 1에서 '총 가격대와 성능이 함께 단계적으로 올라야 한다'를 선택함."
+      },
+      {
+        "id": "fact-performance-target-over-budget",
+        "statement": "예산과 목표 해상도·주사율이 충돌하면 목표 해상도·주사율을 가장 엄격히 지키고 필요하면 예산 초과를 허용한다.",
+        "round": 2,
+        "disputed": false,
+        "evidence": "사용자가 Round 2에서 성능 목표 우선 옵션을 선택함."
+      },
+      {
+        "id": "fact-success-surfaces-api-ui-tests",
+        "statement": "이번 개선의 최소 합격 기준에는 `/api/recommend` 응답, 화면 카드, 회귀 테스트가 모두 포함되어야 한다.",
+        "round": 3,
+        "disputed": false,
+        "evidence": "사용자가 Round 3에서 'API·화면·회귀 테스트까지 모두 필요하다'를 선택함."
+      },
+      {
+        "id": "fact-tier-difference-user-perceived-metrics",
+        "statement": "LOW/MID/HIGH의 차이는 CPU/GPU 부품 자체보다 FPS 여유, 1% Low, 예산 초과액 같은 사용자 체감 지표가 다르면 충분하다.",
+        "round": 4,
+        "disputed": false,
+        "evidence": "사용자가 Round 4에서 체감 지표 차이를 충분한 차별화 기준으로 선택함."
+      },
+      {
+        "id": "fact-representative-cases-user-specified",
+        "statement": "대표 예산·해상도·주사율 조합은 기본값으로 정하지 않고 사용자가 직접 지정해야 한다.",
+        "round": 5,
+        "disputed": false,
+        "evidence": "사용자가 Round 5에서 '사용자가 직접 예산·해상도·주사율 조합을 지정해야 한다'를 선택함."
+      },
+      {
+        "id": "fact-representative-case-count-three",
+        "statement": "대표 검증 조합은 3개만 둔다.",
+        "round": 6,
+        "disputed": false,
+        "evidence": "사용자가 Round 6에서 '대표 케이스는 3개만 둔다'를 선택함."
+      },
+      {
+        "id": "fact-representative-case-values",
+        "statement": "대표 검증 조합은 90만원/1080p/60Hz, 150만원/1440p/144Hz, 250만원/4K/144Hz 세 가지로 한다.",
+        "round": 7,
+        "disputed": false,
+        "evidence": "사용자가 Round 7에서 첫 번째 조합 세트를 선택함."
+      },
+      {
+        "id": "fact-no-overrun-cap-efficiency-warning",
+        "statement": "목표 해상도·주사율 달성을 위한 예산 초과에는 고정 상한을 두지 않지만, 예산 대비 효율이 나쁜 경우 경고한다.",
+        "round": 8,
+        "disputed": false,
+        "evidence": "사용자가 Round 8에서 예산 초과 상한 없음 + 효율 경고 옵션을 선택함."
+      },
+      {
+        "id": "fact-efficiency-warning-price-per-frame-regression",
+        "statement": "1프레임당 가격이 이전 티어보다 악화되면 성능 향상 대비 비용 증가가 크다고 사용자에게 알린다.",
+        "round": 9,
+        "disputed": false,
+        "evidence": "사용자가 Round 9에서 price-per-frame 악화 경고 옵션을 선택함."
+      },
+      {
+        "id": "fact-change-boundary-engine-api-ui",
+        "statement": "기존 Python 서버 구조는 유지하되 추천 엔진, API 설명 필드, UI 카드 표시까지 변경할 수 있다.",
+        "round": 10,
+        "disputed": false,
+        "evidence": "사용자가 Round 10에서 추천 엔진·API 설명 필드·UI 카드 표시까지 변경 가능하다고 선택함."
+      },
+      {
+        "id": "fact-pass-rule-nondecreasing-performance-visible-explanation",
+        "statement": "대표 케이스에서 LOW→MID→HIGH 성능 수치는 비감소면 충분하고, UI에서 등급별 차이 설명이 보이면 통과한다.",
+        "round": 11,
+        "disputed": false,
+        "evidence": "사용자가 Round 11에서 비감소 성능 + UI 설명 옵션을 선택함."
+      },
+      {
+        "id": "fact-non-goals-crawler-catalog-framework",
+        "statement": "외부 크롤러/가격 수집 로직, 부품 카탈로그 데이터 자체, 새 프레임워크나 대규모 서버 구조 변경은 이번 범위에서 제외한다.",
+        "round": 12,
+        "disputed": false,
+        "evidence": "사용자가 Round 12에서 세 제외 범위를 모두 선택함."
+      }
+    ],
+    "interview_id": "574a7a53-e5d1-4e7b-b409-9126f1b1ff7e",
+    "type": "brownfield",
+    "initial_idea": "PC 부품 추천 웹앱을 개선한다. 현재 LOW/MID/HIGH 추천 결과가 서로 너무 비슷하게 나오며, CPU/GPU/예산/해상도/주사율을 반영해 추천 등급이 확실히 달라지게 만들고 싶다. 기존 Python 서버 구조는 유지한다.",
+    "threshold": 0.05,
+    "threshold_source": "default",
+    "language": {
+      "instruction": "Korean"
+    },
+    "codebase_context": "Brownfield repo evidence: `server_fixed.py` is a Python HTTP server exposing `/api/recommend`; recommendation ranking is concentrated in `tier_budget_for_user`, `tier_component_pools`, `rank_parts_for_tier`, `build_tier_candidates`, `select_ordered_tier_plans`, `complete_recommendation_tiers`, and `recommend`. Existing tests cover tier ordering and recommendation constraints in `tests/test_recommendation_ordering.py`, `tests/test_tier_ordering.py`, `tests/test_recommendation_constraints.py`, and FPS behavior in `tests/test_fps_and_fallback.py`. README states recommendations already consider game/resolution/target FPS and prevent LOW→MID→HIGH price/performance inversion, but identical configurations can be shown when no upgrade exists.",
+    "topology": {
+      "status": "confirmed",
+      "confirmed_at": "2026-09-16T00:17:37.335149Z",
+      "components": [
+        {
+          "id": "tier-differentiation",
+          "name": "추천 등급 차별화",
+          "description": "LOW/MID/HIGH가 같은 구성이나 체감상 비슷한 구성으로 수렴하지 않고 등급별로 명확히 다른 CPU/GPU/FPS/가격 특성을 갖게 한다.",
+          "status": "active",
+          "evidence": [
+            "사용자: low/mid/high 추천 결과가 서로 너무 비슷하게 나오는 문제",
+            "server_fixed.py: select_ordered_tier_plans, complete_recommendation_tiers"
+          ],
+          "clarity_scores": {
+            "goal": 0.97,
+            "constraints": 0.96,
+            "criteria": 0.97,
+            "context": 0.96
+          },
+          "weakest_dimension": "context"
+        },
+        {
+          "id": "input-sensitivity",
+          "name": "입력 조건 반영 강화",
+          "description": "CPU/GPU 성능, 예산 범위, 해상도, 주사율이 추천 후보 점수와 등급 선택에 실질적으로 영향을 주게 한다.",
+          "status": "active",
+          "evidence": [
+            "사용자: CPU/GPU/예산/해상도/주사율을 반영",
+            "server_fixed.py: tier_budget_for_user, target_power_score, tier_fps_target, build_tier_candidates"
+          ],
+          "clarity_scores": {
+            "goal": 0.97,
+            "constraints": 0.96,
+            "criteria": 0.97,
+            "context": 0.96
+          },
+          "weakest_dimension": "context"
+        },
+        {
+          "id": "brownfield-integration",
+          "name": "기존 구조 내 통합과 회귀 안전성",
+          "description": "현재 Python 서버 구조와 기존 추천 API/UI 흐름을 유지하면서 추천 엔진과 관련 테스트 중심으로 변경한다.",
+          "status": "active",
+          "evidence": [
+            "사용자: 기존 Flask + Python 구조는 유지",
+            "repo: server_fixed.py exposes /api/recommend; tests/test_recommendation_ordering.py and tests/test_tier_ordering.py cover ordering"
+          ],
+          "clarity_scores": {
+            "goal": 0.97,
+            "constraints": 0.98,
+            "criteria": 0.96,
+            "context": 0.97
+          },
+          "weakest_dimension": "criteria"
+        }
+      ],
+      "deferrals": [],
+      "last_targeted_component_id": "brownfield-integration"
+    },
+    "ontology_snapshots": [
+      {
+        "round": 12,
+        "entities": [
+          {
+            "name": "RecommendationTier",
+            "type": "core domain",
+            "fields": [
+              "low",
+              "mid",
+              "high",
+              "totalPrice",
+              "performance"
+            ],
+            "relationships": [
+              "RecommendationTier contains PCBuild"
+            ]
+          },
+          {
+            "name": "PCBuild",
+            "type": "core domain",
+            "fields": [
+              "cpu",
+              "gpu",
+              "budget",
+              "fps",
+              "resolution",
+              "refresh"
+            ],
+            "relationships": [
+              "PCBuild belongs to RecommendationTier"
+            ]
+          },
+          {
+            "name": "RecommendationInput",
+            "type": "supporting",
+            "fields": [
+              "budget",
+              "resolution",
+              "refresh",
+              "cpu",
+              "gpu"
+            ],
+            "relationships": [
+              "RecommendationInput influences RecommendationTier selection"
+            ]
+          },
+          {
+            "name": "PerformanceTarget",
+            "type": "constraint",
+            "fields": [
+              "resolution",
+              "refresh",
+              "targetFps"
+            ],
+            "relationships": [
+              "PerformanceTarget outranks Budget when they conflict"
+            ]
+          },
+          {
+            "name": "VerificationSurface",
+            "type": "supporting",
+            "fields": [
+              "api",
+              "ui",
+              "regressionTests"
+            ],
+            "relationships": [
+              "VerificationSurface proves recommendation change success"
+            ]
+          },
+          {
+            "name": "UserPerceivedMetric",
+            "type": "success metric",
+            "fields": [
+              "fpsHeadroom",
+              "onePercentLow",
+              "budgetOverrun",
+              "pricePerFrame"
+            ],
+            "relationships": [
+              "UserPerceivedMetric differentiates RecommendationTier"
+            ]
+          },
+          {
+            "name": "RepresentativeCase",
+            "type": "test fixture",
+            "fields": [
+              "900000/1080p/60Hz",
+              "1500000/1440p/144Hz",
+              "2500000/4K/144Hz"
+            ],
+            "relationships": [
+              "RepresentativeCase validates RecommendationInput sensitivity"
+            ]
+          },
+          {
+            "name": "EfficiencyWarning",
+            "type": "user-facing signal",
+            "fields": [
+              "pricePerFrameRegression",
+              "message"
+            ],
+            "relationships": [
+              "EfficiencyWarning appears on VerificationSurface"
+            ]
+          },
+          {
+            "name": "ChangeBoundary",
+            "type": "constraint",
+            "fields": [
+              "recommendationEngine",
+              "apiExplanationFields",
+              "uiCards",
+              "tests"
+            ],
+            "relationships": [
+              "ChangeBoundary limits implementation scope"
+            ]
+          },
+          {
+            "name": "PassRule",
+            "type": "acceptance rule",
+            "fields": [
+              "nonDecreasingPerformance",
+              "tierExplanationVisible"
+            ],
+            "relationships": [
+              "PassRule validates RecommendationTier"
+            ]
+          },
+          {
+            "name": "NonGoal",
+            "type": "constraint",
+            "fields": [
+              "crawlerLogic",
+              "catalogData",
+              "frameworkRewrite"
+            ],
+            "relationships": [
+              "NonGoal limits ChangeBoundary"
+            ]
+          }
+        ],
+        "stability_ratio": 0.9091,
+        "matching_reasoning": "기존 10개 엔티티는 유지되고 NonGoal이 신규 추가됨.",
+        "new": [
+          "NonGoal"
+        ],
+        "changed": [],
+        "stable": [
+          "RecommendationTier",
+          "PCBuild",
+          "RecommendationInput",
+          "PerformanceTarget",
+          "VerificationSurface",
+          "UserPerceivedMetric",
+          "RepresentativeCase",
+          "EfficiencyWarning",
+          "ChangeBoundary",
+          "PassRule"
+        ],
+        "removed": []
+      }
+    ],
+    "auto_answered_rounds": [],
+    "lateral_reviews": [
+      {
+        "round": 2,
+        "trigger": "milestone initial→progress",
+        "personas": [
+          "researcher",
+          "contrarian",
+          "simplifier"
+        ],
+        "findings": "패널은 성공 증거를 기존 `/api/recommend` 응답, LOW/MID/HIGH 카드, 회귀 테스트 중 어디까지로 볼지 정해야 한다고 지적했다. 또한 무리한 차별화가 LOW를 과소추천하거나 HIGH를 과대추천할 수 있으므로, 재고·예산상 업그레이드가 불가능할 때 동일 구성을 허용할 조건과 경고 표시 기준을 물어야 한다고 제안했다."
+      },
+      {
+        "round": 4,
+        "trigger": "milestone progress→refined",
+        "personas": [
+          "researcher",
+          "contrarian",
+          "simplifier"
+        ],
+        "findings": "패널은 대표 입력 케이스와 숫자성 판정 기준이 남은 핵심이라고 지적했다. 평균 FPS/1% Low/FPS 여유를 총액과 함께 비교하고, 예산 초과액은 업그레이드 지표가 아니라 목표 달성을 위한 비용으로 API/UI에 설명되어야 한다고 제안했다."
+      },
+      {
+        "round": 12,
+        "trigger": "milestone refined→ready",
+        "personas": [
+          "researcher",
+          "contrarian",
+          "simplifier"
+        ],
+        "findings": "준비 패널은 결정화를 대체로 허용하되, contrarian이 기존 `build_tier_candidates`의 예산 하드 필터와 등급 간 price-per-frame 경고 부재가 사용자 결정과 충돌할 수 있다고 지적했다. 최종 spec에는 예산을 필터가 아니라 scoring/annotation으로 취급하고, price-per-frame 악화를 구조화된 API/UI 경고로 노출하며, proof는 네트워크 없는 기존 fixture/catalog 기반 회귀 테스트로 한정한다는 제약을 포함한다."
+      }
+    ],
+    "lateral_panel_failures": 0,
+    "auto_answer_streak": 0,
+    "refined_rounds": [],
+    "closure_overrides": [],
+    "ambiguity_milestone": "ready",
+    "architect_failures": 0,
+    "ambiguity_floor": {
+      "floor": 0,
+      "disputed_fact_count": 0,
+      "unscored_active_component_count": 0,
+      "auto_answer_ratio": 0
+    },
+    "current_ambiguity": 0.033,
+    "restated_goal": "기존 Python 서버 구조를 유지하면서 PC 부품 추천 웹앱의 LOW/MID/HIGH 추천이 대표 3개 입력(90만원/1080p/60Hz, 150만원/1440p/144Hz, 250만원/4K/144Hz)에서 해상도·주사율 목표를 우선 반영하고, 성능 수치 비감소·등급별 설명·예산 초과 및 1프레임당 가격 악화 경고를 `/api/recommend`, UI 카드, 회귀 테스트로 검증 가능하게 개선한다.",
+    "intent_review": {
+      "status": "not_required",
+      "supporting_substitutions": [],
+      "version": 1,
+      "locked_digest": "d65f7feff915be3dee3448ed25ea757fac6d2dea70583c849ec1b5b3e4fd69ae",
+      "observed_digest": "99b984cdf529c3e1ccc29911b5197b7315f33fc90f05ad0f39beef48b904c94a",
+      "removed_locked_ids": []
+    }
+  },
+  "skill": "deep-interview",
+  "active": false,
+  "updated_at": "2026-09-16T00:59:02.734Z",
+  "version": 2,
+  "current_phase": "handoff",
+  "session_id": "01a0a78d-17db-754c-87bc-16680fdbda1e",
+  "last_applied_draft_id": "7ed7402e-e183-4792-9e3d-526f693d269a",
+  "receipt": {
+    "version": 1,
+    "skill": "deep-interview",
+    "owner": "gjc-state-cli",
+    "command": "gjc state deep-interview handoff --to ralplan",
+    "state_path": "/Users/qkdgkfka/Desktop/site2/.gjc/_session-01a0a78d-17db-754c-87bc-16680fdbda1e/state/skill-active-state.json",
+    "storage_path": "/Users/qkdgkfka/Desktop/site2/.gjc/_session-01a0a78d-17db-754c-87bc-16680fdbda1e/state/deep-interview-state.json",
+    "mutated_at": "2026-09-16T00:59:02.734Z",
+    "fresh_until": "2026-09-16T01:29:02.734Z",
+    "status": "fresh",
+    "mutation_id": "deep-interview:handoff:ralplan:2026-09-16T00:59:02.734Z",
+    "content_sha256": {
+      "algorithm": "sha256",
+      "value": "7935b85f100dbccc3686078e14fbe31f4abc22b597c1cb3d472dfb64b13df996",
+      "covered_path": "/Users/qkdgkfka/Desktop/site2/.gjc/_session-01a0a78d-17db-754c-87bc-16680fdbda1e/state/deep-interview-state.json",
+      "computed_at": "2026-09-16T00:59:02.767Z"
+    }
+  },
+  "spec_slug": "pc-recommendation-tier-differentiation",
+  "spec_path": "/Users/qkdgkfka/Desktop/site2/.gjc/_session-01a0a78d-17db-754c-87bc-16680fdbda1e/specs/deep-interview-pc-recommendation-tier-differentiation.md",
+  "spec_sha256": "a66f05e17dcaac11e7afd8763582dee3876dc81da453582986f662d4cae08e1c",
+  "spec_stage": "final",
+  "spec_persisted_at": "2026-09-16T00:58:18.151Z",
+  "handoff_to": "ralplan",
+  "handoff_at": "2026-09-16T00:59:02.734Z",
+  "state_revision": 37
+}
