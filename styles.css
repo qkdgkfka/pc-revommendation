@@ -89,6 +89,25 @@
     .filter-group{min-width:0;}
     .filter-label{font-size:10px;font-weight:900;letter-spacing:.8px;color:var(--muted);margin-bottom:6px;}
     .filter-options{display:flex;flex-wrap:wrap;gap:6px;}
+    .gpu-model-filter{grid-column:1/-1;}
+    .gpu-model-filter>.filter-options,.gpu-selector{display:block;min-width:0;width:100%;}
+    .gpu-brand-section+.gpu-brand-section{margin-top:12px;}
+    .gpu-vendor-label{font-size:11px;font-weight:800;color:var(--muted);margin:0 0 6px;}
+    .gpu-series-list{display:flex;flex-wrap:wrap;gap:7px;min-width:0;}
+    .gpu-series-pill{display:flex;align-items:center;gap:4px;box-sizing:border-box;width:100%;max-width:152px;min-width:0;min-height:36px;padding:3px;border:1.5px solid #cbdaf1;border-radius:999px;background:#fff;overflow:hidden;transition:max-width .32s ease,border-color .2s ease,background-color .2s ease,box-shadow .2s ease;}
+    .gpu-series-pill.expanded{max-width:100%;border-color:var(--accent);background:#f0f6ff;box-shadow:0 4px 14px rgba(0,82,204,.08);}
+    .gpu-series-trigger{flex:none;border:0;border-radius:999px;background:transparent;padding:6px 10px;color:var(--accent);font:800 11px var(--font);white-space:nowrap;cursor:pointer;}
+    .gpu-series-pill.expanded .gpu-series-trigger{background:var(--accent);color:#fff;}
+    .gpu-series-trigger:focus-visible,.gpu-model-chip:focus-visible{outline:3px solid #6ea6ff;outline-offset:2px;}
+    .gpu-series-dot{display:inline-block;width:6px;height:6px;margin-left:6px;border-radius:50%;background:currentColor;vertical-align:middle;}
+    .gpu-model-track{display:flex;align-items:center;gap:5px;flex:1;min-width:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;opacity:0;visibility:hidden;transform:translateX(-10px);transition:opacity .22s ease,transform .3s ease,visibility 0s linear .3s;}
+    .gpu-series-pill.expanded .gpu-model-track{opacity:1;visibility:visible;transform:translateX(0);transition-delay:.08s,.08s,0s;}
+    .gpu-model-chip{flex:none;border:1px solid #c9dcf8;border-radius:999px;background:#fff;padding:6px 9px;color:#375277;font:800 11px var(--font);white-space:nowrap;cursor:pointer;opacity:0;transform:translateX(-8px);transition:opacity .18s ease,transform .22s ease,background-color .15s ease,color .15s ease;}
+    .gpu-series-pill.expanded .gpu-model-chip{opacity:1;transform:translateX(0);transition-delay:calc(90ms + var(--chip-index)*35ms),calc(90ms + var(--chip-index)*35ms),0s,0s;}
+    .gpu-model-chip:hover{border-color:var(--accent);color:var(--accent);}
+    .gpu-model-chip.selected{border-color:var(--accent);background:var(--accent);color:#fff;}
+    @media(max-width:480px){.gpu-series-pill{max-width:124px;}.gpu-series-trigger{font-size:10px;padding:6px 8px;}}
+    @media(prefers-reduced-motion:reduce){.gpu-series-pill,.gpu-model-track,.gpu-model-chip{transition:none;}}
     .filter-check{border:1.5px solid var(--border);background:#fff;border-radius:999px;padding:6px 10px;font-family:var(--font);font-size:11px;font-weight:900;color:#52627d;cursor:pointer;transition:all .14s;}
     .filter-check:hover:not(.selected){border-color:var(--accent);color:var(--accent);background:var(--acc-lt);}
     .filter-check.selected{background:var(--accent);border-color:var(--accent);color:#fff;}
@@ -138,8 +157,14 @@
     .cart-label{font-family:var(--mono);font-size:10px;font-weight:900;color:var(--accent);background:var(--acc-lt);border-radius:999px;padding:5px 7px;text-align:center;}
     .cart-thumb{width:42px;height:42px;border-radius:10px;}
     .cart-main{min-width:0;}
-    .cart-name{display:block;font-size:12px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-    .cart-meta{font-size:10px;font-weight:700;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .cart-item{position:relative;min-width:0;}
+    .cart-item .cart-row{width:100%;}
+    .cart-item.has-selection .cart-row{padding-bottom:30px;}
+    .cart-maker{display:block;font-size:10px;font-weight:800;color:var(--accent);margin-bottom:3px;}
+    .cart-name{display:block;font-size:12px;font-weight:900;white-space:normal;overflow-wrap:anywhere;}
+    .cart-meta{display:block;font-size:10px;font-weight:700;color:var(--muted);margin-top:4px;white-space:normal;overflow-wrap:anywhere;}
+    .cart-remove{position:absolute;right:10px;bottom:7px;border:0;background:transparent;color:var(--muted);font:inherit;font-size:10px;cursor:pointer;text-decoration:underline;}
+    .cart-remove:focus-visible{outline:3px solid #6ea6ff;outline-offset:2px;}
     .cart-value{display:block;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     .cart-price{font-family:var(--mono);font-size:11px;font-weight:900;color:#0d1b3e;white-space:nowrap;}
 

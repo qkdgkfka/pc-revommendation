@@ -4,14 +4,13 @@
 from __future__ import annotations
 
 import csv
-import io
 import re
-import sys
+from retailer_parsing import danawa_candidate_blocks, price_from_danawa_block
 import time
 import sqlite3
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 from urllib.parse import parse_qsl, quote_plus, urljoin, urlsplit
 from urllib.request import Request, urlopen
 
@@ -555,18 +554,6 @@ def danawa_candidate_valid(part_type: str, query: str, product_name: str,
         return False
     return price_sane_for_part(part_type, price, query)
 
-def danawa_candidate_blocks(html: str) -> List[str]:
-    starts = [
-        m.start()
-        for m in re.finditer(
-            r"<li\b[^>]*(?:id=[\"']productItem|class=[\"'][^\"']*prod_item)",
-            html,
-            re.I,
-        )
-    ]
-    if not starts:
-        starts = [m.start() for m in re.finditer(r"<div\b[^>]+class=[\"'][^\"']*prod_main_info", html, re.I)]
-    return [html[start:starts[i + 1] if i + 1 < len(starts) else len(html)] for i, start in enumerate(starts)]
 
 def first_anchor_from_block(block: str) -> Tuple[str, str]:
     name_area = re.search(
@@ -582,21 +569,6 @@ def first_anchor_from_block(block: str) -> Tuple[str, str]:
     href_match = re.search(r"<a[^>]+href=[\"']([^\"']+)[\"']", block, re.I | re.S)
     return (href_match.group(1) if href_match else ""), clean_text(img_match.group(1) if img_match else "")
 
-def price_from_danawa_block(block: str) -> Optional[int]:
-    hidden = re.search(r"id=[\"']min_price_[^\"']+[\"'][^>]+value=[\"'](\d+)[\"']", block, re.I)
-    if hidden:
-        price = parse_price_value(hidden.group(1))
-        if price:
-            return price
-
-    price_area = re.search(
-        r"<p\b[^>]+class=[\"'][^\"']*price_sect[^\"']*[\"'][^>]*>(.*?)</p>",
-        block,
-        re.I | re.S,
-    )
-    target = price_area.group(1) if price_area else block
-    price_match = re.search(r"(\d[\d,]{3,})(?:\s*</[^>]+>\s*)*\s*원", target, re.I)
-    return parse_price_value(price_match.group(1)) if price_match else None
 
 def parse_danawa_top_product_regex(
     html: str,

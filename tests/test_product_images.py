@@ -51,9 +51,90 @@ class ProductImageTests(unittest.TestCase):
             server.send_part_image(handler, {'name': 'SSD', 'type': 'storage'})
         handler.send_header.assert_any_call('Cache-Control', 'no-store')
 
+    def test_failed_server_fetch_offers_valid_photo_to_browser(self):
+        handler = Mock(wfile=io.BytesIO())
+        photo = 'https://img.danuri.io/ram.jpg'
+        with patch.object(server, 'saved_products', return_value=[]), \
+             patch.object(server, 'fetch_product_image', return_value=None), \
+             patch.object(server, 'resolve_part_image_url', return_value=''):
+            server.send_part_image(handler, {'name': 'Example RAM', 'type': 'ram', 'image_url': photo})
+        handler.send_response.assert_called_once_with(302)
+        handler.send_header.assert_any_call('Location', photo)
+        handler.send_header.assert_any_call('Cache-Control', 'no-store')
+        self.assertEqual(b'', handler.wfile.getvalue())
+
+    def test_product_page_is_never_used_as_image_redirect(self):
+        handler = Mock(wfile=io.BytesIO())
+        page = 'https://prod.danawa.com/info/?pcode=123'
+        with patch.object(server, 'saved_products', return_value=[]), \
+             patch.object(server, 'fetch_product_image', return_value=None), \
+             patch.object(server, 'resolve_part_image_url', return_value=''), \
+             patch.object(server, 'fetch_product_page_image', return_value=''):
+            server.send_part_image(handler, {'name': 'Example RAM', 'type': 'ram',
+                                             'image_url': page, 'product_url': page})
+        handler.send_response.assert_called_once_with(200)
+        handler.send_header.assert_any_call('Content-Type', 'image/svg+xml; charset=utf-8')
+
+    def test_other_retail_page_is_not_used_as_image_redirect(self):
+        handler = Mock(wfile=io.BytesIO())
+        page = 'https://www.corsair.com/us/en/p/psu/example'
+        with patch.object(server, 'saved_products', return_value=[]), \
+             patch.object(server, 'fetch_product_image', return_value=None), \
+             patch.object(server, 'resolve_part_image_url', return_value=''):
+            server.send_part_image(handler, {'name': 'Example PSU', 'type': 'psu', 'image_url': page})
+        handler.send_response.assert_called_once_with(200)
+
     def test_html_error_is_not_treated_as_product_image(self):
         self.assertEqual('', images.image_content_type(b'<html>Access denied</html>'))
         self.assertEqual('image/jpeg', images.image_content_type(b'\xff\xd8\xffphoto'))
+
+    def test_saved_sku_url_ignores_search_parameters_and_translated_name(self):
+        row = {'name': '삼성전자 SSD', 'url': 'https://prod.danawa.com/info/?pcode=123&keyword=SSD',
+               'image_url': 'https://img.danuri.io/ssd.jpg'}
+        with patch.object(server, 'saved_products', return_value=[row]):
+            self.assertEqual(row['image_url'], server.resolve_part_image_url(
+                'Samsung SSD', 'storage', 'https://prod.danawa.com/info/?pcode=123'))
+
+    def test_reference_photo_matches_brand_model_and_capacity_without_price_lookup(self):
+        rows = [
+            {'name': '삼성전자 990 EVO Plus M.2 NVMe (2TB)', 'image_url': 'https://img.danuri.io/wrong.jpg'},
+            {'name': '삼성전자 990 PRO M.2 NVMe (1TB)', 'image_url': 'https://img.danuri.io/pro.jpg'},
+            {'name': '삼성전자 990 EVO Plus M.2 NVMe (1TB)', 'image_url': 'https://img.danuri.io/right.jpg'},
+        ]
+        with patch.object(server, 'saved_products', return_value=rows), patch.object(server, 'fetch_market_top_product', return_value=None):
+            self.assertEqual(rows[2]['image_url'], server.resolve_part_image_url('Samsung 990 EVO Plus NVMe SSD 1TB', 'storage'))
+
+    def test_compuzone_photo_is_preferred_and_failure_tries_next_source(self):
+        rows = [
+            {'name': 'Example SSD 1TB', 'image_url': 'https://img.danuri.io/ssd.jpg'},
+            {'name': 'Example SSD 1TB', 'image_url': 'https://image3.compuzone.co.kr/ssd.jpg'},
+        ]
+        handler = Mock(wfile=io.BytesIO())
+        data = b'\xff\xd8\xffreal-photo'
+        def fetch(url):
+            return (data, 'image/jpeg') if url == rows[0]['image_url'] else None
+        with patch.object(server, 'saved_products', return_value=rows), patch.object(server, 'fetch_product_image', side_effect=fetch):
+            self.assertEqual(rows[1]['image_url'], server.resolve_part_image_url('Example SSD 1TB', 'storage'))
+            server.send_part_image(handler, {'name': 'Example SSD 1TB', 'type': 'storage'})
+        self.assertEqual(data, handler.wfile.getvalue())
+
+    def test_real_sku_does_not_borrow_photo_from_similar_product(self):
+        row = {'name': 'Samsung 990 PRO 1TB', 'url': 'https://prod.danawa.com/info/?pcode=999',
+               'image_url': 'https://img.danuri.io/wrong.jpg'}
+        with patch.object(server, 'saved_products', return_value=[row]), patch.object(server, 'fetch_market_top_product', return_value=None):
+            self.assertEqual('', server.resolve_part_image_url('Samsung 990 PRO 1TB', 'storage',
+                             'https://prod.danawa.com/info/?pcode=123'))
+
+    def test_compuzone_lazy_image_is_saved(self):
+        from test_market_sources import compuzone_row
+        html = compuzone_row().replace('src="https://image3.compuzone.co.kr/product.jpg"',
+                                      'src="/noimg.gif" data-original="//image3.compuzone.co.kr/product.jpg"')
+        items = server.parse_compuzone_browse_products(html, 'https://www.compuzone.co.kr/', 'gpu')
+        self.assertEqual('https://image3.compuzone.co.kr/product.jpg', items[0]['image_url'])
+
+    def test_official_image_is_accepted_without_opening_proxy_to_arbitrary_hosts(self):
+        self.assertEqual('https://www.corsair.com/psu.png', images.retailer_image_url('https://www.corsair.com/psu.png'))
+        self.assertEqual('', images.retailer_image_url('https://corsair.com.evil.test/psu.png'))
 
 
 if __name__ == '__main__':

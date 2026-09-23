@@ -65,6 +65,28 @@ class SavedRetailCatalogTests(unittest.TestCase):
         catalog.CACHE_PATH.write_text("{broken")
         self.assertEqual(1, len(catalog.saved_products("cpu", self.now)))
 
+    def test_unchanged_catalog_reuses_validation_but_returns_independent_rows(self):
+        catalog.remember_products("cpu", [self.item()])
+        with patch.object(catalog, "_verified_retail_row", wraps=catalog._verified_retail_row) as verify:
+            first = catalog.saved_products("cpu", self.now)
+            count = verify.call_count
+            self.assertGreater(count, 0)
+            first[0]["price"] = 1
+            later = catalog.saved_products("cpu", self.now + timedelta(hours=25))
+            self.assertEqual(count, verify.call_count)
+        self.assertEqual(200000, later[0]["price"])
+        self.assertEqual("stale", later[0]["price_status"])
+
+    def test_cached_rows_follow_replacement_and_removal_of_source_files(self):
+        catalog.remember_products("cpu", [self.item()])
+        self.assertEqual(200000, catalog.saved_products("cpu", self.now)[0]["price"])
+        replacement = catalog.CACHE_PATH.with_suffix(".replacement")
+        replacement.write_text(json.dumps({"products": {"cpu": [self.item(price=250000)]}}))
+        replacement.replace(catalog.CACHE_PATH)
+        self.assertEqual(250000, catalog.saved_products("cpu", self.now)[0]["price"])
+        catalog.CACHE_PATH.unlink()
+        self.assertEqual([], catalog.saved_products("cpu", self.now))
+
 
 if __name__ == "__main__":
     unittest.main()

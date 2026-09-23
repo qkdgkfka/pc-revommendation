@@ -23,41 +23,7 @@ function queryString(params) {
 function partUrl(part) {
   return part?.source_url || part?.url || part?.shop_url || part?.product_url || shopSearchUrl(part?.name);
 }
-function partImageUrl(part, type = '') {
-  if (!part?.name && !part?.product_name) return '';
-  if (String(part.image_url || '').startsWith('/api/part-image?')) return `${baseUrl()}${part.image_url}`;
-  if (/^https?:\/\//i.test(part.image_url || '') && new URL(part.image_url).pathname === '/api/part-image') return part.image_url;
-  const name = part.product_name || part.name;
-  const params = queryString({
-    name:String(name), type:String(type || part.part_type || part.type || ''),
-    image_url:part.image_url || '', product_url:partUrl(part),
-  });
-  return `${baseUrl()}/api/part-image?${params}`;
-}
-function previewAttrs(part, type = '') {
-  if (!part?.name && !part?.product_name) return '';
-  const price = effectivePrice(part);
-  const data = {
-    'preview-url': partUrl(part),
-    'preview-name': fullProductName(part),
-    'preview-image': partImageUrl(part, type),
-    'preview-fallback': imageFallbackUrl(part),
-    'preview-price': price != null ? money(price) : '',
-    'preview-source': priceProvenance(part).text,
-  };
-  return Object.entries(data)
-    .map(([key, value]) => `data-${key}="${escapeHtml(value)}"`)
-    .join(' ');
-}
-function partThumb(part, type = '', className = 'part-thumb') {
-  const src = partImageUrl(part, type);
-  if (!src) return `<span class="${className}"></span>`;
-  return `<span class="${className} image-loading"><img src="${escapeHtml(src)}" data-image-fallback="${escapeHtml(imageFallbackUrl(part))}" alt="${escapeHtml(displayName(part))} 제품 이미지" loading="lazy" decoding="async" referrerpolicy="no-referrer"/></span>`;
-}
-function imageFallbackUrl(part) {
-  const url = String(part?.image_url || '');
-  return /^https?:\/\//i.test(url) && !url.includes('/api/part-image') ? url : '';
-}
+
 function gpuBrand(item) {
   const value = String(item?.brand || item?.vendor || item?.name || '').toLowerCase();
   if (value.includes('nvidia') || value.includes('geforce') || value.includes('rtx') || value.includes('gtx')) return 'nvidia';
@@ -79,9 +45,8 @@ function fullProductName(item) {
   if (!brand || brand.toLowerCase() === 'nvidia' || brand.toLowerCase() === 'amd') return name;
   return name.toLowerCase().includes(brand.toLowerCase()) ? name : `${brand} ${name}`;
 }
-function displayName(item) {
+function productManufacturer(item) {
   const fullName = fullProductName(item);
-  if (!item || /추가 안 함|직접 선택/.test(fullName)) return fullName;
   const makers = [
     ['GIGABYTE', /gigabyte|기가바이트/i], ['ASUS', /asus|아수스|에이수스/i],
     ['MSI', /\bmsi\b/i], ['ZOTAC', /zotac|조텍/i], ['GALAX', /galax|갤럭시/i],
@@ -95,8 +60,15 @@ function displayName(item) {
     ['ASRock', /asrock|애즈락/i], ['Intel', /intel|인텔/i], ['AMD', /\bamd\b|라이젠|ryzen/i],
   ];
   const makerText = [item.manufacturer, item.maker, fullName, item.brand].filter(Boolean).join(' ');
-  let maker = makers.find(([, pattern]) => pattern.test(makerText))?.[0]
+  const maker = makers.find(([, pattern]) => pattern.test(makerText))?.[0]
     || String(item.manufacturer || item.maker || item.brand || '').replace(/^(nvidia|amd)$/i, '');
+  return { label:maker || '', pattern:makers.find(([label]) => label === maker)?.[1] };
+}
+function displayName(item) {
+  const fullName = fullProductName(item);
+  if (!item || /추가 안 함|직접 선택/.test(fullName)) return fullName;
+  const manufacturer = productManufacturer(item);
+  const maker = manufacturer.label;
   const gpu = fullName.match(/\b(RTX|GTX|RX)\s*[- ]?\s*(\d{4})\s*(TI\s*SUPER|TI|SUPER|XTX|XT|GRE)?/i);
   if (gpu) {
     const suffix = (gpu[3] || '').toUpperCase().replace('TI', 'Ti').replace('SUPER', 'Super');
@@ -115,8 +87,7 @@ function displayName(item) {
     return `${maker ? `${maker} - ` : ''}${[memoryType, `${item.gb}GB`, item.speed].filter(Boolean).join(' ')}`;
   }
   let shortName = fullName.replace(/\([^)]*\)|\[[^\]]*\]/g, '').replace(/벌크|정품|병행수입|해외구매|공식인증|당일발송|무료배송/g, '').replace(/\s+/g, ' ').trim();
-  const makerMatch = makers.find(([label]) => label === maker);
-  if (makerMatch) shortName = shortName.replace(makerMatch[1], '').trim();
+  if (manufacturer.pattern) shortName = shortName.replace(manufacturer.pattern, '').trim();
   if (maker && shortName.toLowerCase().startsWith(maker.toLowerCase())) shortName = shortName.slice(maker.length).trim();
   const label = `${maker ? `${maker} - ` : ''}${shortName}`;
   return label.length > 46 ? `${label.slice(0, 43).trim()}…` : label;
@@ -370,6 +341,11 @@ function findCatalogItemById(id) {
     .find(Boolean);
 }
 
+function bestProductImageUrl(current, candidate) {
+  const realImage = value => /^https?:\/\//i.test(value || '') && !String(value).includes('/api/part-image');
+  return realImage(candidate) ? candidate : realImage(current) ? current : candidate || current || '';
+}
+
 function applyPriceResult(result) {
   if (!result) return;
   const target = findCatalogItemById(result.id);
@@ -380,7 +356,7 @@ function applyPriceResult(result) {
   if (result.currency) target.currency = result.currency;
   if (result.price_source) target.price_source = result.price_source;
   if (result.product_name) target.product_name = result.product_name;
-  if (result.image_url) target.image_url = result.image_url;
+  if (result.image_url) target.image_url = bestProductImageUrl(target.image_url, result.image_url);
   ['price_status','price_checked_at','source_url'].forEach(key => {
     if (result[key] != null) target[key] = result[key];
   });
@@ -419,6 +395,7 @@ const BUILDER_META = Object.fromEntries(BUILDER_PARTS.map(item => [item.key, ite
 
 function rawCatalogFor(type) {
   const browseItems = browseProductsFor(type);
+  if (type === 'gpu' && filterValues('gpu', 'model').length) return uniqueProducts([...browseItems, ...allKnownProductsFor('gpu')]);
   if (type === 'gpu' || type === 'cpu' || type === 'ram') return browseItems;
   if (type === 'mb') {
     const { cpu, ram } = selectedCustomParts();
@@ -461,16 +438,51 @@ function cpuThreads(part) {
 }
 
 function gpuModelToken(part) {
-  const name = String(part?.name || '').toLowerCase();
-  const patterns = [
-    ['5090','5090'], ['5080','5080'], ['5070 ti','5070 Ti'], ['5070','5070'],
-    ['5060 ti','5060 Ti'], ['5060','5060'], ['4090','4090'], ['4080','4080'],
-    ['4070 ti','4070 Ti'], ['4070','4070'], ['4060 ti','4060 Ti'], ['4060','4060'],
-    ['9070 xt','9070 XT'], ['9070','9070'], ['7900 xtx','7900 XTX'], ['7900 xt','7900 XT'],
-    ['7900','7900'], ['7800','7800'], ['7700','7700'], ['7600','7600'], ['6600','6600'],
-  ];
-  const found = patterns.find(([needle]) => name.includes(needle));
-  return found ? found[1] : '';
+  const name = String(part?.product_name || part?.name || '');
+  const match = name.match(/\b(RTX|GTX|RX)\s*[- ]?\s*(\d{4})\s*(Ti\s*Super|Ti|Super|XTX|XT|GRE)?\b/i);
+  if (!match) return '';
+  const suffix = (match[3] || '').toUpperCase().replace(/TI\s*SUPER/, 'Ti Super').replace('TI', 'Ti').replace('SUPER', 'Super');
+  return `${match[1].toUpperCase()} ${match[2]}${suffix ? ` ${suffix}` : ''}`;
+}
+
+function gpuSeriesGroups(items) {
+  const groups = new Map();
+  for (const item of items) {
+    const model = gpuModelToken(item);
+    if (!model) continue;
+    const [family, number] = model.split(' ');
+    // Workstation RTX 4500/6000-style numbers are not GeForce generation models.
+    if (family === 'RTX' && Number(number[2]) < 5) continue;
+    const vendor = family === 'RX' ? 'AMD' : 'NVIDIA';
+    const generation = family === 'RX' ? `${number[0]}000` : number.slice(0, 2);
+    const label = `${family} ${generation} Series`;
+    if (!groups.has(label)) groups.set(label, { vendor, label, models:[] });
+    if (!groups.get(label).models.includes(model)) groups.get(label).models.push(model);
+  }
+  return [...groups.values()].sort((a, b) => (a.vendor === b.vendor ? a.label.localeCompare(b.label, 'en', { numeric:true }) : a.vendor === 'NVIDIA' ? -1 : 1))
+    .map(group => ({ ...group, models:group.models.sort((a, b) => a.localeCompare(b, 'en', { numeric:true })) }));
+}
+
+function preferredGpuProductForModel(model, available, references) {
+  const matches = available.filter(part => gpuModelToken(part) === model);
+  const reference = references.find(part => gpuModelToken(part) === model);
+  const photo = matches.find(part => /^https?:\/\//i.test(part.image_url || ''));
+  if (reference) {
+    if (!/^https?:\/\//i.test(reference.image_url || '') && photo) reference.image_url = photo.image_url;
+    return reference;
+  }
+  return photo || matches[0] || null;
+}
+
+function selectGpuModel(model) {
+  if (st.builderPart !== 'gpu') return;
+  st.builderFilters.gpu = { ...(st.builderFilters.gpu || {}), model:[model] };
+  const selected = preferredGpuProductForModel(model, allKnownProductsFor('gpu'), baseCatalogFor('gpu'));
+  if (selected) selectBuilderProduct('gpu', selected.id);
+  else {
+    renderBuilderFilters();
+    renderProductList();
+  }
 }
 
 function psuRating(part) {
@@ -680,17 +692,32 @@ function renderBuilderFilters() {
   const type = st.builderPart;
   const box = document.getElementById('builderFilters');
   if (!box) return;
+  const existingGpuHost = box.querySelector('[data-gpu-selector-root]');
+  if (existingGpuHost && type === 'gpu') existingGpuHost.remove();
+  else if (existingGpuHost) window.GpuModelSelector?.unmount(existingGpuHost);
   box.innerHTML = builderFilterDefs(type).map(group => `
-    <div class="filter-group">
+    <div class="filter-group ${type === 'gpu' && group.key === 'model' ? 'gpu-model-filter' : ''}">
       <div class="filter-label">${escapeHtml(group.label)}</div>
       <div class="filter-options">
-        ${group.options.map(([value,label]) => `
+        ${type === 'gpu' && group.key === 'model' ? '<div data-gpu-selector-root></div>' : group.options.map(([value,label]) => `
           <button type="button" class="filter-check ${filterHas(type, group.key, value) ? 'selected' : ''}" aria-pressed="${filterHas(type, group.key, value)}"
             data-filter-key="${escapeHtml(group.key)}" data-filter-value="${escapeHtml(value)}">${escapeHtml(label)}</button>
         `).join('') || '<span class="product-source">선택 가능한 옵션 없음</span>'}
       </div>
     </div>
   `).join('');
+  if (type === 'gpu') {
+    const placeholder = box.querySelector('[data-gpu-selector-root]');
+    if (existingGpuHost) placeholder.replaceWith(existingGpuHost);
+    const host = existingGpuHost || placeholder;
+    const vendors = filterValues('gpu', 'vendor');
+    window.GpuModelSelector?.render(host, {
+      groups:gpuSeriesGroups(allKnownProductsFor('gpu'))
+        .filter(group => !vendors.length || vendors.includes(group.vendor.toLowerCase())),
+      selectedModel:filterValues('gpu', 'model')[0] || '',
+      onSelectModel:selectGpuModel,
+    });
+  }
   box.querySelectorAll('.filter-check').forEach(btn => {
     btn.addEventListener('click', () => toggleBuilderFilter(type, btn.dataset.filterKey, btn.dataset.filterValue));
   });
@@ -813,27 +840,50 @@ function setBuilderPart(type) {
   void refreshProductBrowserPrices();
 }
 
+function clearBuilderProduct(type) {
+  const select = document.getElementById(BUILDER_META[type]?.select);
+  if (!select) return;
+  select.value = '';
+  if (type === 'cpu' || type === 'ram') {
+    const { cpu, ram, mb } = selectedCustomParts();
+    populateMbs(cpu, ram, mb?.id);
+  }
+  updateCustomChart();
+  renderBuilderFilters();
+  renderProductList();
+  void refreshSelectedPrices();
+}
+
 function renderBuildCart() {
   const box = document.getElementById('buildCart');
   if (!box) return;
   const parts = selectedCustomParts();
   box.innerHTML = BUILDER_PARTS.map(meta => {
-    const part = parts[meta.key] || {};
-    const price = effectivePrice(part);
+    const part = parts[meta.key];
+    const price = part ? effectivePrice(part) : null;
     const active = st.builderPart === meta.key;
+    const manufacturer = part ? productManufacturer(part).label || part.vendor || part.brand || '제조사 정보 없음' : '';
+    const specs = part ? partMeta(part, meta.key) || part.spec_text || '상세 사양 정보 없음' : '';
     return `
-      <button type="button" class="cart-row ${active ? 'active' : ''}" data-cart-part="${meta.key}" ${previewAttrs(part, meta.key)}>
-        <span class="cart-label">${meta.cart}</span>
-        ${partThumb(part, meta.key, 'cart-thumb')}
-        <span class="cart-main">
-          <span class="cart-name" title="${escapeHtml(fullProductName(part))}">${escapeHtml(part.name || part.product_name ? displayName(part) : '선택 필요')}</span>
-          ${priceProvenanceHtml(part)}
-        </span>
-        <span class="cart-price">${price != null ? money(price) : '-'}</span>
-      </button>`;
+      <div class="cart-item ${part ? 'has-selection' : ''}">
+        <button type="button" class="cart-row ${active ? 'active' : ''}" data-cart-part="${meta.key}" ${previewAttrs(part, meta.key)}>
+          <span class="cart-label">${meta.cart}</span>
+          ${partThumb(part, meta.key, 'cart-thumb')}
+          <span class="cart-main">
+            ${part ? `<span class="cart-maker">${escapeHtml(manufacturer)}</span>` : ''}
+            <span class="cart-name">${escapeHtml(part ? fullProductName(part) : '선택 필요')}</span>
+            ${part ? `<span class="cart-meta">${escapeHtml(specs)}</span>${priceProvenanceHtml(part)}` : ''}
+          </span>
+          <span class="cart-price">${price != null ? money(price) : '-'}</span>
+        </button>
+        ${part ? `<button type="button" class="cart-remove" data-remove-part="${meta.key}" aria-label="${meta.label} 선택 해제">선택 해제</button>` : ''}
+      </div>`;
   }).join('');
   box.querySelectorAll('[data-cart-part]').forEach(row => {
     row.addEventListener('click', () => setBuilderPart(row.dataset.cartPart));
+  });
+  box.querySelectorAll('[data-remove-part]').forEach(button => {
+    button.addEventListener('click', () => clearBuilderProduct(button.dataset.removePart));
   });
   bindPreviewTargets(box);
 }
@@ -928,7 +978,7 @@ function populateMbs(cpu, ram, keepId = '') {
   const sel = document.getElementById('csMb');
   if (!sel) return;
   const items = compatibleMbs(cpu, ram, allKnownProductsFor('mb'));
-  sel.innerHTML = items.map(it =>
+  sel.innerHTML = '<option value="">선택 필요</option>' + items.map(it =>
     `<option value="${it.id}">${catalogPriceLabel(it)}</option>`
   ).join('');
   if (keepId && items.some(it => it.id === keepId)) sel.value = keepId;
@@ -1101,7 +1151,6 @@ function importRecommendedBuild(tier) {
   // Keep the exact price/SKU returned by the recommendation until the user
   // explicitly refreshes prices in the direct-spec product browser.
   priceLookupToken += 1;
-  productLookupToken += 1;
   Object.entries(parts).forEach(([type, part]) => {
     if (part?.id) {
       rememberBrowseProduct(type, withPartType([part], type)[0]);
@@ -1158,120 +1207,3 @@ function importRecommendedBuild(tier) {
   setActiveView('custom');
   window.requestAnimationFrame(() => document.getElementById('customSection').scrollIntoView({ behavior:'smooth', block:'start' }));
 }
-
-let previewTimer = null;
-let previewPopover = null;
-let previewTarget = null;
-
-function ensurePreviewPopover() {
-  if (previewPopover) return previewPopover;
-  previewPopover = document.createElement('div');
-  previewPopover.className = 'part-preview-popover';
-  previewPopover.id = 'partImagePreview';
-  previewPopover.setAttribute('role', 'tooltip');
-  previewPopover.setAttribute('aria-hidden', 'true');
-  previewPopover.innerHTML = '<div class="preview-image-wrap"><img alt="" referrerpolicy="no-referrer"><span class="preview-image-empty" hidden>대표 이미지가 없습니다</span></div><div class="preview-caption"><strong class="preview-name"></strong><span class="preview-price"></span><span class="preview-source"></span></div>';
-  const img = previewPopover.querySelector('img');
-  img.addEventListener('error', () => {
-    if (retryProductImage(img)) return;
-    img.hidden = true;
-    previewPopover.querySelector('.preview-image-empty').hidden = false;
-  });
-  document.body.appendChild(previewPopover);
-  return previewPopover;
-}
-
-function positionPreviewPopover(target, pop) {
-  const rect = target.getBoundingClientRect();
-  const margin = 12;
-  const width = pop.offsetWidth || 260;
-  const height = pop.offsetHeight || 300;
-  let left = rect.right + margin;
-  if (left + width > window.innerWidth - margin) left = rect.left - width - margin;
-  left = Math.max(margin, Math.min(left, window.innerWidth - width - margin));
-  const top = Math.max(margin, Math.min(rect.top, window.innerHeight - height - margin));
-  pop.style.left = `${left}px`;
-  pop.style.top = `${top}px`;
-}
-
-function hidePartPreview() {
-  clearTimeout(previewTimer);
-  previewTimer = null;
-  if (previewTarget) previewTarget.removeAttribute('aria-describedby');
-  previewTarget = null;
-  if (previewPopover) {
-    previewPopover.classList.remove('show');
-    previewPopover.setAttribute('aria-hidden', 'true');
-  }
-}
-
-function schedulePartPreview(target) {
-  hidePartPreview();
-  if (!target?.dataset?.previewName) return;
-  previewTimer = setTimeout(() => {
-    if (!target.isConnected) return;
-    const pop = ensurePreviewPopover();
-    const img = pop.querySelector('img');
-    const src = target.dataset.previewImage;
-    img.hidden = !src;
-    pop.querySelector('.preview-image-empty').hidden = Boolean(src);
-    img.alt = `${target.dataset.previewName} 대표 이미지`;
-    img.dataset.imageFallback = target.dataset.previewFallback || '';
-    delete img.dataset.imageRetried;
-    if (src) img.src = src;
-    else img.removeAttribute('src');
-    pop.querySelector('.preview-name').textContent = target.dataset.previewName;
-    pop.querySelector('.preview-price').textContent = target.dataset.previewPrice || '가격 미확인';
-    pop.querySelector('.preview-source').textContent = target.dataset.previewSource || '';
-    positionPreviewPopover(target, pop);
-    pop.classList.add('show');
-    pop.setAttribute('aria-hidden', 'false');
-    target.setAttribute('aria-describedby', pop.id);
-    previewTarget = target;
-  }, 220);
-}
-
-function bindPreviewTargets(root = document) {
-  if (!root?.querySelectorAll) return;
-  root.querySelectorAll('[data-preview-name]').forEach(node => {
-    if (node.dataset.previewBound) return;
-    node.dataset.previewBound = '1';
-    node.addEventListener('mouseenter', () => schedulePartPreview(node));
-    node.addEventListener('mouseleave', hidePartPreview);
-    node.addEventListener('focusin', () => schedulePartPreview(node));
-    node.addEventListener('focusout', hidePartPreview);
-  });
-  root.querySelectorAll('.product-thumb img, .part-thumb img, .cart-thumb img').forEach(img => {
-    if (img.dataset.fallbackBound) return;
-    img.dataset.fallbackBound = '1';
-    const fallback = () => {
-      if (retryProductImage(img)) return;
-      img.hidden = true;
-      img.parentElement.classList.remove('image-loading');
-      img.parentElement.classList.add('image-unavailable');
-      img.parentElement.setAttribute('aria-label', '대표 이미지 없음');
-    };
-    const loaded = () => {
-      img.hidden = false;
-      img.parentElement.classList.remove('image-unavailable', 'image-loading');
-      img.parentElement.removeAttribute('aria-label');
-    };
-    img.addEventListener('error', fallback);
-    img.addEventListener('load', loaded);
-    if (img.complete) img.naturalWidth ? loaded() : fallback();
-  });
-}
-
-function retryProductImage(img) {
-  const fallback = img.dataset.imageFallback;
-  if (!fallback || img.dataset.imageRetried || img.src === fallback) return false;
-  img.dataset.imageRetried = '1';
-  img.hidden = false;
-  img.src = fallback;
-  return true;
-}
-
-document.addEventListener('keydown', event => { if (event.key === 'Escape') hidePartPreview(); });
-window.addEventListener('resize', hidePartPreview);
-window.addEventListener('scroll', hidePartPreview, true);
-

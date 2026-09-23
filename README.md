@@ -71,7 +71,42 @@ python3 crawl_game_benchmarks.py
 
 ```sh
 python3 -m unittest discover -s tests -v
+node --test tests/test_builder_ui.js
 ```
 
 > [!IMPORTANT]  
 > 성능 기준 모델이 명확하지 않은 상품은 정확도를 위해 이웃 모델의 벤치마크를 임의로 끌어와 사용하지 않도록 설계되었습니다. 가격과 FPS의 검증 범위는 철저히 분리되어 동작합니다.
+
+## 코드 구조와 유지보수
+
+실행 진입점은 `server_fixed.py` 하나입니다. Python 표준 라이브러리의
+`ThreadingHTTPServer`가 API와 정적 파일을 함께 제공하며, 별도의 프론트엔드 빌드는 없습니다.
+`requirements.txt`의 BeautifulSoup은 HTML 파싱을 보완합니다.
+
+| 파일 | 역할 |
+| --- | --- |
+| `server_fixed.py` | HTTP 라우팅, 판매처 연동, 추천 및 가격/FPS 처리 |
+| `server_catalogs.py` | 기준 부품, 게임, 성능 카탈로그 |
+| `product_metadata.py` | 제품명, 제조사, 정확한 모델 식별, RAM/SSD 등 규격 해석 |
+| `retailer_parsing.py` | 서버와 오프라인 크롤러가 공유하는 다나와 목록/가격 추출 |
+| `market_catalog.py` | 저장 상품, 가격 유효기간, 파일 변경 시 갱신되는 검증 캐시 |
+| `product_images.py` | 외부 이미지 검증과 제한된 이미지 프록시/캐시 |
+| `component_compatibility.py` | CPU·메인보드·RAM 호환성 |
+| `game_benchmarks.py`, `graphics_estimates.py` | 게임 실측 자료 및 그래픽 옵션 추정 |
+| `app.js`, `app_utils.js`, `app_data.js` | 화면 상태/이벤트, 부품 선택/렌더링, 오프라인 기본 데이터 |
+| `product_images.js` | 추천과 직접 선택에서 공유하는 이미지·미리보기·오류 대체 표시 |
+| `gpu_selector.js`, `vendor/react/` | GPU 모델 선택에만 사용하는 React 컴포넌트와 런타임 |
+| `tests/` | Python 회귀 검사 및 Node 기반 프론트엔드 로직 검사 |
+
+제품의 `image_url`은 이미지 주소이며 구매 주소와 별개입니다. 기존 API 호환성을 위해
+구매 주소의 `url`/`source_url` 별칭과 RAM의 DDR 세대를 뜻하는 `type`을 유지합니다.
+부품 종류는 `component_type`/`part_type`으로 전달되며, 프론트엔드 경계에서 정규화됩니다.
+
+`product_import.py`와 서버의 가져오기 헬퍼는 보존되어 있지만, 현재 페이지에는
+제품 가져오기 UI나 `/api/import/*` 라우트가 없습니다. 저장된 가져오기 상품을 읽는
+카탈로그 경로는 유지됩니다.
+
+`train_model.py`는 신경망 학습 대신 보정 JSON을 생성하는 독립 도구입니다.
+`artifacts/`의 과거 모델 파일은 현재 서버가 로드하지 않지만, 출처 확인 전까지 보존합니다.
+`data/`의 기준 데이터와 `vendor/react/`는 배포에 포함해야 합니다.
+`.gjc/`, `node_modules/`, 로그, Python 캐시, 실행 중 생성되는 시장 캐시는 Git 추적 대상이 아닙니다.

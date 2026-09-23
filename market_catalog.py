@@ -15,21 +15,24 @@ PART_TYPES = ("cpu", "gpu", "mb", "ram", "storage", "hdd", "psu", "case", "softw
 MAX_PRICE_AGE_HOURS = 24
 _lock = RLock()
 _file_cache = {}
+_rows_cache = {}
+_EMPTY_CATALOG = {}
 
 
 def _read_catalog(path):
     try:
-        stamp = path.stat().st_mtime_ns
+        stat = path.stat()
+        stamp = (stat.st_mtime_ns, stat.st_size, stat.st_ino)
         if path in _file_cache and _file_cache[path][0] == stamp:
             return _file_cache[path][1]
         payload = json.loads(path.read_text(encoding="utf-8"))
         products = payload.get("products", {})
         if not isinstance(products, dict):
-            return {}
+            return _EMPTY_CATALOG
         _file_cache[path] = (stamp, products)
         return products
     except (OSError, ValueError, TypeError):
-        return {}
+        return _EMPTY_CATALOG
 
 
 def _verified_retail_row(item):
@@ -46,6 +49,27 @@ def _verified_retail_row(item):
         return False
 
 
+def _saved_rows(part_type):
+    """Reuse validation/merging until either source snapshot is replaced.
+
+    Called under _lock. The source dictionaries are retained for identity checks;
+    callers receive fresh row copies and price age is calculated separately.
+    """
+    snapshot = _read_catalog(SNAPSHOT_PATH)
+    runtime = _read_catalog(CACHE_PATH)
+    cached = _rows_cache.get(part_type)
+    if cached and cached[0] is snapshot and cached[1] is runtime:
+        return cached[2]
+    combined = {}
+    for source in (snapshot, runtime):
+        for item in source.get(part_type, []):
+            if _verified_retail_row(item):
+                combined[item["id"]] = dict(item)
+    rows = tuple(combined.values())
+    _rows_cache[part_type] = (snapshot, runtime, rows)
+    return rows
+
+
 def saved_products(part_type, now=None):
     """Return timestamped fallback choices; a saved quote is never labelled live."""
     if part_type not in PART_TYPES:
@@ -54,13 +78,10 @@ def saved_products(part_type, now=None):
     if current.tzinfo is None:
         current = current.replace(tzinfo=timezone.utc)
     with _lock:
-        combined = {}
-        for path in (SNAPSHOT_PATH, CACHE_PATH):
-            for item in _read_catalog(path).get(part_type, []):
-                if _verified_retail_row(item):
-                    combined[item["id"]] = dict(item)
+        rows = _saved_rows(part_type)
     output = []
-    for item in combined.values():
+    for saved in rows:
+        item = dict(saved)
         checked = str(item.get("price_checked_at") or item.get("scraped_at"))
         try:
             observed = datetime.fromisoformat(checked.replace("Z", "+00:00"))

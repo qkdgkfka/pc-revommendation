@@ -235,7 +235,6 @@ const st = {
   lastRecommendation: null,
 };
 let isLoading = false;
-let productLookupToken = 0;
 let customFpsToken = 0;
 const customFpsCache = new Map();
 const danawaBrowseByType = Object.create(null);
@@ -261,9 +260,11 @@ function populateGpus(brand = 'all', refreshChart = true) {
     : brand === 'amd'
       ? all.filter(item => gpuBrand(item) === 'amd')
       : all;
-  sel.innerHTML = pool.map(g =>
+  const previous = sel.value;
+  sel.innerHTML = '<option value="">선택 필요</option>' + pool.map(g =>
     `<option value="${g.id}">${catalogPriceLabel(g)}</option>`
   ).join('');
+  if (pool.some(item => item.id === previous)) sel.value = previous;
   if (refreshChart) updateCustomChart();
 }
 
@@ -272,9 +273,11 @@ function populateDropdown(id, items) {
   if (!sel) return;
   const type = SELECTOR_PART_TYPES[id];
   const pool = type ? allKnownProductsFor(type) : items;
-  sel.innerHTML = pool.map(it =>
+  const previous = sel.value;
+  sel.innerHTML = '<option value="">선택 필요</option>' + pool.map(it =>
     `<option value="${it.id}">${catalogPriceLabel(it)}</option>`
   ).join('');
+  if (pool.some(item => item.id === previous)) sel.value = previous;
 }
 
 function groupedOptionsHtml(items, labelKey = 'label') {
@@ -367,7 +370,7 @@ function initDropdowns() {
   populateGpus('all');
   populateDropdown('csCpu', CPUS);
   populateDropdown('csRam', RAMS);
-  populateMbs(CPUS[0], RAMS[0]);
+  populateMbs(selectedCustomParts().cpu, selectedCustomParts().ram);
   populateDropdown('csStorage', STORAGES);
   populateDropdown('csHdd', HDDS);
   populateDropdown('csPsu', PSUS);
@@ -419,7 +422,7 @@ async function loadServerCatalog() {
     populateGpus(activeBrand);
     populateDropdown('csCpu', CPUS);
     populateDropdown('csRam', RAMS);
-    populateMbs(CPUS[0], RAMS[0]);
+    populateMbs(selectedCustomParts().cpu, selectedCustomParts().ram);
     populateDropdown('csStorage', STORAGES);
     populateDropdown('csHdd', HDDS);
     populateDropdown('csPsu', PSUS);
@@ -553,7 +556,15 @@ function updateCustomPrice() {
 function updateCustomChart() {
   updateCustomPrice();
   const { gpu, cpu, ram, storage } = selectedCustomParts();
-  if (!gpu || !cpu || !ram) return;
+  if (!gpu || !cpu || !ram) {
+    customFpsToken += 1;
+    ['csGameChart', 'csWorkChart'].forEach(id => {
+      const chart = document.getElementById(id);
+      chart.setAttribute('aria-busy', 'false');
+      chart.innerHTML = '<div class="no-spec"><div class="no-spec-text">CPU, GPU, RAM을 선택해주세요</div></div>';
+    });
+    return;
+  }
 
   if (st.csMode === 'game') {
     const game = document.getElementById('csGameSelect')?.value || st.csGame || 'cyberpunk2077';
@@ -837,9 +848,9 @@ if (loadMoreProductsBtn) {
 const clearBuildBtn = document.getElementById('clearBuildBtn');
 if (clearBuildBtn) {
   clearBuildBtn.addEventListener('click', () => {
-    ['csGpu','csCpu','csRam','csStorage','csHdd','csPsu','csCase','csSoftware'].forEach(id => {
+    ['csGpu','csCpu','csRam','csMb','csStorage','csHdd','csPsu','csCase','csSoftware'].forEach(id => {
       const sel = document.getElementById(id);
-      if (sel && sel.options.length) sel.selectedIndex = 0;
+      if (sel) sel.value = '';
     });
     const { cpu, ram } = selectedCustomParts();
     populateMbs(cpu, ram);

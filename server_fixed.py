@@ -20,7 +20,7 @@ from concurrent.futures import ThreadPoolExecutor, TimeoutError, as_completed
 from dataclasses import dataclass, replace
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qsl, quote_plus, urlencode, urljoin, urlparse, urlsplit, urlunsplit
+from urllib.parse import parse_qsl, quote_plus, urlencode, urljoin, urlparse, urlsplit
 from urllib.request import Request, urlopen
 import argparse
 from datetime import datetime, timedelta
@@ -29,14 +29,30 @@ import json
 import math
 import random
 import re
+from retailer_parsing import danawa_candidate_blocks, price_from_danawa_block
+import secrets
 import sqlite3
 import traceback
 import copy
 import time
 from market_catalog import remember_products, saved_products
+# Preserve existing helper imports for scripts/tests while implementation lives
+# in the shared metadata module.
+from product_metadata import (
+    DANAWA_BROWSE_DEFAULT_QUERIES, GPU_MAKER_ALIASES, GPU_MAKER_LABELS, canonical_name,
+    capacity_mb_from_text, clean_visible_text, compatible_gpu_price_name, compatible_price_name,
+    gpu_exact_model_key, gpu_maker_label, gpu_maker_normalize, gpu_model_number_from_key,
+    gpu_model_number_mentions, image_name_tokens, infer_brand, infer_cpu_metadata,
+    infer_gpu_vram, infer_hdd_rpm, infer_mb_metadata, infer_psu_watt,
+    model_tokens, normalize_browse_part_type, normalize_gpu_maker_prefs, normalize_product_url,
+    normalize_text, parse_price_value, parse_ram_metadata, query_model_name,
+    safe_float, safe_int, strip_html, variant_tokens,
+)
 from game_benchmarks import estimate_from_measurements, load_measurements
 from graphics_estimates import graphics_scenarios
-from product_images import fetch_product_image, retailer_image_url
+from product_images import (fetch_product_image, retailer_image_url, image_source_priority,
+                            product_page_key, fetch_product_page_image)
+from product_import import fetch_product_page, imported_products, save_imported_product, supported_product_url
 from component_compatibility import platform_compatibility
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
@@ -70,17 +86,6 @@ GPU_MARKET_PRICE_CACHE: Dict[str, Optional[Dict[str, Any]]] = {}
 # than presenting a pre-composed component list.  Cache short-lived pages so a
 # user changing local filters does not repeatedly hit Danawa for the same page.
 DANAWA_BROWSE_CACHE: Dict[Tuple[str, str, int, int], Dict[str, Any]] = {}
-DANAWA_BROWSE_DEFAULT_QUERIES = {
-    "cpu": "CPU",
-    "gpu": "그래픽카드",
-    "ram": "RAM 메모리",
-    "mb": "메인보드",
-    "storage": "SSD",
-    "hdd": "HDD",
-    "psu": "파워서플라이",
-    "case": "PC 케이스",
-    "software": "Windows 소프트웨어",
-}
 
 # ─────────────────────────────────────────────────────────────
 # Embedded fallback catalogs
@@ -95,43 +100,11 @@ from server_catalogs import CPU_CATALOG, GPU_CATALOG, RAM_CATALOG, MB_CATALOG, P
 def clamp(x: float, lo: float = 0.0, hi: float = 1.0) -> float:
     return max(lo, min(hi, x))
 
-def safe_float(v: Any, default: float = 0.0) -> float:
-    try:
-        x = float(v)
-        if math.isnan(x) or math.isinf(x):
-            return default
-        return x
-    except Exception:
-        return default
-
-def safe_int(v: Any, default: int = 0) -> int:
-    try:
-        return int(float(v))
-    except Exception:
-        return default
-
-def normalize_text(v: Any) -> str:
-    return " ".join(str(v or "").strip().lower().split())
-
-def canonical_name(v: Any) -> str:
-    t = normalize_text(v)
-    for token in ["geforce", "radeon", "graphics", "graphic", "series", "desktop", "(tm)", "(r)", "processor"]:
-        t = t.replace(token, "")
-    return t.replace("  ", " ").strip()
 
 def danawa_search_url(name: Any) -> str:
     q = quote_plus(str(name or "").strip())
     return f"https://search.danawa.com/dsearch.php?query={q}" if q else ""
 
-def clean_visible_text(value: Any) -> str:
-    return re.sub(r"\s+", " ", unescape(str(value or ""))).strip()
-
-def parse_price_value(text: Any) -> Optional[int]:
-    digits = re.sub(r"[^\d]", "", str(text or ""))
-    if not digits:
-        return None
-    value = int(digits)
-    return value if value >= 1000 else None
 
 GPU_DANAWA_CATEGORY_IDS = {"112753"}
 STORAGE_DANAWA_CATEGORY_IDS = {"112760"}
@@ -149,98 +122,7 @@ DANAWA_BROWSE_CATEGORY_IDS = {
     "psu": {"112777"},
     "case": {"112775"},
 }
-GPU_MAKER_ALIASES: Dict[str, Tuple[str, ...]] = {
-    "msi": ("msi", "엠에스아이"),
-    "gigabyte": ("gigabyte", "기가바이트"),
-    "palit": ("palit", "팰릿", "팔릿"),
-    "colorful": ("colorful", "컬러풀"),
-    "asus": ("asus", "에이수스", "아수스"),
-    "zotac": ("zotac", "조텍"),
-    "galax": ("galax", "갤럭시"),
-    "emtek": ("emtek", "이엠텍"),
-    "inno3d": ("inno3d", "이노3d", "이노쓰리디"),
-    "gainward": ("gainward", "게인워드"),
-    "sapphire": ("sapphire", "사파이어"),
-    "powercolor": ("powercolor", "파워컬러"),
-    "xfx": ("xfx",),
-    "asrock": ("asrock", "애즈락"),
-    "biostar": ("biostar", "바이오스타"),
-    "manli": ("manli", "만리"),
-}
-GPU_MAKER_LABELS: Dict[str, str] = {
-    "msi": "MSI",
-    "gigabyte": "Gigabyte",
-    "palit": "Palit",
-    "colorful": "Colorful",
-    "asus": "ASUS",
-    "zotac": "ZOTAC",
-    "galax": "GALAX",
-    "emtek": "Emtek",
-    "inno3d": "INNO3D",
-    "gainward": "Gainward",
-    "sapphire": "Sapphire",
-    "powercolor": "PowerColor",
-    "xfx": "XFX",
-    "asrock": "ASRock",
-}
 
-def gpu_maker_normalize(value: Any) -> str:
-    text = normalize_text(strip_html(str(value or "")))
-    compact = re.sub(r"[^0-9a-z가-힣]+", "", text)
-    for key, aliases in GPU_MAKER_ALIASES.items():
-        for alias in aliases:
-            alias_norm = normalize_text(alias)
-            alias_compact = re.sub(r"[^0-9a-z가-힣]+", "", alias_norm)
-            if alias_norm and alias_norm in text:
-                return key
-            if alias_compact and alias_compact in compact:
-                return key
-    return ""
-
-def normalize_gpu_maker_prefs(value: Any) -> List[str]:
-    if value is None:
-        return []
-    if isinstance(value, str):
-        raw_items = [x.strip() for x in re.split(r"[,/ ]+", value) if x.strip()]
-    elif isinstance(value, list):
-        raw_items = [str(x).strip() for x in value if str(x).strip()]
-    else:
-        raw_items = [str(value).strip()]
-    out: List[str] = []
-    for raw in raw_items:
-        key = gpu_maker_normalize(raw) or normalize_text(raw)
-        if key in {"any", "all", "none", "nopref", "무관", "선호없음"}:
-            continue
-        if key and key not in out:
-            out.append(key)
-    return out
-
-def gpu_maker_label(key: str) -> str:
-    return GPU_MAKER_LABELS.get(key, key.upper())
-
-def query_model_name(query: Any) -> str:
-    q = clean_visible_text(query)
-    maker = gpu_maker_normalize(q)
-    if maker:
-        for alias in GPU_MAKER_ALIASES.get(maker, ()):
-            q = re.sub(rf"\b{re.escape(alias)}\b", " ", q, flags=re.I)
-        q = re.sub(r"\s+", " ", q).strip()
-    # Danawa's GPU results are more reliable with the actual chip model than
-    # with vendor marketing prefixes such as "NVIDIA GeForce" or "AMD Radeon".
-    model = gpu_exact_model_key(q)
-    if model:
-        match = re.match(r"(rtx|gtx|rx)(\d{3,5})(tisuper|super|ti|xtx|xt|gre)?", model, re.I)
-        if match:
-            prefix, number, modifier = match.groups()
-            suffix = {
-                "tisuper": " Ti Super", "super": " Super", "ti": " Ti",
-                "xtx": " XTX", "xt": " XT", "gre": " GRE",
-            }.get((modifier or "").lower(), "")
-            q = f"{prefix.upper()} {number}{suffix}"
-            vram = re.search(r"\b(8|12|16|20|24|32)\s*gb\b", clean_visible_text(query), re.I)
-            if vram:
-                q += f" {vram.group(1)}GB"
-    return q
 
 def danawa_category_matches(part_type: Any, category: Any) -> bool:
     ctype = normalize_text(part_type)
@@ -441,21 +323,7 @@ def danawa_candidate_valid(
         return False
     return price_sane_for_part(part_type, price, query, catalog_price)
 
-def strip_html(value: str) -> str:
-    return clean_visible_text(re.sub(r"<[^>]+>", " ", value or ""))
 
-def danawa_candidate_blocks(html: str) -> List[str]:
-    starts = [
-        m.start()
-        for m in re.finditer(
-            r"<li\b[^>]*(?:id=[\"']productItem|class=[\"'][^\"']*prod_item)",
-            html,
-            re.I,
-        )
-    ]
-    if not starts:
-        starts = [m.start() for m in re.finditer(r"<div\b[^>]+class=[\"'][^\"']*prod_main_info", html, re.I)]
-    return [html[start:starts[i + 1] if i + 1 < len(starts) else len(html)] for i, start in enumerate(starts)]
 
 def first_anchor_from_block(block: str) -> Tuple[str, str]:
     name_area = re.search(
@@ -498,21 +366,6 @@ def image_from_danawa_block(block: str, base_url: str) -> str:
                 return url
     return ""
 
-def price_from_danawa_block(block: str) -> Optional[int]:
-    hidden = re.search(r"id=[\"']min_price_[^\"']+[\"'][^>]+value=[\"'](\d+)[\"']", block, re.I)
-    if hidden:
-        price = parse_price_value(hidden.group(1))
-        if price:
-            return price
-
-    price_area = re.search(
-        r"<p\b[^>]+class=[\"'][^\"']*price_sect[^\"']*[\"'][^>]*>(.*?)</p>",
-        block,
-        re.I | re.S,
-    )
-    target = price_area.group(1) if price_area else block
-    price_match = re.search(r"(\d[\d,]{3,})(?:\s*</[^>]+>\s*)*\s*원", target, re.I)
-    return parse_price_value(price_match.group(1)) if price_match else None
 
 def parse_danawa_top_product_regex(
     html: str,
@@ -703,14 +556,6 @@ def fetch_danawa_top_product(
 # Live Danawa product browser (direct-spec screen)
 # ─────────────────────────────────────────────────────────────
 
-def normalize_browse_part_type(value: Any) -> str:
-    key = normalize_text(value)
-    aliases = {
-        "memory": "ram", "ssd": "storage", "motherboard": "mb", "mainboard": "mb",
-        "power": "psu", "chassis": "case",
-    }
-    key = aliases.get(key, key)
-    return key if key in DANAWA_BROWSE_DEFAULT_QUERIES else ""
 
 def danawa_browse_url(query: str, page: int = 1, limit: int = 40) -> str:
     """Build a standard-product results URL in Danawa's popular/recommended order."""
@@ -761,104 +606,6 @@ def danawa_product_code(value: Any) -> str:
     match = re.search(r"productItem(\d+)", str(value or ""), re.I)
     return match.group(1) if match else ""
 
-def parse_ram_metadata(text: Any) -> Dict[str, Any]:
-    raw = clean_visible_text(text)
-    lower = raw.lower()
-    result: Dict[str, Any] = {}
-    ram_type = re.search(r"\bddr\s*([45])\b", lower, re.I)
-    if ram_type:
-        result["type"] = f"DDR{ram_type.group(1)}"
-
-    capacities = [safe_int(value, 0) for value in re.findall(r"\b(\d{1,3})\s*gb\b", lower, re.I)]
-    kits = [
-        safe_int(size, 0) * safe_int(count, 0)
-        for size, count in re.findall(r"\b(\d{1,3})\s*gb\s*[x×*]\s*(\d+)\b", lower, re.I)
-    ]
-    capacity = max([value for value in capacities + kits if 4 <= value <= 512] or [0])
-    if capacity:
-        result["gb"] = capacity
-
-    speed_match = re.search(r"\bddr\s*[45]\s*[- ]?(\d{4,5})\b", lower, re.I)
-    if not speed_match:
-        speed_match = re.search(r"\b(\d{4,5})\s*(?:mhz|mt/s|mts)\b", lower, re.I)
-    speed = safe_int(speed_match.group(1), 0) if speed_match else 0
-    if 1600 <= speed <= 10000:
-        result["speed"] = speed
-    return result
-
-def capacity_mb_from_text(text: Any) -> int:
-    raw = clean_visible_text(text).lower()
-    values: List[int] = []
-    for value in re.findall(r"\b(\d+(?:\.\d+)?)\s*tb\b", raw, re.I):
-        try:
-            values.append(int(float(value) * 1000))
-        except Exception:
-            pass
-    values.extend(safe_int(value, 0) for value in re.findall(r"\b(\d{2,6})\s*gb\b", raw, re.I))
-    valid = [value for value in values if 32 <= value <= 100_000]
-    return max(valid) if valid else 0
-
-def infer_cpu_metadata(text: Any) -> Dict[str, Any]:
-    name = normalize_text(text)
-    result: Dict[str, Any] = {}
-    if "ryzen" in name or "amd" in name:
-        result["vendor"] = "AMD"
-        model = re.search(r"\b([56789]\d{3,4})(?:x3d|x|g|f)?\b", name, re.I)
-        model_number = safe_int(model.group(1), 0) if model else 0
-        if model_number >= 7000:
-            result["socket"] = "AM5"
-        elif model_number >= 1000:
-            result["socket"] = "AM4"
-    elif "intel" in name or "core" in name or "ultra" in name:
-        result["vendor"] = "Intel"
-        if "ultra" in name and re.search(r"\b[2-9]\d{2}[a-z]*\b", name):
-            result["socket"] = "LGA1851"
-        elif re.search(r"\bi[3579][ -]?(1[2-4]\d{3})[a-z]*\b", name, re.I):
-            result["socket"] = "LGA1700"
-    return result
-
-def infer_mb_metadata(text: Any) -> Dict[str, Any]:
-    name = normalize_text(text)
-    result: Dict[str, Any] = {}
-    if re.search(r"\b(?:a520|b450|b550|x470|x570)\b", name, re.I):
-        result.update({"socket": "AM4", "ram_type": "DDR4"})
-    elif re.search(r"\b(?:a620|b650|b850|x670|x870)\b", name, re.I):
-        result.update({"socket": "AM5", "ram_type": "DDR5"})
-    elif re.search(r"\b(?:h610|b660|b760|z690|z790)\b", name, re.I):
-        result.update({"socket": "LGA1700", "ram_type": "DDR4" if "ddr4" in name else "DDR5"})
-    elif re.search(r"\b(?:b860|z890)\b", name, re.I):
-        result.update({"socket": "LGA1851", "ram_type": "DDR5"})
-    return result
-
-def infer_gpu_vram(text: Any) -> int:
-    values = [safe_int(value, 0) for value in re.findall(r"\b(\d{1,2})\s*gb\b", clean_visible_text(text), re.I)]
-    valid = [value for value in values if 4 <= value <= 64]
-    return max(valid) if valid else 0
-
-def infer_psu_watt(text: Any) -> int:
-    values = [safe_int(value, 0) for value in re.findall(r"\b(\d{3,4})\s*w\b", clean_visible_text(text), re.I)]
-    valid = [value for value in values if 300 <= value <= 3000]
-    return max(valid) if valid else 0
-
-def infer_hdd_rpm(text: Any) -> int:
-    match = re.search(r"\b(5400|5900|7200)\s*(?:rpm)?\b", clean_visible_text(text), re.I)
-    return safe_int(match.group(1), 0) if match else 0
-
-def infer_brand(text: Any, fallback: str = "") -> str:
-    name = clean_visible_text(text)
-    if not name:
-        return fallback
-    known = [
-        "ASUS", "ASRock", "AMD", "Antec", "Corsair", "Crucial", "ESSENCORE", "FSP",
-        "GIGABYTE", "G.SKILL", "Intel", "Kingston", "KLEVV", "Lian Li", "Lexar", "MSI",
-        "NVIDIA", "NZXT", "PALIT", "Samsung", "Seagate", "Seasonic", "SK hynix",
-        "Toshiba", "Western Digital", "WD", "ZOTAC", "마이크로닉스", "이엠텍", "제이씨현",
-    ]
-    lower = name.lower()
-    for brand in known:
-        if brand.lower() in lower:
-            return brand
-    return name.split()[0] if name.split() else fallback
 
 def performance_reference_for_danawa_product(part_type: Any, product_name: Any) -> Optional[Dict[str, Any]]:
     """Use a known exact model/spec profile; unrelated model numbers are not benchmarks."""
@@ -1116,8 +863,7 @@ def parse_compuzone_browse_products(html: str, search_url: str, part_type: str, 
         if not market_component_name_valid(ctype, name):
             continue
         image_area = re.search(r'<a\b[^>]*class=["\']prd_info_main_img["\'][^>]*>(.*?)</a>', block, re.I | re.S)
-        image_tag = re.search(r'<img\b[^>]*>', image_area.group(1), re.I | re.S) if image_area else None
-        image = absolute_image_url(html_attribute(image_tag.group(0), "src"), url) if image_tag else ""
+        image = image_from_danawa_block(image_area.group(1), url) if image_area else ""
         spec_area = re.search(r'<div\b[^>]*class=["\']prd_subTxt["\'][^>]*>(.*?)</div>', block, re.I | re.S)
         spec = strip_html(spec_area.group(1)) if spec_area else ""
         item = enrich_danawa_browse_product(ctype, code, name, price, url, image, DANAWA_BROWSE_DEFAULT_QUERIES[ctype], pos + 1, spec)
@@ -1155,7 +901,7 @@ def _market_fetch_html(url: str, provider: str, timeout: float = 8.0) -> str:
     return raw.decode(charset, errors="replace")
 
 
-def _market_source_page(part_type: str, query: str, page: int, limit: int, provider: str, refresh: bool = False, timeout: float = 8.0) -> Dict[str, Any]:
+def _market_source_page(part_type: str, query: str, page: int, limit: int, provider: str, refresh: bool = False, timeout: float = 8.0, persist: bool = True) -> Dict[str, Any]:
     key = (part_type, normalize_text(query), page, limit, provider)
     now = datetime.utcnow()
     cached = MARKET_BROWSE_CACHE.get(key)
@@ -1190,7 +936,8 @@ def _market_source_page(part_type: str, query: str, page: int, limit: int, provi
         if len(MARKET_BROWSE_CACHE) > 240:
             oldest = min(MARKET_BROWSE_CACHE, key=lambda k: MARKET_BROWSE_CACHE[k]["fetched_at"])
             MARKET_BROWSE_CACHE.pop(oldest, None)
-        remember_products(part_type, items)
+        if persist:
+            remember_products(part_type, items)
         return payload
     except Exception:
         if cached and cached["payload"].get("items"):
@@ -1201,7 +948,7 @@ def _market_source_page(part_type: str, query: str, page: int, limit: int, provi
         return {**base, "status": "unavailable", "error": ("다나와" if provider == "danawa" else "컴퓨존") + " 상품 목록을 불러오지 못했습니다."}
 
 
-def market_products_response(part_type: Any, query: Any = "", page: Any = 1, limit: Any = 40, refresh: Any = False, source: Any = "all") -> Dict[str, Any]:
+def market_products_response(part_type: Any, query: Any = "", page: Any = 1, limit: Any = 40, refresh: Any = False, source: Any = "all", persist: bool = True) -> Dict[str, Any]:
     ctype = normalize_browse_part_type(part_type)
     provider = normalize_text(source) or "all"
     if not ctype or provider not in {"all", "danawa", "compuzone"}:
@@ -1214,7 +961,7 @@ def market_products_response(part_type: Any, query: Any = "", page: Any = 1, lim
     force = refresh is True or normalize_text(refresh) in {"1", "true", "yes"}
     providers = ["danawa", "compuzone"] if provider == "all" else [provider]
     with ThreadPoolExecutor(max_workers=len(providers)) as executor:
-        futures = [executor.submit(_market_source_page, ctype, query, page, 20 if p == "compuzone" else limit, p, force) for p in providers]
+        futures = [executor.submit(_market_source_page, ctype, query, page, 20 if p == "compuzone" else limit, p, force, 8.0, persist) for p in providers]
         results = [future.result() for future in futures]
     items = []
     # Interleave retailers without treating two different SKUs as interchangeable.
@@ -1276,143 +1023,6 @@ def fetch_market_top_product(query: Any, part_type: Any = "", timeout: float = 2
     best.update(matched_by="market_exact_model", search_url=next((r["source_url"] for r in results if r["provider"] in best["price_source"]), ""))
     return best
 
-def normalize_product_url(url: Any) -> str:
-    raw = str(url or "").strip()
-    if not raw:
-        return ""
-    try:
-        parts = urlsplit(raw)
-    except Exception:
-        return raw.lower()
-
-    scheme = (parts.scheme or "https").lower()
-    netloc = parts.netloc.lower()
-    if netloc.startswith("www."):
-        netloc = netloc[4:]
-
-    path = re.sub(r"/+$", "", parts.path or "")
-    query_items = []
-    for key, value in parse_qsl(parts.query, keep_blank_values=True):
-        k = key.lower()
-        if k.startswith("utm_") or k in {"ref", "ref_src", "source", "spm", "gclid", "fbclid", "yclid", "igshid"}:
-            continue
-        query_items.append((key, value))
-    query = urlencode(sorted(query_items), doseq=True)
-    return urlunsplit((scheme, netloc, path, query, ""))
-
-def model_tokens(v: Any) -> set:
-    t = canonical_name(v)
-    patterns = [
-        r"\b(?:rtx|gtx|rx)\s*\d{3,5}\b",
-        r"\bultra\s*[3579]?\s*\d{3}[a-z]*\b",
-        r"\bi[3579][-\s]?\d{4,5}[a-z]*\b",
-        r"\b(?:a|b|h|x|z)\d{3,4}\b",
-        r"\bddr[45]\b",
-        r"\b\d+\s*(?:gb|tb|w)\b",
-        r"\b\d{4,5}x3d\b",
-        r"\b\d{3}[a-z]\b",
-        r"\b\d{4,5}[a-z]{0,3}\b",
-    ]
-    found = []
-    for pattern in patterns:
-        found.extend(re.findall(pattern, t))
-    return {re.sub(r"[^a-z0-9]", "", x) for x in found}
-
-
-def gpu_exact_model_key(v: Any) -> str:
-    t = canonical_name(v).replace("-", " ")
-    m = re.search(
-        r"\b(rtx|gtx|rx)\s*([0-9]{3,5})\s*(ti\s*super|super|ti|xtx|xt|gre)?\b",
-        t,
-        re.I,
-    )
-    if not m:
-        return ""
-    prefix, number, modifier = m.group(1).lower(), m.group(2), re.sub(r"\s+", "", (m.group(3) or "").lower())
-    return f"{prefix}{number}{modifier}"
-
-def gpu_model_number_from_key(key: str) -> str:
-    m = re.search(r"\d{3,5}", key or "")
-    return m.group(0) if m else ""
-
-def gpu_model_number_mentions(v: Any) -> set:
-    t = canonical_name(v)
-    return {number for number in COMMON_GPU_MODEL_NUMBERS if re.search(rf"(?<!\d){re.escape(number)}(?!\d)", t)}
-
-def compatible_gpu_price_name(catalog_name: Any, price_name: Any) -> bool:
-    catalog_key = gpu_exact_model_key(catalog_name)
-    price_key = gpu_exact_model_key(price_name)
-    if not catalog_key:
-        return True
-    if not price_key or catalog_key != price_key:
-        return False
-    target_number = gpu_model_number_from_key(catalog_key)
-    extra_numbers = gpu_model_number_mentions(price_name) - ({target_number} if target_number else set())
-    requested_vram = re.search(r"\b(\d+)\s*gb\b", canonical_name(catalog_name))
-    listed_vram = re.search(r"\b(\d+)\s*gb\b", canonical_name(price_name))
-    if requested_vram and (not listed_vram or requested_vram.group(1) != listed_vram.group(1)):
-        return False
-    return not extra_numbers
-
-def variant_tokens(v: Any) -> set:
-    words = set(canonical_name(v).replace("-", " ").split())
-    return words & {"super", "ti", "xtx", "xt", "gre", "x3d", "kf", "f", "k", "u"}
-
-def compatible_price_name(catalog_name: Any, price_name: Any) -> bool:
-    """Reject a nearby model or a cheaper capacity/edition of the requested item.
-
-    Retail names may translate brands, so compare the model and material specs
-    instead of requiring every word in the English catalog name to appear.
-    """
-    requested = canonical_name(catalog_name)
-    listed = canonical_name(price_name)
-    if not requested or not listed:
-        return False
-    if gpu_exact_model_key(catalog_name):
-        return compatible_gpu_price_name(catalog_name, price_name)
-
-    def identifiers(text: str) -> set:
-        text = re.sub(r"\bi[3579][-\s]*", " ", text)
-        text = re.sub(r"\b(?:ddr\s*[45]|gddr\s*[567]|gen\s*[345]|pcie\s*[345]|atx)\b", " ", text)
-        text = re.sub(r"\b\d+(?:\.\d+)?\s*(?:gb|tb|w|mhz|mt/s)\b", " ", text)
-        # CPU numeric models, motherboard chipsets, SSD/case/PSU model codes.
-        return set(re.findall(r"\b(?:[a-z]{1,10}\d+[a-z0-9]*|\d{3,5}[a-z]{0,3}(?:3d)?)\b", text))
-
-    requested_models = identifiers(requested)
-    listed_models = identifiers(listed)
-    if requested_models and not requested_models.issubset(listed_models):
-        return False
-
-    requested_ram = parse_ram_metadata(requested)
-    if requested_ram.get("type"):
-        listed_ram = parse_ram_metadata(listed)
-        for spec in ("type", "gb", "speed"):
-            if requested_ram.get(spec) and requested_ram[spec] != listed_ram.get(spec):
-                return False
-    else:
-        requested_capacity = capacity_mb_from_text(requested)
-        if requested_capacity and requested_capacity != capacity_mb_from_text(listed):
-            return False
-
-    watts = re.search(r"\b(\d{3,4})\s*w\b", requested)
-    if watts and not re.search(rf"\b{watts.group(1)}\s*w\b", listed):
-        return False
-
-    # Editions change price even when the principal model number is shared.
-    edition_groups = [
-        {"pro", "evo", "plus"}, {"home", "business"},
-        {"fpp", "dsp", "oem", "esd"}, {"bronze", "gold", "platinum", "titanium"},
-    ]
-    for editions in edition_groups:
-        wanted = set(re.findall(r"\b[a-z]+\b", requested)) & editions
-        found = set(re.findall(r"\b[a-z]+\b", listed)) & editions
-        if wanted and wanted != found:
-            return False
-    if "windows" in requested:
-        version = re.search(r"windows\s*(\d+)", requested)
-        if version and not re.search(rf"(?:windows|윈도우)\s*{version.group(1)}\b", listed):
-            return False
-    return True
 
 def resolution_key(value: Any) -> str:
     s = normalize_text(value)
@@ -2774,7 +2384,6 @@ def has_average_hierarchy_benchmark(part: Dict[str, Any]) -> bool:
 # ─────────────────────────────────────────────────────────────
 
 
-
 # Only workload priors, not FPS observations. Actual measured rows are loaded
 # from game_benchmarks.json; uncertainty is reported when interpolation is needed.
 for _game, _weight, _low1 in [
@@ -3374,7 +2983,6 @@ def storage_candidates_for(storage_pool: List[Dict[str, Any]], tier: str, tier_b
         tier_fit = 1.0 - min(1.0, abs(tier_rank(storage.get("tier")) - TIER_RANK[tier]) / 2.0)
         return 0.45 * price_fit + 0.40 * cap_fit + 0.15 * tier_fit
     return sorted(storage_pool, key=storage_score, reverse=True)[:3]
-
 
 
 def normalize_work_profile(value: Any) -> str:
@@ -4142,9 +3750,136 @@ def catalog_response() -> Dict[str, Any]:
         retail = saved_products(part_type)
         known = {part["id"] for part in response[key]}
         response[key].extend(part for part in retail if part["id"] not in known)
+        known.update(part["id"] for part in retail)
+        response[key].extend(part for part in imported_products(part_type) if part.get("id") not in known)
     response["catalog_sizes"] = {kind: len(response[key]) for kind, key in catalog_keys.items()}
     response["reference_catalog_sizes"] = {kind: len(items) for kind, items in CATALOGS.items()}
     return response
+
+
+# Product imports are held only long enough for a human to inspect and confirm.
+IMPORT_PREVIEWS: Dict[str, Tuple[float, Dict[str, Any]]] = {}
+
+
+def import_part_type(name: str, spec: str = "") -> str:
+    text = normalize_text(name + " " + spec[:400])
+    patterns = (
+        ("gpu", r"\b(?:geforce|radeon|rtx\s*\d{4}|gtx\s*\d{4}|rx\s*\d{4})\b|그래픽카드"),
+        ("ram", r"\b(?:ddr[45]|dimm|memory)\b|메모리"),
+        ("mb", r"\b(?:motherboard|mainboard|b650|b850|b760|z790|z890|x870)\b|메인보드"),
+        ("psu", r"\b(?:power supply|psu|[5-9]\d{2}w|1\d{3}w)\b|파워서플라이"),
+        ("storage", r"\b(?:ssd|nvme|990\s*pro|sn850|p41)\b"),
+        ("hdd", r"\b(?:hdd|hard disk)\b"),
+        ("cpu", r"\b(?:ryzen|intel core|core ultra|processor)\b|프로세서"),
+    )
+    for part_type, pattern in patterns:
+        if re.search(pattern, text, re.I):
+            return part_type
+    return ""
+
+
+def normalize_import_product(raw: Dict[str, Any], requested_type: str = "") -> Dict[str, Any]:
+    url = supported_product_url(raw.get("url"))
+    name = clean_visible_text(raw.get("name"))[:300]
+    if not url or not name or len(name) < 5:
+        raise ValueError("Product information was incomplete")
+    detected = import_part_type(name, str(raw.get("spec_text") or ""))
+    requested = normalize_browse_part_type(requested_type)
+    if detected and requested and detected != requested:
+        raise ValueError("Product category does not match the selected component")
+    part_type = detected or requested
+    if not part_type or not market_component_name_valid(part_type, name):
+        raise ValueError("Product category could not be verified")
+    provider, code = product_page_key(url)
+    price = safe_int(raw.get("price"), 0)
+    if not 1000 <= price <= 20_000_000:
+        price = 0
+    item = enrich_danawa_browse_product(part_type, code, name, price, url,
+                                        retailer_image_url(raw.get("image_url")), part_type, 0,
+                                        clean_visible_text(raw.get("spec_text"))[:2000])
+    item.update(id=f"{provider}_{part_type}_{code}", shop="Compuzone" if provider == "compuzone" else "Danawa",
+                component_type=part_type, source_url=url, spec_text=clean_visible_text(raw.get("spec_text"))[:2000],
+                price_source=f"{provider}_import", price_status="verified" if price else "unavailable",
+                price_checked_at=datetime.utcnow().isoformat(timespec="seconds") + "Z" if price else "",
+                tags=["user_imported"])
+    if raw.get("brand"):
+        item["brand"] = clean_visible_text(raw["brand"])[:80]
+    item["manufacturer"] = item.get("brand") or item.get("vendor") or infer_brand(name)
+    item["product_url"] = url
+    return item
+
+
+def import_duplicate(old: Dict[str, Any], new: Dict[str, Any]) -> bool:
+    if old.get("id") == new.get("id"):
+        return True
+    if product_page_key(old.get("url")) and product_page_key(old.get("url")) == product_page_key(new.get("url")):
+        return True
+    old_brand = normalize_text(old.get("manufacturer") or infer_brand(old.get("name")))
+    new_brand = normalize_text(new.get("manufacturer") or infer_brand(new.get("name")))
+    return bool(old_brand and old_brand == new_brand and canonical_name(old.get("name")) == canonical_name(new.get("name"))
+                and compatible_price_name(old.get("name"), new.get("name"))
+                and compatible_price_name(new.get("name"), old.get("name")))
+
+
+def stage_import(item: Dict[str, Any]) -> Dict[str, Any]:
+    now = time.monotonic()
+    for token, (expires, _) in list(IMPORT_PREVIEWS.items()):
+        if expires < now:
+            IMPORT_PREVIEWS.pop(token, None)
+    token = secrets.token_urlsafe(24)
+    IMPORT_PREVIEWS[token] = (now + 600, item)
+    return {"token": token, "product": item}
+
+
+def import_preview_response(body: Dict[str, Any]) -> Dict[str, Any]:
+    url = supported_product_url(body.get("url"))
+    if not url:
+        return {"ok": False, "error": "Unsupported product URL"}
+    try:
+        raw = fetch_product_page(url)
+        item = normalize_import_product(raw, body.get("type") or "")
+        return {"ok": True, **stage_import(item)}
+    except (OSError, ValueError, LookupError) as error:
+        return {"ok": False, "error": str(error) if isinstance(error, ValueError) else "Could not retrieve this product"}
+
+
+def import_search_response(part_type: Any, query: Any, source: Any = "all") -> Dict[str, Any]:
+    ctype = normalize_browse_part_type(part_type)
+    name = clean_visible_text(query)[:120]
+    if not ctype or len(name) < 3 or supported_product_url(name):
+        return {"ok": False, "error": "Enter a product name to search online", "candidates": []}
+    result = market_products_response(ctype, name, 1, 40, False, source, persist=False)
+    candidates = []
+    wanted_brand = infer_brand(name)
+    for raw in result.get("items", []):
+        if not supported_product_url(raw.get("url")) or not compatible_price_name(name, raw.get("name")):
+            continue
+        if wanted_brand and normalize_text(wanted_brand) != normalize_text(infer_brand(raw.get("name"))):
+            continue
+        try:
+            candidates.append(stage_import(normalize_import_product(raw, ctype)))
+        except ValueError:
+            continue
+        if len(candidates) >= 20:
+            break
+    return {"ok": result.get("ok", False), "status": result.get("status"), "candidates": candidates,
+            "error": result.get("error") or ""}
+
+
+def import_commit_response(body: Dict[str, Any]) -> Dict[str, Any]:
+    token = str(body.get("token") or "")
+    staged = IMPORT_PREVIEWS.get(token)
+    if not staged or staged[0] < time.monotonic():
+        return {"ok": False, "error": "Product preview expired; search again"}
+    item = staged[1]
+    for old in [*imported_products(item["component_type"]), *saved_products(item["component_type"]),
+                *CATALOGS.get(item["component_type"], [])]:
+        if import_duplicate(old, item):
+            return {"ok": True, "created": False, "product": old}
+    saved, created = save_imported_product(item, import_duplicate)
+    if created:
+        IMPORT_PREVIEWS.pop(token, None)
+    return {"ok": True, "created": created, "product": saved}
 
 def safe_external_url(url: Any) -> str:
     raw = str(url or "").strip()
@@ -4155,21 +3890,54 @@ def safe_external_url(url: Any) -> str:
         return ""
     return raw
 
-def resolve_part_image_url(name: Any, part_type: Any = "") -> str:
+
+def saved_part_image_urls(name: Any, part_type: Any, product_url: str = "") -> List[str]:
+    ctype = normalize_browse_part_type(part_type)
+    sku = product_page_key(product_url)
+    requested = image_name_tokens(name, ctype)
+    exact, matched = [], []
+    for item in saved_products(ctype):
+        url = retailer_image_url(item.get("image_url"))
+        if not url:
+            continue
+        listed_name = item.get("product_name") or item.get("name")
+        if sku:
+            if product_page_key(item.get("url")) == sku:
+                exact.append(url)
+        elif canonical_name(listed_name) == canonical_name(name):
+            exact.append(url)
+        elif requested and any(re.search(r"\d", token) for token in requested):
+            listed = image_name_tokens(listed_name, ctype)
+            if requested.issubset(listed):
+                if ctype == "gpu" and gpu_exact_model_key(name) != gpu_exact_model_key(listed_name):
+                    continue
+                if ctype == "storage" and (requested & {"pro", "evo", "plus"}) != (listed & {"pro", "evo", "plus"}):
+                    continue
+                # Capacity/model suffix tokens must agree, even when the
+                # retailer appends distributor or package descriptions.
+                capacities = lambda tokens: {t for t in tokens if re.fullmatch(r"\d+(?:gb|tb|w)|kit\d+x\d+", t)}
+                if capacities(requested) == capacities(listed):
+                    matched.append(url)
+    return sorted(set(exact or matched), key=lambda url: (image_source_priority(url), url))
+
+
+def resolve_part_image_url(name: Any, part_type: Any = "", product_url: str = "", excluded=()) -> str:
     clean_name = clean_visible_text(name)
     if not clean_name:
         return ""
-    key = (normalize_text(part_type), canonical_name(clean_name))
-    if IMAGE_URL_CACHE.get(key):
-        return IMAGE_URL_CACHE[key]
-    # Product photos do not expire when their saved price does. Avoid another
-    # retailer search (and its price-validation filters) for an already seen SKU.
-    for item in saved_products(normalize_browse_part_type(part_type)):
-        if canonical_name(item.get("product_name") or item.get("name")) == key[1]:
-            image_url = retailer_image_url(item.get("image_url"))
-            if image_url:
-                IMAGE_URL_CACHE[key] = image_url
-                return image_url
+    key = (normalize_text(part_type), canonical_name(clean_name), product_page_key(product_url))
+    cached = IMAGE_URL_CACHE.get(key)
+    candidates = saved_part_image_urls(clean_name, part_type, product_url)
+    if cached:
+        candidates.append(cached)
+    for url in sorted(set(candidates), key=lambda value: (image_source_priority(value), value)):
+        if url not in excluded:
+            IMAGE_URL_CACHE[key] = url
+            return url
+    # A known SKU is recovered from its own sales page in send_part_image.
+    # Do not replace it with another product returned by a price search.
+    if product_page_key(product_url) or excluded:
+        return ""
     try:
         live = fetch_market_top_product(clean_name, part_type, timeout=3.0)
         image_url = retailer_image_url((live or {}).get("image_url"))
@@ -4196,12 +3964,45 @@ def placeholder_svg(name: Any) -> bytes:
 def send_part_image(handler: BaseHTTPRequestHandler, params: Dict[str, str]) -> None:
     name = params.get("name") or ""
     part_type = params.get("type") or ""
+    product_url = params.get("product_url") or ""
     supplied_url = retailer_image_url(params.get("image_url"))
-    result = fetch_product_image(supplied_url) if supplied_url else None
+    if supplied_url and (product_page_key(supplied_url) or supplied_url == retailer_image_url(product_url)):
+        supplied_url = ""
+    candidates = saved_part_image_urls(name, part_type, product_url)
+    if supplied_url:
+        candidates.append(supplied_url)
+    result = None
+    browser_fallback_url = ""
+    tried = set()
+    for url in sorted(set(candidates), key=lambda value: (image_source_priority(value), value))[:3]:
+        tried.add(url)
+        result = fetch_product_image(url)
+        if result:
+            break
+        if not browser_fallback_url:
+            browser_fallback_url = url
     if result is None:
-        resolved_url = resolve_part_image_url(name, part_type)
-        if resolved_url and resolved_url != supplied_url:
+        resolved_url = resolve_part_image_url(name, part_type, product_url, tried)
+        if resolved_url and resolved_url not in tried:
+            tried.add(resolved_url)
             result = fetch_product_image(resolved_url)
+            if not result and not browser_fallback_url:
+                browser_fallback_url = resolved_url
+    if result is None and product_page_key(product_url):
+        recovered_url = fetch_product_page_image(product_url)
+        if recovered_url and recovered_url not in tried:
+            result = fetch_product_image(recovered_url)
+            if result:
+                IMAGE_URL_CACHE[(normalize_text(part_type), canonical_name(name), product_page_key(product_url))] = recovered_url
+            elif not browser_fallback_url:
+                browser_fallback_url = recovered_url
+    if result is None and browser_fallback_url and re.search(r"\.(?:jpe?g|png|gif|webp|avif)$", urlparse(browser_fallback_url).path, re.I):
+        handler.send_response(302)
+        handler.send_header("Location", browser_fallback_url)
+        handler.send_header("Cache-Control", "no-store")
+        handler.send_header("Content-Length", "0")
+        handler.end_headers()
+        return
     data, content_type = result if result else (placeholder_svg(name), "image/svg+xml; charset=utf-8")
     handler.send_response(200)
     handler.send_header("Content-Type", content_type)

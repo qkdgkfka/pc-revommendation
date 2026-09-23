@@ -1,7 +1,11 @@
 node_modules/
 __pycache__/
+*.py[cod]
 .DS_Store
 .env
+.venv/
+venv/
+.gjc/
+*.log
 data/market_cache.json
-data/market_cache.tmp
-
+data/*.tmp

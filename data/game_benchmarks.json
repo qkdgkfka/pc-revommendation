@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
-  "collected_at": "2026-09-15T07:16:35.946097+00:00",
+  "collected_at": "2026-09-18T02:01:48.856620+00:00",
   "sources": [
     {
       "url": "https://gamersnexus.net/gpus/nvidia-selling-lies-rtx-5070-founders-edition-review-benchmarks",
-      "html_sha256": "2ab2acad1f09788776e87ab7ae327ecea0c319b009b54ed96f7e68bddbe33b49"
+      "html_sha256": "c2e8ffc1c0fbf3c46d2474c56ab8044eecff11bc2e83c3f9248d1ddb1b3f0832"
     },
     {
       "url": "https://geekawhat.com/nvidia-geforce-rtx-5070-review/",
-      "html_sha256": "3cb637acffb768fa466107f6aa5ec62a62bb91623c443a615b6483fa940b1fdf"
+      "html_sha256": "ec515ad4e8c9cf840de9ae2b1cfc97c0583e358195ca87e9d0009fc0be339905"
     }
   ],
   "measurements": [
