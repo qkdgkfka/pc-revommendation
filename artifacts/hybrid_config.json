@@ -9,16 +9,18 @@
   },
   "db_summary": {
     "loaded": true,
-    "components": 124,
-    "prices": 143,
+    "components": 254,
+    "prices": 1115,
     "benchmarks": 144,
     "by_type": {
-      "CPU": 22,
-      "GPU": 72,
-      "MB": 2,
-      "PSU": 8,
-      "RAM": 12,
-      "STORAGE": 8
+      "CASE": 2,
+      "CPU": 58,
+      "GPU": 121,
+      "HDD": 1,
+      "MB": 23,
+      "PSU": 13,
+      "RAM": 16,
+      "STORAGE": 20
     }
   },
   "benchmark_summary": {

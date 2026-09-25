@@ -81,6 +81,9 @@ class MarketplaceAvailabilityTests(unittest.TestCase):
         server.MARKET_BROWSE_CACHE.clear()
         self.persist = patch.object(server, 'remember_products')
         self.persist.start()
+        empty_saved = patch.object(server, 'saved_products', return_value=[])
+        empty_saved.start()
+        self.addCleanup(empty_saved.stop)
 
     def tearDown(self):
         self.persist.stop()

@@ -72,3 +72,24 @@ test('a price lookup endpoint placeholder does not erase a real product photo', 
   assert.equal(context.bestProductImageUrl('https://img.danuri.io/4070.jpg', '/api/part-image?name=RTX4070'),
     'https://img.danuri.io/4070.jpg');
 });
+
+
+test('server observation timestamps are visible on confirmed quotes', () => {
+  const result = context.priceProvenance({price:296980, price_status:'verified',
+    price_source:'danawa_live', scraped_at:'2026-09-24T14:00:00Z'});
+  assert.equal(result.status, 'verified');
+  assert.match(result.text, /9[.]\s*24/);
+});
+
+test('a successful price refresh clears stale flags and retains the observed time', () => {
+  const target = {id:'test-cpu', name:'Intel Core i5-14600KF', price:300000,
+    stale:true, price_stale:true, price_status:'stale', price_checked_at:'2026-09-20T10:00:00Z'};
+  const original = context.findCatalogItemById;
+  context.findCatalogItemById = () => target;
+  try {
+    context.applyPriceResult({id:'test-cpu', price:296980, price_status:'verified',
+      price_source:'danawa_live', verified:true, scraped_at:'2026-09-24T14:00:00Z'});
+    assert.equal(context.priceProvenance(target).status, 'verified');
+    assert.match(context.priceProvenance(target).text, /9[.]\s*24/);
+  } finally { context.findCatalogItemById = original; }
+});

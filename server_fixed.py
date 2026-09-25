@@ -27,6 +27,8 @@ from datetime import datetime, timedelta
 from html import escape, unescape
 import json
 import math
+import logging
+from http.client import HTTPException
 import random
 import re
 from retailer_parsing import danawa_candidate_blocks, price_from_danawa_block
@@ -880,7 +882,7 @@ def parse_compuzone_browse_products(html: str, search_url: str, part_type: str, 
 
 def market_component_name_valid(part_type: str, name: str) -> bool:
     lower = normalize_text(name)
-    if any(token in lower for token in ("중고", "리퍼", "refurb", "노트북용", "sodimm", "so-dimm")):
+    if any(token in lower for token in ("중고", "리퍼", "refurb", "노트북", "sodimm", "so-dimm")):
         return False
     if part_type == "cpu":
         return not any(token in lower for token in ("조립pc", "본체", "데스크탑", "노트북", "브라켓"))
@@ -891,6 +893,45 @@ def market_component_name_valid(part_type: str, name: str) -> bool:
         if part_type in {"storage", "hdd"} and any(token in lower for token in ("케이스", "enclosure", "usb")):
             return False
     return not danawa_name_rejected(part_type, name, DANAWA_BROWSE_DEFAULT_QUERIES.get(part_type, ""))
+
+
+def retail_quote_valid(part_type: str, query: str, item: Dict[str, Any]) -> bool:
+    """Validate an observed retail SKU without comparing it to an old estimate."""
+    name = item.get("product_name") or item.get("name") or ""
+    url = item.get("url") or ""
+    if not (1000 <= safe_int(item.get("price"), 0) <= 20_000_000
+            and market_product_url(url)
+            and market_component_name_valid(part_type, name)
+            and compatible_price_name(query, name)):
+        return False
+    params = dict(parse_qsl(urlsplit(url).query))
+    if "compuzone" in (urlparse(url).hostname or ""):
+        category = params.get("MediumDivNo")
+        return not category or category == COMPUZONE_CATEGORY_IDS.get(part_type)
+    return danawa_url_category_matches(part_type, url) and not danawa_url_rejected(part_type, url)
+
+
+def saved_market_page(part_type: str, query: str, page: int, limit: int, provider: str, verified_only: bool = False) -> Dict[str, Any]:
+    """A retailer outage may reuse observed prices, keeping their original age."""
+    rows = []
+    for item in saved_products(part_type):
+        if verified_only and (not item.get("image_checked_at") or not item.get("price_verified")):
+            continue
+        item_provider = "compuzone" if "compuzone" in (urlparse(item.get("url", "")).hostname or "") else "danawa"
+        if item_provider != provider or not market_component_name_valid(part_type, item["name"]):
+            continue
+        if query:
+            if model_tokens(query) or re.search(r"\d\s*(?:GB|TB)\b", query, re.I):
+                if not compatible_price_name(query, item["name"]):
+                    continue
+            elif not all(token in canonical_name(item["name"]) for token in canonical_name(query).split()):
+                continue
+        rows.append(item)
+    start = (page - 1) * limit
+    items = rows[start:start + limit]
+    status = "stale" if any(item.get("price_stale") for item in items) else "cached"
+    return {"items": items, "status": status if items else "unavailable",
+            "total": len(rows), "has_more": start + limit < len(rows), "cached": True}
 
 
 def _market_fetch_html(url: str, provider: str, timeout: float = 8.0) -> str:
@@ -939,12 +980,16 @@ def _market_source_page(part_type: str, query: str, page: int, limit: int, provi
         if persist:
             remember_products(part_type, items)
         return payload
-    except Exception:
+    except (OSError, ValueError, HTTPException) as error:
+        logging.getLogger(__name__).warning("Retailer %s request failed (%s): %s", provider, type(error).__name__, error)
         if cached and cached["payload"].get("items"):
             old = cached["payload"]
             items = [{**item, "price_status": "stale", "price_stale": True, "price_verified": False,
                       "price_source": provider + "_stale"} for item in old["items"]]
             return {**old, "status": "stale", "items": items, "cached": True, "error": "판매처 응답 지연으로 이전 확인 가격을 표시합니다."}
+        saved = saved_market_page(part_type, query, page, limit, provider)
+        if saved["items"]:
+            return {**base, **saved, "error": "판매처 연결 지연으로 저장된 확인 가격을 표시합니다."}
         return {**base, "status": "unavailable", "error": ("다나와" if provider == "danawa" else "컴퓨존") + " 상품 목록을 불러오지 못했습니다."}
 
 
@@ -967,13 +1012,23 @@ def market_products_response(part_type: Any, query: Any = "", page: Any = 1, lim
     # Interleave retailers without treating two different SKUs as interchangeable.
     for index in range(max((len(result["items"]) for result in results), default=0)):
         items.extend(result["items"][index] for result in results if index < len(result["items"]))
+    # Collected verified SKUs remain selectable beyond the retailer's first page.
+    known = {item["id"] for item in items}
+    stored_pages = [saved_market_page(ctype, query, page, limit, p, verified_only=True) for p in providers]
+    for stored in stored_pages:
+        for item in stored["items"]:
+            if item["id"] not in known:
+                items.append(item)
+                known.add(item["id"])
     statuses = [result["status"] for result in results]
-    status = "live" if "live" in statuses else "stale" if "stale" in statuses else "empty" if "empty" in statuses else "unavailable"
+    if any(stored["items"] for stored in stored_pages):
+        statuses.append("cached")
+    status = "live" if "live" in statuses else "cached" if "cached" in statuses else "stale" if "stale" in statuses else "empty" if "empty" in statuses else "unavailable"
     return {
         "ok": status != "unavailable", "status": status, "type": ctype,
         "query": query, "query_used": query or DANAWA_BROWSE_DEFAULT_QUERIES[ctype],
         "page": page, "limit": limit, "items": items, "total": None,
-        "has_more": any(result["has_more"] for result in results),
+        "has_more": any(result["has_more"] for result in results + stored_pages),
         "source": provider, "source_status": {result["provider"]: result["status"] for result in results},
         "source_urls": {result["provider"]: result["source_url"] for result in results},
         "cached": bool(results) and all(result["cached"] for result in results),
@@ -1007,14 +1062,14 @@ def fetch_market_top_product(query: Any, part_type: Any = "", timeout: float = 2
         results = list(executor.map(lambda p: _market_source_page(ctype, search_query, 1, 20, p, False, timeout), providers))
     matches = []
     for response in results:
-        if response.get("status") != "live":
+        if response.get("status") not in {"live", "cached"}:
             continue
         for item in response["items"]:
             if not compatible_price_name(query, item["name"]):
                 continue
             if prefs and gpu_maker_normalize(item["name"]) not in prefs:
                 continue
-            if not price_sane_for_part(ctype, item["price"], query, catalog_price):
+            if not retail_quote_valid(ctype, query, item):
                 continue
             matches.append(item)
     if not matches:
@@ -1144,6 +1199,7 @@ def summarize_part(part: Dict[str, Any], part_type: str) -> Dict[str, Any]:
     value_per_10000 = 0.0 if price <= 0 else round(performance_index / max(1.0, price / 10000.0), 3)
     out = {
         "id": part.get("id"),
+        "performance_ref_id": part.get("performance_ref_id") or part.get("id"),
         "name": part.get("name"),
         "product_name": (part.get("product_name") if verified_gpu_listing else price_info.get("name")) or part.get("product_name") or part.get("name"),
         "price": price,
@@ -1158,9 +1214,9 @@ def summarize_part(part: Dict[str, Any], part_type: str) -> Dict[str, Any]:
         "performance_index": round(performance_index, 1),
         "performance_metric": performance_metric,
         "value_per_10000krw": value_per_10000,
-        "scraped_at": (part.get("scraped_at") if verified_gpu_listing else price_info.get("scraped_at")) or part.get("scraped_at"),
+        "scraped_at": ((part.get("price_checked_at") or part.get("scraped_at")) if verified_gpu_listing else price_info.get("scraped_at")) or part.get("scraped_at"),
         "verified": bool(verified_gpu_listing or price_info),
-        "price_status": "verified" if verified_gpu_listing or price_info else ("estimated" if price > 0 else "unavailable"),
+        "price_status": (part.get("price_status") or "verified") if verified_gpu_listing else "verified" if price_info else ("estimated" if price > 0 else "unavailable"),
     }
     if part_type == "cpu":
         out.update({
@@ -1482,13 +1538,13 @@ def upsert_component(conn: sqlite3.Connection, part_type: str, name: str) -> int
     conn.commit()
     return int(row["id"] if isinstance(row, sqlite3.Row) else row[0])
 
-def insert_price(conn: sqlite3.Connection, component_id: int, price: int, url: str, shop: str = "Danawa") -> None:
+def insert_price(conn: sqlite3.Connection, component_id: int, price: int, url: str, shop: str = "Danawa", checked_at: Optional[str] = None) -> None:
     conn.execute(
         """
-        INSERT OR IGNORE INTO prices(component_id, shop, currency, price, url)
-        VALUES (?,?,?,?,?)
+        INSERT OR IGNORE INTO prices(component_id, shop, currency, price, url, scraped_at)
+        VALUES (?,?,?,?,?,?)
         """,
-        (component_id, shop, "KRW", int(price), url),
+        (component_id, shop, "KRW", int(price), url, checked_at or datetime.utcnow().isoformat(timespec="seconds") + "Z"),
     )
     conn.commit()
 
@@ -1525,7 +1581,7 @@ def verified_price_info(part: Dict[str, Any]) -> bool:
         and not part.get("stale")
         and source not in {"", "catalog", "catalog_search", "catalog_fallback", "danawa_search", "estimated", "unavailable"}
         and market_product_url(part.get("url"))
-        and price_is_fresh(part.get("scraped_at") or part.get("checked_at"))
+        and price_is_fresh(part.get("price_checked_at") or part.get("scraped_at") or part.get("checked_at"))
     )
 
 def _best_match_key(query: str, keys: Iterable[str]) -> Optional[str]:
@@ -1664,11 +1720,9 @@ def db_lookup_price_info(part: Dict[str, Any], part_type: str) -> Optional[Dict[
             if (
                 price > 0
                 and (not row.get("type") or normalize_text(row.get("type")) == part_type_key)
-                and compatible_price_name(part_name, row.get("name"))
+                and retail_quote_valid(part_type_key, part_name, row)
                 and str(row.get("currency") or "KRW").upper() == "KRW"
                 and market_product_url(row.get("url") or part_url)
-                and price_sane_for_part(part_type, price, part_name, catalog_price)
-                and danawa_url_category_matches(part_type, row.get("url") or part_url)
                 and not danawa_url_rejected(part_type, row.get("url") or part_url)
             ):
                 return {
@@ -1690,7 +1744,7 @@ def db_lookup_price_info(part: Dict[str, Any], part_type: str) -> Optional[Dict[
     type_filtered = [
         k for k, row in rows.items()
         if (not row.get("type") or normalize_text(row.get("type")) == part_type_key)
-        and compatible_price_name(part_name, row.get("name"))
+        and retail_quote_valid(part_type_key, part_name, row)
     ]
     match = _best_match_key(key, type_filtered)
     if not match:
@@ -1708,13 +1762,8 @@ def db_lookup_price_info(part: Dict[str, Any], part_type: str) -> Optional[Dict[
     if price <= 0:
         return None
 
-    if not price_sane_for_part(part_type, price, part_name, catalog_price):
+    if not retail_quote_valid(part_type_key, part_name, row):
         return None
-    if normalize_text(part_type) in {"gpu", "storage", "ssd", "mb", "motherboard", "mainboard"}:
-        if not danawa_url_category_matches(part_type, row.get("url")):
-            return None
-        if danawa_url_rejected(part_type, row.get("url")):
-            return None
 
     return {
         "price": price,
@@ -1750,12 +1799,12 @@ def market_lookup_name(part: Dict[str, Any], part_type: Any) -> str:
 def store_danawa_price(part: Dict[str, Any], part_type: str, live: Dict[str, Any]) -> Dict[str, Any]:
     component_name = clean_visible_text(live.get("product_name") or live.get("name") or part.get("name"))
     shop = live.get("shop") or "Danawa"
-    checked_at = live.get("scraped_at") or datetime.utcnow().isoformat(timespec="seconds") + "Z"
+    checked_at = live.get("price_checked_at") or live.get("scraped_at") or datetime.utcnow().isoformat(timespec="seconds") + "Z"
     conn = _ensure_db_connection(create=True)
     if conn is not None:
         try:
             cid = upsert_component(conn, part_type, component_name)
-            insert_price(conn, cid, safe_int(live.get("price"), 0), live.get("url") or "", shop=shop)
+            insert_price(conn, cid, safe_int(live.get("price"), 0), live.get("url") or "", shop=shop, checked_at=checked_at)
         finally:
             conn.close()
         load_db_cache()
@@ -1768,7 +1817,7 @@ def store_danawa_price(part: Dict[str, Any], part_type: str, live: Dict[str, Any
         "scraped_at": checked_at,
         "stale": False,
         "verified": True,
-        "price_status": "verified",
+        "price_status": live.get("price_status") or "verified",
         "matched_by": live.get("matched_by") or ("compuzone_top" if shop == "Compuzone" else "danawa_top"),
         "price_source": live.get("price_source") or ("compuzone_top_live" if shop == "Compuzone" else "danawa_top_live"),
         "name": component_name,
@@ -1965,14 +2014,16 @@ def apply_price_info_to_part(part: Dict[str, Any], info: Optional[Dict[str, Any]
     part["price_source"] = info.get("price_source") or "danawa_top"
     part["price_source_label"] = info.get("matched_by") or "danawa_top"
     part["stale"] = bool(info.get("stale"))
-    if info.get("scraped_at"):
-        part["scraped_at"] = info.get("scraped_at")
+    observed_at = info.get("price_checked_at") or info.get("scraped_at")
+    if observed_at:
+        part["scraped_at"] = observed_at
+        part["price_checked_at"] = observed_at
     if info.get("product_name"):
         part["product_name"] = info.get("product_name")
     elif info.get("name"):
         part["product_name"] = info.get("name")
     part["verified"] = verified_price_info(part)
-    part["price_status"] = "verified" if part["verified"] else ("stale" if part["stale"] else "estimated")
+    part["price_status"] = ("cached" if info.get("price_status") == "cached" else "verified") if part["verified"] else ("stale" if part["stale"] else "estimated")
 
 DISPLAY_PRICE_TYPES = {"cpu", "gpu", "ram", "mb", "storage", "psu", "hdd", "case", "software"}
 
@@ -2091,9 +2142,9 @@ def resolve_recommendation_price_cache(
                     "price_source": part.get("price_source") or "danawa_top_live",
                     "matched_by": part.get("price_source_label") or "danawa_top",
                     "product_name": part.get("product_name") or part.get("name"),
-                    "scraped_at": part.get("scraped_at"),
+                    "scraped_at": part.get("price_checked_at") or part.get("scraped_at"),
                     "verified": True,
-                    "price_status": "verified",
+                    "price_status": part.get("price_status") or "verified",
                 }
                 continue
             cached = None if normalized_type == "gpu" and maker_prefs else db_lookup_price_info(part, part_type)
@@ -2112,7 +2163,8 @@ def resolve_recommendation_price_cache(
             pending[future] = (key, part, part_type, cached)
 
         try:
-            iterator = as_completed(pending, timeout=3.0)
+            # Requests queued behind the six workers need their own timeout window.
+            iterator = as_completed(pending, timeout=max(3.0, math.ceil(len(pending) / 6) * 3.0))
             for future in iterator:
                 key, part, part_type, cached = pending.pop(future)
                 try:
@@ -2282,7 +2334,7 @@ def price_lookup_response(body: Dict[str, Any]) -> Dict[str, Any]:
             "image_url": info.get("image_url") or item.get("image_url") or part_image_endpoint(item, part_type),
             "scraped_at": info.get("scraped_at"),
             "price_source": info.get("price_source") or "danawa_top",
-            "price_status": "verified" if verified_price_info(info) else "stale",
+            "price_status": ("cached" if info.get("price_status") == "cached" else "verified") if verified_price_info(info) else "stale",
             "verified": verified_price_info(info),
         })
 
@@ -2673,6 +2725,19 @@ def attach_graphics_modes(fps, gpu, cpu, game, resolution):
         measured = estimate_from_measurements(reference_gpu, reference_cpu, {"gb":32}, game, row["resolution"], row["preset"], GAME_FPS_PROFILES.get(game, GAME_FPS_PROFILES["default"]), CATALOGS)
         return measured[0] if measured else fps["fps_by_option"][row["preset"]]
     fps["graphics_modes"] = graphics_scenarios(gpu, cpu, game, resolution, fps, reference_native)
+    # Optional persistence must never make FPS unavailable when the DB is busy.
+    try:
+        from game_database import save_prediction, digest
+        from graphics_estimates import graphics_measurements, feature_support
+        conditions={"gpu":gpu.get("performance_ref_id") or gpu.get("id"),
+                    "cpu":cpu.get("performance_ref_id") or cpu.get("id"),
+                    "game":game,"resolution":resolution,"preset":"high",
+                    "native_options":fps["fps_by_option"],"bottleneck":fps.get("bottleneck")}
+        revision="graphics-v2:"+digest([list(graphics_measurements()),feature_support()])
+        save_prediction(conditions,fps["graphics_modes"],revision)
+    except (sqlite3.Error, OSError, ValueError):
+        logging.warning("Could not persist graphics prediction", exc_info=True)
+
 
 # ─────────────────────────────────────────────────────────────
 # Recommendation logic
@@ -2862,18 +2927,84 @@ def price_sum_for_parts(parts: Dict[str, Dict[str, Any]], price_cache: Dict[Tupl
         if isinstance(part, dict) and part_type in {"cpu", "gpu", "ram", "mb", "psu", "storage"}
     )
 
+def verified_recommendation_inventory() -> Dict[str, List[Dict[str, Any]]]:
+    """Only observed retail SKUs with usable specs and a fetched real photograph."""
+    kinds = ("cpu", "gpu", "ram", "mb", "psu", "storage")
+    inventory = {kind: [] for kind in kinds}
+    required = {
+        "cpu": ("perf", "socket", "tdp"), "gpu": ("perf_1080", "perf_1440", "perf_2160", "vram", "tdp"),
+        "ram": ("type", "gb", "speed"), "mb": ("socket", "ram_type"),
+        "psu": ("watt",), "storage": ("capacity",),
+    }
+    def candidates(kind):
+        response = market_products_response(kind, source="all", limit=40)
+        rows = {product_page_key(row.get("url")): dict(row) for row in saved_products(kind)}
+        rows.update({product_page_key(row.get("url")): dict(row) for row in response["items"]})
+        selected, groups = [], {}
+        for row in sorted(rows.values(), key=lambda r: safe_int(r.get("price"), 0)):
+            name = row.get("product_name") or row.get("name") or ""
+            if not (verified_price_info(row) and retail_quote_valid(kind, name, row)
+                    and all(row.get(field) for field in required[kind])
+                    and retailer_image_url(row.get("image_url"))):
+                continue
+            if kind == "gpu" and not is_recommendable_gpu(row):
+                continue
+            # Keep platform/capacity diversity without downloading every retailer SKU.
+            group = ((row.get("performance_ref_id") or name), gpu_maker_normalize(name) if kind == "gpu" else "") if kind in {"cpu", "gpu"} else tuple(row.get(field) for field in required[kind])
+            if kind == "mb":
+                chipset = re.search(r"(?<![A-Z0-9])([ABHXZ]\d{3}E?)(?=[^A-Z0-9]|M|I|$)", name.upper())
+                group = (row.get("socket"), row.get("ram_type"), chipset.group(1) if chipset else name)
+            if groups.get(group, 0) >= 2:
+                continue
+            groups[group] = groups.get(group, 0) + 1
+            row["scraped_at"] = row.get("price_checked_at") or row.get("scraped_at")
+            selected.append(row)
+        # Sample across the price range instead of discarding all later/high-end models.
+        limit = 128 if kind in {"cpu", "gpu"} else 48
+        if len(selected) > limit:
+            selected = [selected[round(i * (len(selected) - 1) / (limit - 1))] for i in range(limit)]
+        return selected
+
+    with ThreadPoolExecutor(max_workers=6) as executor:
+        batches = dict(zip(kinds, executor.map(candidates, kinds)))
+    def photograph(kind, part):
+        photo = fetch_product_image(part["image_url"])
+        if not photo or photo[1] not in {"image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"}:
+            return None
+        return kind, part
+
+    executor = ThreadPoolExecutor(max_workers=16)
+    pending = [executor.submit(photograph, kind, part) for kind in kinds for part in batches[kind]]
+    try:
+        for future in as_completed(pending, timeout=12):
+            result = future.result()
+            if result:
+                kind, part = result
+                inventory[kind].append(part)
+    except TimeoutError:
+        pass  # Incomplete photo verification never creates a recommendation candidate.
+    finally:
+        executor.shutdown(wait=False, cancel_futures=True)
+    for rows in inventory.values():
+        rows.sort(key=lambda row: (row["price"], row["id"]))
+    return inventory
+
+
 def tier_component_pools(
     tier: str,
     resolution: str,
     refresh: int,
     gpu_pref: str,
+    inventory: Optional[Dict[str, List[Dict[str, Any]]]] = None,
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]:
-    cpu_pool = [p for p in CPU_CATALOG if is_desktop_cpu(p)]
-    gpu_pool = [p for p in GPU_CATALOG if is_recommendable_gpu(p)]
-    ram_pool = RAM_CATALOG[:]
-    mb_pool = [p for p in MB_CATALOG if is_desktop_mb(p)]
-    psu_pool = PSU_CATALOG[:]
-    storage_pool = STORAGE_CATALOG[:]
+    source = {"cpu": CPU_CATALOG, "gpu": GPU_CATALOG, "ram": RAM_CATALOG,
+              "mb": MB_CATALOG, "psu": PSU_CATALOG, "storage": STORAGE_CATALOG} if inventory is None else inventory
+    cpu_pool = [p for p in source.get("cpu", []) if is_desktop_cpu(p)]
+    gpu_pool = [p for p in source.get("gpu", []) if is_recommendable_gpu(p)]
+    ram_pool = list(source.get("ram", []))
+    mb_pool = [p for p in source.get("mb", []) if is_desktop_mb(p)]
+    psu_pool = list(source.get("psu", []))
+    storage_pool = list(source.get("storage", []))
 
     if gpu_pref != "ANY":
         gpu_pool = [g for g in gpu_pool if normalize_text(g.get("vendor")) == normalize_text(gpu_pref)]
@@ -3335,7 +3466,8 @@ class CandidateEvaluationCache:
         return self.work_scores[key]
 
 def build_tier_candidates(user: Any, tier: str, rng: random.Random, limit: int = 36,
-                          shared_fps: Optional[Dict[Tuple[str, str, str], Dict[str, Any]]] = None) -> List[Dict[str, Any]]:
+                          shared_fps: Optional[Dict[Tuple[str, str, str], Dict[str, Any]]] = None,
+                          inventory: Optional[Dict[str, List[Dict[str, Any]]]] = None) -> List[Dict[str, Any]]:
     request = RecommendationRequest.from_payload(user)
     budget_min = request.budget_min
     budget_max = request.budget_max
@@ -3353,10 +3485,12 @@ def build_tier_candidates(user: Any, tier: str, rng: random.Random, limit: int =
     price_cache: Dict[Tuple[str, str], int] = {}
 
     cpu_pool, gpu_pool, ram_pool, mb_pool, psu_pool, storage_pool = tier_component_pools(
-        tier, resolution, refresh, gpu_pref
+        tier, resolution, refresh, gpu_pref, inventory
     )
+    if inventory is not None and gpu_maker_prefs:
+        gpu_pool = [p for p in gpu_pool if gpu_maker_normalize(p.get("name")) in gpu_maker_prefs]
     market_gpu_prices = request.gpu_market_prices
-    if isinstance(market_gpu_prices, dict) and market_gpu_prices:
+    if inventory is None and isinstance(market_gpu_prices, dict) and market_gpu_prices:
         priced_gpu_pool = [
             market_gpu_prices[str(part.get("id"))]
             for part in gpu_pool
@@ -3655,24 +3789,22 @@ def recommend(user: Any) -> Dict[str, Any]:
         response = copy.deepcopy(cached[1])
         response["engine"]["cached"] = True
         return response
-    market_gpu_prices = resolve_verified_gpu_market_prices(request.gpu_pref, list(request.gpu_brands))
-    request = replace(request, gpu_market_prices=market_gpu_prices)
+    inventory = verified_recommendation_inventory()
+    market_gpu_prices = {str(p["id"]): p for p in inventory["gpu"]}
 
     seed = stable_seed(request.as_payload(include_market_prices=False))
     rng = random.Random(seed)
     shared_fps: Dict[Tuple[str, str, str], Dict[str, Any]] = {}
     candidate_sets = {
-        tier: build_tier_candidates(request, tier, rng, limit=36, shared_fps=shared_fps)
+        tier: build_tier_candidates(request, tier, rng, limit=36, shared_fps=shared_fps, inventory=inventory)
         for tier in ["low", "mid", "high"]
     }
     results = select_ordered_tier_plans(candidate_sets)
     results = complete_recommendation_tiers(results, candidate_sets, request)
 
     warnings: List[str] = []
-    if not DB_CACHE.get("loaded"):
-        warnings.append("SQLite DB를 찾지 못해 일부 CPU/주변 부품은 내장 카탈로그 기준으로 계산했습니다.")
-    if not market_gpu_prices:
-        warnings.append("다나와·컴퓨존에서 현재 그래픽카드 가격을 확인하지 못해 카탈로그 참고 가격을 사용했습니다.")
+    if not all(inventory.values()):
+        warnings.append("실제 판매가와 제품 사진이 확인된 부품으로 호환 구성을 만들 수 없습니다. 잠시 후 다시 조회해주세요.")
 
     payload = {
         "input": request.as_payload(include_market_prices=False),
@@ -3684,9 +3816,10 @@ def recommend(user: Any) -> Dict[str, Any]:
             "catalog": {k: len(v) for k, v in CATALOGS.items()},
             "db_summary": DB_CACHE.get("summary", {}),
             "verified_gpu_prices": len(market_gpu_prices),
+            "verified_inventory_counts": {kind: len(rows) for kind, rows in inventory.items()},
         },
     }
-    refresh_recommendation_prices(payload)
+    # Prices and photos were verified before selection; do not replace SKUs afterward.
     # Retail refresh may reverse totals; only retain genuine upgrades at the
     # final displayed prices, then fill any gap with an explicitly equal build.
     refreshed = {tier: [plan] if plan.get("parts") else [] for tier, plan in payload["results"].items()}
@@ -3901,6 +4034,8 @@ def saved_part_image_urls(name: Any, part_type: Any, product_url: str = "") -> L
         if not url:
             continue
         listed_name = item.get("product_name") or item.get("name")
+        if ctype == "ram" and not market_component_name_valid(ctype, listed_name or ""):
+            continue
         if sku:
             if product_page_key(item.get("url")) == sku:
                 exact.append(url)
@@ -3909,7 +4044,7 @@ def saved_part_image_urls(name: Any, part_type: Any, product_url: str = "") -> L
         elif requested and any(re.search(r"\d", token) for token in requested):
             listed = image_name_tokens(listed_name, ctype)
             if requested.issubset(listed):
-                if ctype == "gpu" and gpu_exact_model_key(name) != gpu_exact_model_key(listed_name):
+                if ctype in {"gpu", "ram"} and not compatible_price_name(name, listed_name):
                     continue
                 if ctype == "storage" and (requested & {"pro", "evo", "plus"}) != (listed & {"pro", "evo", "plus"}):
                     continue

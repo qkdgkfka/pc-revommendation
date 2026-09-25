@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from threading import RLock
 from urllib.parse import urlparse
+from retail_database import read_products
 
 
 DATA_DIR = Path(__file__).resolve().parent / "data"
@@ -57,16 +58,23 @@ def _saved_rows(part_type):
     """
     snapshot = _read_catalog(SNAPSHOT_PATH)
     runtime = _read_catalog(CACHE_PATH)
+    database = read_products(DATA_DIR / "pc.db")
     cached = _rows_cache.get(part_type)
-    if cached and cached[0] is snapshot and cached[1] is runtime:
-        return cached[2]
+    if cached and cached[0] is snapshot and cached[1] is runtime and cached[2] is database:
+        return cached[3]
     combined = {}
-    for source in (snapshot, runtime):
+    for source in (snapshot, runtime, database):
         for item in source.get(part_type, []):
             if _verified_retail_row(item):
-                combined[item["id"]] = dict(item)
+                previous = combined.get(item["id"], {})
+                checked = str(item.get("price_checked_at") or item.get("scraped_at") or "")
+                old_checked = str(previous.get("price_checked_at") or previous.get("scraped_at") or "")
+                if checked >= old_checked:
+                    combined[item["id"]] = dict(item)
+                elif item.get("image_url") == previous.get("image_url") and item.get("image_checked_at"):
+                    previous["image_checked_at"] = item["image_checked_at"]
     rows = tuple(combined.values())
-    _rows_cache[part_type] = (snapshot, runtime, rows)
+    _rows_cache[part_type] = (snapshot, runtime, database, rows)
     return rows
 
 

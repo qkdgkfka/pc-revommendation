@@ -1,0 +1,92 @@
+{
+  "checked_at": "2026-09-25T13:02:44.945549+00:00",
+  "sources": [
+    {
+      "url": "https://www.back2gaming.com/review/nvidia-geforce-rtx-5070-founders-edition/",
+      "active": 246,
+      "pending": 0
+    },
+    {
+      "url": "https://clockupcore.com/zenlesszonezero/",
+      "active": 111,
+      "pending": 0
+    },
+    {
+      "url": "https://clockupcore.com/wutheringwaves/",
+      "active": 0,
+      "pending": 72
+    },
+    {
+      "url": "https://clockupcore.com/genshinimpact/",
+      "active": 0,
+      "pending": 25
+    },
+    {
+      "url": "https://clockupcore.com/valorant/",
+      "active": 0,
+      "pending": 15
+    },
+    {
+      "url": "https://clockupcore.com/overwatch2/",
+      "active": 0,
+      "pending": 15
+    },
+    {
+      "url": "https://clockupcore.com/eldenring/",
+      "active": 0,
+      "pending": 25
+    },
+    {
+      "url": "https://www.thefpsreview.com/2025/11/17/overclocking-nvidia-geforce-rtx-5070/3/",
+      "active": 2,
+      "graphics": 2
+    },
+    {
+      "url": "https://www.nvidia.com/content/dam/en-zz/Solutions/geforce/news/nvidia-rtx-games-engines-apps/dlss-rt-games-apps-overrides.json",
+      "matched": 31
+    }
+  ],
+  "coverage": {
+    "dota2": 15,
+    "f1_24": 15,
+    "the_last_of_us1": 15,
+    "spider_man2": 15,
+    "ratchet_clank": 15,
+    "space_marine2": 15,
+    "expedition33": 1,
+    "valorant": 0,
+    "csgo2": 15,
+    "csgo": 0,
+    "overwatch2": 0,
+    "apex": 1,
+    "rainbow6": 3,
+    "pubg": 15,
+    "cyberpunk2077": 24,
+    "baldurs_gate3": 15,
+    "god_of_war_ragnarok": 0,
+    "black_myth_wukong": 18,
+    "witcher3": 0,
+    "elden_ring": 0,
+    "ghost_of_tsushima": 15,
+    "red_dead_redemption2": 0,
+    "horizon_forbidden_west": 15,
+    "hogwarts_legacy": 16,
+    "starfield": 15,
+    "genshin_impact": 0,
+    "wuthering_waves": 0,
+    "zenless_zone_zero": 111,
+    "lostark": 0,
+    "wow": 0,
+    "ffxiv": 4,
+    "cities_skylines2": 0,
+    "msfs2024": 9,
+    "farming_sim": 0,
+    "fortnite": 2,
+    "marvel_rivals": 1,
+    "cod_black_ops6": 2,
+    "dragons_dogma2": 6,
+    "dying_light2": 4,
+    "resident_evil4": 23,
+    "alan_wake2": 2
+  }
+}

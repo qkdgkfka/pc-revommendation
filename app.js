@@ -323,6 +323,7 @@ function populateGamePair(categoryId, gameId, category, game) {
   if (gameSelect) {
     gameSelect.innerHTML = options.map(item => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.label)}</option>`).join('');
     gameSelect.value = selectedGame;
+    window.refreshGamePicker?.(gameSelect);
   }
   return { category:validCategory, game:selectedGame };
 }
@@ -487,11 +488,10 @@ function pricePerFrame(totalPrice, fps) {
 function pricePerFrameHtml(totalPrice, fps, game, resolution, missing = false) {
   const value = missing ? null : pricePerFrame(totalPrice, fps);
   const gameName = GAME_OPTIONS.find(item => item.id === game)?.label || game || '선택 게임';
-  const result = value == null ? '계산 대기' : `${Math.round(value).toLocaleString('ko-KR')}원 / 프레임`;
+  const result = value == null ? '계산 대기' : `${Math.round(value).toLocaleString('ko-KR')}원`;
   return `<div class="frame-value" aria-live="polite">
     <span class="frame-value-label">1프레임당 가격</span><strong>${result}</strong>
-    <span class="frame-value-detail">${escapeHtml(gameName)} · ${escapeHtml(resolution)}p · 고옵</span>
-    <span class="frame-value-formula">${value == null ? '전체 부품 가격과 FPS 확인 후 계산합니다.' : `${money(totalPrice)} ÷ ${Number(fps).toLocaleString('ko-KR')} FPS · 낮을수록 좋은 가성비`}</span>
+    <span class="frame-value-detail">${escapeHtml(gameName)} · ${escapeHtml(resolution)}p · 풀옵</span>
   </div>`;
 }
 
@@ -546,6 +546,8 @@ function updateCustomPrice() {
       buyChip('SW', software),
     ].join('');
   }
+  const compatibilityBox = document.getElementById("csCompatibility");
+  if (compatibilityBox) compatibilityBox.innerHTML = compatibilityHtml(cpu, mb);
   renderBuildCart();
 }
 
@@ -560,6 +562,7 @@ function updateCustomChart() {
     customFpsToken += 1;
     ['csGameChart', 'csWorkChart'].forEach(id => {
       const chart = document.getElementById(id);
+      window.GraphicsDetails?.unmountWithin(chart);
       chart.setAttribute('aria-busy', 'false');
       chart.innerHTML = '<div class="no-spec"><div class="no-spec-text">CPU, GPU, RAM을 선택해주세요</div></div>';
     });
@@ -583,83 +586,10 @@ function customFpsKey(gpu, cpu, ram, game, resolution, refresh) {
   return [gpu?.id, cpu?.id, ram?.id, game, resolution, refresh].join('|');
 }
 
-function fpsSourceLabel(fps) {
-  const labels = {
-    measured_benchmark: '동일 구성 실측 벤치마크',
-    benchmark_calibrated: '실측 벤치마크 보정 추정',
-    model_estimate: '성능 모델 추정 · 실측 자료 없음',
-    game_db_benchmark: '수집된 게임별 실측 벤치마크',
-    tpu_reference_calibrated: '공개 실측 벤치마크 앵커 보정',
-    crawled_gpu_hierarchy: '수집된 GPU 벤치마크 기반 보정',
-    embedded_hierarchy: 'GPU 벤치마크 기반 보정',
-  };
-  return fps?.fps_source_label || labels[fps?.fps_source] || '성능 모델 추정';
-}
-
-function benchmarkOptionHtml(option, label) {
-  if (!option) return '';
-  const method = option.method === 'measured_benchmark' ? '동일 CPU·GPU 실측 참고'
-    : option.method === 'model_estimate' ? '실측 자료 없음 · 계산 모델 추정' : '실측 자료에서 보정한 추정값';
-  const average = Number(option.reference_avg_fps);
-  const observed = Number.isFinite(average) && average > 0 ? ` · 원문 ${average.toLocaleString('ko-KR')} FPS` : '';
-  const conditions = option.conditions || [option.reference_resolution ? `${option.reference_resolution}p` : '', option.reference_preset].filter(Boolean).join(' · ');
-  const source = /^https?:\/\//i.test(option.source_url || '') ? `<a href="${escapeHtml(option.source_url)}" target="_blank" rel="noopener noreferrer">측정 원문</a>` : '';
-  return `<p><strong>${label} · ${method}</strong>${conditions ? `<br>${escapeHtml(conditions)}${observed}` : ''}${source ? `<br>${source}` : ''}</p>`;
-}
-
-function fpsEvidenceHtml(fps) {
-  if (!fps) return '';
-  const confidence = { high:'높음', medium:'보통', low:'낮음' }[fps.confidence];
-  const sourceUrl = /^https?:\/\//i.test(fps.benchmark_source_url || '') ? fps.benchmark_source_url : '';
-  const source = sourceUrl ? `<a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(fps.benchmark_source_title || '벤치마크 원문')}</a>` : '';
-  const range = fps.fps_range_by_option?.high;
-  const rangeText = range && Number.isFinite(Number(range.min)) && Number.isFinite(Number(range.max))
-    ? `고옵 예상 범위 ${Number(range.min).toLocaleString('ko-KR')}–${Number(range.max).toLocaleString('ko-KR')} FPS` : '';
-  const notes = Array.isArray(fps.estimation_notes) ? fps.estimation_notes.filter(Boolean) : [];
-  const reference = [fps.benchmark_reference_gpu, fps.benchmark_reference_cpu].filter(Boolean).join(' + ');
-  const options = [['low', '저옵'], ['medium', '중옵'], ['high', '고옵']]
-    .map(([key, label]) => benchmarkOptionHtml(fps.option_evidence?.[key], label)).join('');
-  return `<div class="benchmark-evidence">
-    <span class="evidence-label">${escapeHtml(fpsSourceLabel(fps))}${confidence ? ` · 신뢰도 ${confidence}` : ''}</span>
-    ${rangeText ? `<span>${rangeText}</span>` : ''}
-    ${source ? `<span>${source}</span>` : ''}
-    ${fps.benchmark_conditions ? `<span>원문 측정 조건 · ${escapeHtml(fps.benchmark_conditions)}</span>` : ''}
-    ${reference || notes.length || options ? `<details><summary>원문 수치·옵션별 추정 기준</summary>${reference ? `<p>기준 구성 · ${escapeHtml(reference)}</p>` : ''}${options}${notes.map(note => `<p>${escapeHtml(note)}</p>`).join('')}</details>` : ''}
-  </div>`;
-}
-
-function bottleneckHtml(fps) {
-  const estimate = fps?.bottleneck;
-  if (!estimate || estimate.estimated !== true) return '';
-  const labels = { cpu:'CPU', gpu:'GPU', balanced:'균형 범위' };
-  const percent = Number(estimate.percent);
-  const display = Number.isFinite(percent) ? `약 ${Math.min(100, Math.max(0, percent)).toFixed(1)}%` : '자료 부족';
-  return `<div class="bottleneck-summary">
-    <div class="build-check-heading"><strong>예상 병목 · ${labels[estimate.limiting_component] || '분석 중'}</strong><b>${display}</b></div>
-    <small>선택 게임 · 해상도 · 고옵 기준 추정</small>
-    <details><summary>계산 기준</summary><p>${escapeHtml(estimate.note || '게임별 벤치마크와 CPU·GPU 성능 차이로 보정한 추정치입니다.')}</p><a href="https://pc-builds.com/ko/bottleneck-calculator/" target="_blank" rel="noopener noreferrer">PC-Builds 표시 방식 참고</a></details>
-  </div>`;
-}
-
-function compatibilityHtml(compatibility) {
-  if (!compatibility || typeof compatibility !== 'object') return '';
-  const ok = compatibility.compatible === true;
-  const bios = compatibility.status === 'bios_check_required' ? ' · 출고 BIOS 확인' : '';
-  return `<div class="build-compatibility ${ok ? 'compatible' : 'incompatible'}"><div class="build-check-heading"><strong>CPU · 메인보드</strong><span class="compatibility-badge">${ok ? '✓ 플랫폼 호환' : '호환 정보 부족'}${bios}</span></div></div>`;
-}
-
-function graphicsModesHtml(fps) {
-  if (!Array.isArray(fps?.graphics_modes) || !fps.graphics_modes.length) return '';
-  const rows = fps.graphics_modes.map(mode => {
-    const value = Number(mode.avg_fps);
-    const available = mode.supported && mode.avg_fps != null && Number.isFinite(value) && value > 0;
-    const range = mode.range;
-    const rangeText = range && Number.isFinite(Number(range.min)) && Number.isFinite(Number(range.max)) ? `예상 ${Math.round(range.min)}–${Math.round(range.max)} FPS` : '';
-    const source = /^https?:\/\//i.test(mode.source_url || '') ? `<a href="${escapeHtml(mode.source_url)}" target="_blank" rel="noopener noreferrer">${mode.method === 'workload_estimate' ? '기능 지원 정보' : '측정 출처'}</a>` : '';
-    const measured = ['mode_measurement', 'measured_benchmark'].includes(mode.method) ? '원문 구성 실측' : '추정';
-    return `<div class="graphics-mode"><div><strong>${escapeHtml(mode.label)}</strong><b>${available ? `${value.toLocaleString('ko-KR')} FPS` : '자료 없음'}</b></div><small>${available ? `${measured}${mode.generated ? ' · 생성 프레임 포함' : ''}${rangeText ? ` · ${rangeText}` : ''}` : ''}${mode.generated && Number(mode.render_fps) > 0 ? ` · 실제 렌더 약 ${Math.round(mode.render_fps)} FPS` : ''}</small><p>${escapeHtml(mode.note || '')}${source ? ` · ${source}` : ''}</p></div>`;
-  }).join('');
-  return `<details class="graphics-modes"><summary>RT · DLSS/FSR · 프레임 생성 FPS 비교</summary>${rows}<small>생성 프레임은 표시를 부드럽게 하며 입력 응답성은 실제 렌더 FPS에 따라 달라집니다.</small></details>`;
+function compatibilityHtml(cpu, mb) {
+  if (!cpu?.socket || !mb?.socket) return '';
+  const ok = String(cpu.socket).trim().toUpperCase() === String(mb.socket).trim().toUpperCase();
+  return `<div class="build-compatibility ${ok ? 'compatible' : 'incompatible'}">CPU · 메인보드 소켓 ${ok ? '호환' : '비호환'}</div>`;
 }
 
 function fpsRequestPart(part) {
@@ -713,6 +643,7 @@ function renderCustomGameChart(gpu, cpu, ram, benchmark = null, loading = false)
   const res = st.csRes;
   const benchmarkFps = benchmark?.fps_by_option;
   const chart = document.getElementById('csGameChart');
+  window.GraphicsDetails?.unmountWithin(chart);
   chart.setAttribute('aria-busy', String(loading));
   if (!benchmarkFps) {
     chart.innerHTML = `<div class="fps-empty ${loading ? 'is-loading' : ''}" role="status">${loading ? '<span class="spinner"></span> 선택 구성의 벤치마크를 확인하고 있습니다.' : 'FPS 정보를 불러오지 못했습니다. 아래 버튼으로 다시 확인해주세요.'}${loading ? '' : '<button type="button" class="mini-btn ghost" id="retryFpsBtn">FPS 다시 확인</button>'}</div>`;
@@ -730,26 +661,28 @@ function renderCustomGameChart(gpu, cpu, ram, benchmark = null, loading = false)
   const rows = [
     { label:'저옵', fps:low },
     { label:'중옵', fps:med },
-    { label:'고옵', fps:high },
+    { label:'풀옵', fps:high },
   ];
 
   const html = rows.map(r => {
     if (!Number.isFinite(r.fps) || r.fps < 0) return `<div class="chart-row"><span class="chart-lbl">${r.label}</span><span class="chart-note">측정 정보 없음</span></div>`;
     const pct = Math.min(100, (r.fps/maxFps)*100);
-    const cls = r.fps >= 144 ? 'fps-over' : r.fps >= 60 ? '' : 'fps-low';
     return `
       <div class="chart-row">
         <span class="chart-lbl">${r.label}</span>
         <div class="chart-bg"><div class="chart-fill fps" style="width:${pct}%"></div></div>
-        <span class="chart-val ${cls}">${r.fps} fps</span>
+        <span class="chart-val">${r.fps} fps</span>
       </div>`;
   }).join('');
 
-  const capNote = benchmark?.frame_cap ? ` · 게임 기본 ${benchmark.frame_cap}fps 제한 반영` : '';
-  chart.innerHTML = `<div class="chart-wrap">${html}<div class="chart-note">${res}p · 네이티브 예상 FPS · RT / 프레임 생성 끔${capNote}</div>${fpsEvidenceHtml(benchmark)}${bottleneckHtml(benchmark)}${graphicsModesHtml(benchmark)}</div>`;
+  const gameName = GAME_OPTIONS.find(game => game.id === gameKey)?.label || gameKey;
+  const capNote = benchmark?.frame_cap ? `<div class="chart-note">게임 기본 ${benchmark.frame_cap}fps 제한 반영</div>` : '';
+  chart.innerHTML = `<div class="chart-wrap"><div class="chart-context">${escapeHtml(gameName)} · ${res}p</div>${html}${capNote}</div>`;
+  window.GraphicsDetails?.mount(chart, benchmark);
 }
 
 function renderCustomWorkChart(gpu, cpu, ram, storage) {
+  window.GraphicsDetails?.unmountWithin(document.getElementById('csGameChart'));
   const selected = st.csWork;
   const scores = Object.entries(WORK_PROFILES).map(([key, wt]) => {
     const score = workScore(gpu, cpu, ram, storage, key);
@@ -996,6 +929,7 @@ function setLoading(v) {
 // ─────────────────────────────────────────────────────────────
 
 function renderResults(data) {
+  window.GraphicsDetails?.unmountWithin(resultsContainer);
   const results = data.results;
   if (!results) { showStatus('error','서버 응답 형식 오류'); resultsContainer.innerHTML=''; return; }
   st.lastRecommendation = data;
@@ -1003,14 +937,11 @@ function renderResults(data) {
   const tiers  = ['low','mid','high'];
   const labels = { low:'LOW', mid:'MID', high:'HIGH' };
   placeholder.style.display = 'none';
-  const hz = st.refresh;
-
   const cards = tiers.map(tier => {
     const r = results[tier];
-    if (!r) return `<div class="card ${tier}"><div class="tier-name">${labels[tier]}</div><p style="color:var(--muted);font-size:13px;margin-top:8px">데이터 없음</p></div>`;
+    if (!r?.parts || !Object.keys(r.parts).length) return `<div class="card ${tier}"><div class="tier-name">${labels[tier]}</div><p style="color:var(--muted);font-size:13px;margin-top:8px">판매가와 제품 사진이 확인된 호환 구성을 찾지 못했습니다. 잠시 후 다시 조회해주세요.</p></div>`;
 
     const parts   = r.parts  || {};
-    const alloc   = r.allocation || {};
     const fps     = r.fps    || {};
     const ws      = r.work_scores || {};
     const gpu     = parts.gpu     || {};
@@ -1030,56 +961,36 @@ function renderResults(data) {
     if (st.panelMode === 'game') {
       const fpsByOpt = fps.fps_by_option || {};
       const frameCap = Number(fps.frame_cap || 0);
-      const targetFps = Number(fps.target_fps || (frameCap ? Math.min(hz, frameCap) : hz));
-      const displayTarget = frameCap ? Math.min(hz, frameCap) : hz;
-      const maxFps   = Math.max(...Object.values(fpsByOpt).map(Number).filter(Number.isFinite), displayTarget*1.5, 60);
-      const hzPct    = Math.min(100, (displayTarget/maxFps)*100);
-      const hzCov    = Number(fps.target_coverage || fps.hz_coverage || 0);
-      const vLabel   = fps.value_label || '–';
-      const capacityLabel = fps.capacity_label || vLabel;
+      const maxFps = Math.max(...Object.values(fpsByOpt).map(Number).filter(Number.isFinite), 60);
       const gameId = fps.game || st.game;
       const gameName = GAME_OPTIONS.find(game => game.id === gameId)?.label || gameId;
 
       const fpsRows = [
         { label:'저옵', key:'low'    },
         { label:'중옵', key:'medium' },
-        { label:'고옵', key:'high'   },
+        { label:'풀옵', key:'high'   },
       ].map(({label,key}) => {
         const val = Number(fpsByOpt[key]);
         if (fpsByOpt[key] == null || !Number.isFinite(val) || val < 0) return '';
         const pct = Math.min(100,(val/maxFps)*100);
-        const cls = fpsClass(val, displayTarget);
-        const badge = val>=displayTarget ? (val>=displayTarget*1.1?'✓+':'✓') : '✗';
         return `
           <div class="fb-row">
             <span class="fb-lbl">${label}</span>
             <div class="fb-bg">
               <div class="fb-fill" style="width:${pct}%"></div>
-              <div class="hz-line" style="left:${hzPct}%" title="${hz}Hz 목표선"></div>
             </div>
-            <span class="fb-val ${cls}">${val}fps ${badge}</span>
+            <span class="fb-val">${val}fps</span>
           </div>`;
       }).join('');
 
       perfSection = `
         <div class="fps-section">
           <div class="fps-hdr">
-            <span class="fps-title">예상 FPS · ${st.resolution}p @ ${displayTarget}fps 목표</span>
+            <span class="fps-title">예상 FPS · ${st.resolution}p</span>
             <span class="fps-tag">${escapeHtml(gameName)}</span>
           </div>
           <div class="fps-bars">${fpsRows || '<p class="chart-note">해당 구성의 FPS 자료를 확인하지 못했습니다.</p>'}</div>
-          <div class="chart-note" style="margin-top:7px">네이티브 래스터 · RT / 프레임 생성 끔${frameCap ? ` · 게임 기본 ${frameCap}fps 제한 반영` : ''}</div>
-          ${fpsEvidenceHtml(fps)}
-          ${bottleneckHtml(fps)}
-          ${graphicsModesHtml(fps)}
-          <div class="val-row">
-            <span class="val-icon">${valueIcon(capacityLabel)}</span>
-            <div class="val-info">
-              <div class="val-lbl">${escapeHtml(capacityLabel)}</div>
-              <div class="val-sub">목표 ${targetFps.toFixed(0)}fps 대비 ${(hzCov * 100).toFixed(0)}%</div>
-            </div>
-            <span class="hz-pill ${hzPillClass(hzCov)}">${hzPillText(hzCov,displayTarget)}</span>
-          </div>
+          ${frameCap ? `<div class="chart-note">게임 기본 ${frameCap}fps 제한 반영</div>` : ''}
           ${pricePerFrameHtml(totalPrice, fpsByOpt.high, st.game, st.resolution, missingPrice)}
         </div>`;
     } else {
@@ -1124,7 +1035,6 @@ function renderResults(data) {
           <div class="tier-name">${labels[tier]}</div>
           <div class="tier-badge">${money(totalPrice)}</div>
         </div>
-        <div class="budget-sub">부품 합계 · 목표 ${money(r.tierBudget)} &nbsp;/&nbsp; GPU ${money(alloc.gpuBudget)} · CPU ${money(alloc.cpuBudget)}</div>
 
         <div class="divider"></div>
 
@@ -1134,7 +1044,7 @@ function renderResults(data) {
         ${partRowHtml('MB', mb, 'mb')}
         ${partRowHtml('SSD', stor, 'storage')}
         ${partRowHtml('PSU', psu.name ? psu : { name: psu.recommendedWatt+'W 파워', recommendedWatt: psu.recommendedWatt }, 'psu')}
-        ${compatibilityHtml(r.compatibility)}
+        ${compatibilityHtml(cpu, mb)}
         ${r.same_configuration ? '<p class="chart-note">추가 업그레이드 후보가 없어 앞 등급과 동일한 구성입니다.</p>' : ''}
 
         <div class="divider"></div>
@@ -1145,6 +1055,9 @@ function renderResults(data) {
   }).join('');
 
   resultsContainer.innerHTML = `<div class="cards">${cards}</div>`;
+  if (st.panelMode === 'game') tiers.forEach(tier => {
+    window.GraphicsDetails?.mount(resultsContainer.querySelector(`.card.${tier} .fps-section`), results[tier]?.fps);
+  });
   resultsContainer.querySelectorAll('[data-import-tier]').forEach(button => {
     button.addEventListener('click', () => importRecommendedBuild(button.dataset.importTier));
   });

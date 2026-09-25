@@ -4,9 +4,9 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>PC 견적 도우미</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet"/>
   <link rel="stylesheet" href="styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect x=%274%27 y=%276%27 width=%2724%27 height=%2717%27 rx=%273%27 fill=%27%232563eb%27/%3E%3Cpath d=%27M10 27h12M16 23v4%27 stroke=%27%232563eb%27 stroke-width=%273%27/%3E%3C/svg%3E">
 </head>
 <body>
 
@@ -100,6 +100,7 @@
               <button type="button" class="mini-btn ghost" id="clearBuildBtn">초기화</button>
             </div>
             <div class="build-cart" id="buildCart"></div>
+            <div id="csCompatibility"></div>
             <div class="spec-total">
               <span class="spec-total-label">부품 합계</span>
               <span class="spec-total-price" id="csTotalPrice">₩0</span>
@@ -139,7 +140,7 @@
                 <select class="custom-game-select" id="csGameCategorySelect" aria-label="게임 카테고리"></select>
                 <select class="custom-game-select" id="csGameSelect" aria-label="세부 게임"></select>
               </div>
-              <div class="sec-title" style="margin-bottom:6px">예상 FPS <span style="font-weight:400;text-transform:none;letter-spacing:0">(저옵 / 중옵 / 고옵)</span></div>
+              <div class="sec-title" style="margin-bottom:6px">예상 FPS <span style="text-transform:none;letter-spacing:0">(저옵 / 중옵 / 풀옵)</span></div>
               <div id="csGameChart"><div class="no-spec"><div class="no-spec-text">부품을 선택해주세요</div></div></div>
             </div>
 
@@ -167,7 +168,6 @@
           <div class="choice block" data-budget="3000000" data-budget-min="2000000" data-budget-max="3000000">200~300만원<small>총 예산 범위</small></div>
           <div class="choice block" data-budget="4500000" data-budget-min="3000000" data-budget-max="4500000">300만원 이상<small>고사양 구성</small></div>
         </div>
-        <div class="hint">예산에 맞춰 LOW / MID / HIGH를 추천합니다. 최소 호환 구성도 예산을 넘으면 초과 금액을 표시합니다.</div>
       </div>
 
       <div class="group">
@@ -268,10 +268,12 @@
 
 <script src="vendor/react/react.production.min.js"></script>
 <script src="vendor/react/react-dom.production.min.js"></script>
+<script src="graphics_details.js"></script>
 <script src="gpu_selector.js"></script>
 <script src="app_data.js"></script>
 <script src="app_utils.js"></script>
 <script src="product_images.js"></script>
+<script src="game_picker.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

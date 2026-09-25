@@ -213,10 +213,22 @@ def crawl(output=DEFAULT_OUTPUT):
                 "sources": sources, "measurements": rows,
                 "graphics_measurements": parse_graphics_modes(*pages)}
     output = Path(output)
+    if output.exists():
+        previous = json.loads(output.read_text(encoding="utf-8"))
+        refreshed = {GN_URL, GEEK_URL}
+        snapshot["measurements"].extend(r for r in previous.get("measurements", [])
+                                        if r.get("source_url") not in refreshed)
+        snapshot["sources"].extend(r for r in previous.get("sources", []) if r.get("url") not in refreshed)
+        snapshot["pending_measurements"] = previous.get("pending_measurements", [])
+        snapshot["graphics_measurements"].extend(r for r in previous.get("graphics_measurements", []) if r.get("source_url") not in refreshed)
+        snapshot["feature_support"] = previous.get("feature_support", {})
     output.parent.mkdir(parents=True, exist_ok=True)
     temporary = output.with_suffix(".tmp")
     temporary.write_text(json.dumps(snapshot, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     temporary.replace(output)
+    if output.resolve() == DEFAULT_OUTPUT.resolve():
+        from game_database import save_snapshot
+        save_snapshot(snapshot)
     return snapshot
 
 

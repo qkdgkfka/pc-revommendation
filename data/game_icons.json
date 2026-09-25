@@ -1,0 +1,289 @@
+{
+  "red_dead_redemption2": {
+    "name": "Red Dead Redemption 2",
+    "source_url": "https://store.steampowered.com/app/1174180/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1174180/header.jpg?t=1759502961",
+    "sha256": "27aa89c336b381083a1b3e8de84ffbcb842219dabca97aabfcf707b1dd8c135c",
+    "checked_at": "2026-09-25T13:02:38.960783+00:00"
+  },
+  "wuthering_waves": {
+    "name": "Wuthering Waves",
+    "source_url": "https://store.steampowered.com/app/3513350/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3513350/c85fc0782fba9d3c8c8b4989587c720c325ed9cf/header.jpg?t=1787182292",
+    "sha256": "16bbd882d528f44528570756f9ec8a2f10157462dbc2d5dc42cd78a20145defb",
+    "checked_at": "2026-09-25T13:02:39.293916+00:00"
+  },
+  "csgo": {
+    "name": "Counter-Strike: Global Offensive",
+    "source_url": "https://blog.counter-strike.net/",
+    "image_url": "https://blog.counter-strike.net/wp-content/themes/counterstrike_launch/favicon.ico",
+    "sha256": "c54bf797e4a852cc91b2fb3b61b585d4d490d285f882ec8194b3f56b49f27e7f",
+    "checked_at": "2026-09-25T13:02:40.769528+00:00"
+  },
+  "valorant": {
+    "name": "VALORANT",
+    "source_url": "https://playvalorant.com/en-us/",
+    "image_url": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/news/cbf4460132cdfeb2a97fad5f9dd25ba0bc058f76-128x128.png?accountingTag=VAL",
+    "sha256": "d947a1f3afddaa19a0405cd900ec63efeb813dea4993f30a2153fed4dbc5e364",
+    "checked_at": "2026-09-25T13:02:40.649475+00:00"
+  },
+  "genshin_impact": {
+    "name": "Genshin Impact 6th Anniversary",
+    "source_url": "https://apps.apple.com/app/id1517783697",
+    "image_url": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/5c/e2/13/5ce21317-a08a-24ac-cc5f-2b25a4d71fa6/AppIcon-0-0-1x_U007epad-0-1-85-220.png/100x100bb.jpg",
+    "sha256": "66992e15b5c815ac1bd8835dcee12e9733f493155ba126dc1304fb167f078953",
+    "checked_at": "2026-09-25T13:02:40.920081+00:00"
+  },
+  "alan_wake2": {
+    "name": "Alan Wake 2",
+    "source_url": "https://www.alanwake.com/",
+    "image_url": "https://www.alanwake.com/wp-content/uploads/2023/09/cropped-fav_512-1-32x32.png",
+    "sha256": "b045339c436a8389e4ca60b7c9bbc734ef1f76ce2e7b2f21531316f1ccf2a157",
+    "checked_at": "2026-09-25T13:02:41.219189+00:00"
+  },
+  "zenless_zone_zero": {
+    "name": "Zenless Zone Zero",
+    "source_url": "https://apps.apple.com/app/id1606356401",
+    "image_url": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/2d/4a/fb/2d4afb82-bdb9-cc80-b5b7-d1d7f515b2ae/AppIcon-1x_U007emarketing-0-8-0-85-220-0.png/100x100bb.jpg",
+    "sha256": "86a81cc4ddf713a04ec28ad310033be0b0494642a32a5a701804187e5da3f89b",
+    "checked_at": "2026-09-25T13:02:41.045262+00:00"
+  },
+  "wow": {
+    "name": "World of Warcraft",
+    "source_url": "https://worldofwarcraft.blizzard.com/en-us/",
+    "image_url": "https://assets-bwa.worldofwarcraft.blizzard.com/static/wow-icon-32x32.1a38d7c1c3d8df560d53f5c2ad5442c0401edf83.png",
+    "sha256": "161a3e6571ce6bbc6134ced4643a4b6281e97f8223dc7580a6197b33aeee51d5",
+    "checked_at": "2026-09-25T13:02:41.083664+00:00"
+  },
+  "overwatch2": {
+    "name": "Overwatch®",
+    "source_url": "https://store.steampowered.com/app/2357570/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2357570/7baa151c768868f1fe1d3aeea2467fa1a35fb531/header_alt_assets_22.jpg?t=1788890347",
+    "sha256": "eb06474cbbe3c7e53e78107ed3c27f2714bb0621bac7a19800b5db5edac79507",
+    "checked_at": "2026-09-25T13:02:37.796055+00:00"
+  },
+  "csgo2": {
+    "name": "Counter-Strike 2",
+    "source_url": "https://store.steampowered.com/app/730/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/730/162664aa5da85f418105350c5d67ca565f6c3713/header.jpg?t=1789251637",
+    "sha256": "747527645619ecf6fbbec78aa543ab0c9a5be12f0bd7c17ccf559e1522678ded",
+    "checked_at": "2026-09-25T13:02:37.783299+00:00"
+  },
+  "apex": {
+    "name": "Apex Legends™",
+    "source_url": "https://store.steampowered.com/app/1172470/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1172470/60fcaedb88ccf94df30281533d828b86c6ffb9b6/header_alt_assets_5.jpg?t=1790164440",
+    "sha256": "635b8db85d44006a9e24c7842b768818d33f81b9314aa084d53cd78a8581ea6a",
+    "checked_at": "2026-09-25T13:02:38.193741+00:00"
+  },
+  "rainbow6": {
+    "name": "Tom Clancy's Rainbow Six Siege",
+    "source_url": "https://store.steampowered.com/app/359550/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/359550/6b69a8d5ac8d0542bba5c735a8bcc5bb33cda42e/header_alt_assets_25.jpg?t=1790108602",
+    "sha256": "4a4fa51301a1e87bc2af0e65922ab90ca0f3e42f76dc7e6e672a88ba66359c0a",
+    "checked_at": "2026-09-25T13:02:38.069804+00:00"
+  },
+  "cyberpunk2077": {
+    "name": "Cyberpunk 2077",
+    "source_url": "https://store.steampowered.com/app/1091500/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1091500/e9047d8ec47ae3d94bb8b464fb0fc9e9972b4ac7/header.jpg?t=1784714077",
+    "sha256": "b93e64874b844e41a3269e9be00c9fad8037e8a79d00535a8344542bd02c81e6",
+    "checked_at": "2026-09-25T13:02:38.348445+00:00"
+  },
+  "pubg": {
+    "name": "PUBG: BATTLEGROUNDS",
+    "source_url": "https://store.steampowered.com/app/578080/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/578080/841ea38bc58cabb70aef65365cf50bc2d79329d9/header.jpg?t=1786493086",
+    "sha256": "acd549290767b2fc76a7efb7d7881e73530ab5432061b14e6d1095b5c5bd0892",
+    "checked_at": "2026-09-25T13:02:38.263821+00:00"
+  },
+  "baldurs_gate3": {
+    "name": "Baldur's Gate 3",
+    "source_url": "https://store.steampowered.com/app/1086940/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1086940/48a2fcbda8565bb45025e98fd8ebde8a7203f6a0/header.jpg?t=1777363040",
+    "sha256": "70f099749ece31e4ff2d017cbfafc47fd8cbe52e23eb26daec8dde4549576ccb",
+    "checked_at": "2026-09-25T13:02:38.471029+00:00"
+  },
+  "god_of_war_ragnarok": {
+    "name": "God of War Ragnarök",
+    "source_url": "https://store.steampowered.com/app/2322010/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2322010/header.jpg?t=1776465233",
+    "sha256": "6f12e8e431fc55073cd0255b9bc7c5ce7e8eeb130e31bd179a7e9ba0d2267b3a",
+    "checked_at": "2026-09-25T13:02:38.495735+00:00"
+  },
+  "black_myth_wukong": {
+    "name": "Black Myth: Wukong",
+    "source_url": "https://store.steampowered.com/app/2358720/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2358720/header.jpg?t=1760601605",
+    "sha256": "a3f9a6b85e2e7e03d979823a99e47f8f8ee038f287f59097e7556e0b9afd6f16",
+    "checked_at": "2026-09-25T13:02:38.557128+00:00"
+  },
+  "witcher3": {
+    "name": "The Witcher 3: Wild Hunt - Complete Edition",
+    "source_url": "https://store.steampowered.com/app/292030/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/292030/97cca1147b256f450331044255b1dbd2d57d609e/header_alt_assets_4.jpg?t=1788333513",
+    "sha256": "85ab1d50b1eb0648588df4bab69c8426f903e9c361aa25175593911436f9c1dc",
+    "checked_at": "2026-09-25T13:02:38.755962+00:00"
+  },
+  "elden_ring": {
+    "name": "ELDEN RING",
+    "source_url": "https://store.steampowered.com/app/1245620/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1245620/f0b19c231f86fa0e633ff88a1a63459443017728/header_alt_assets_3.jpg?t=1790290043",
+    "sha256": "c6b1f5c4a6a44a5f1a37962b42426a55f4db7788a40cd9d80b56fdc289016f6e",
+    "checked_at": "2026-09-25T13:02:38.741357+00:00"
+  },
+  "ghost_of_tsushima": {
+    "name": "Ghost of Tsushima DIRECTOR'S CUT",
+    "source_url": "https://store.steampowered.com/app/2215430/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2215430/header.jpg?t=1763409398",
+    "sha256": "fe1bf015452d5e52a6a9fb9b7e535996a5b8f950fd5b4fd958636095ac02f39a",
+    "checked_at": "2026-09-25T13:02:38.769558+00:00"
+  },
+  "horizon_forbidden_west": {
+    "name": "Horizon Forbidden West™ Complete Edition",
+    "source_url": "https://store.steampowered.com/app/2420110/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2420110/header.jpg?t=1789585745",
+    "sha256": "6104bbc74ffcc2c87d724897d9ea8cf59f6398af2633e5e9d4443fb4c5c0bf03",
+    "checked_at": "2026-09-25T13:02:39.068190+00:00"
+  },
+  "hogwarts_legacy": {
+    "name": "Hogwarts Legacy",
+    "source_url": "https://store.steampowered.com/app/990080/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/990080/be2971b1023bccb04f993887d70ef4d2060262cf/header.jpg?t=1790097140",
+    "sha256": "5d406f44f7725e2249ddb63a40c15d05531bbf504837c4374bb2586fe3c07b79",
+    "checked_at": "2026-09-25T13:02:39.019990+00:00"
+  },
+  "starfield": {
+    "name": "Starfield",
+    "source_url": "https://store.steampowered.com/app/1716740/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1716740/header.jpg?t=1786648030",
+    "sha256": "f2859683835f5d8f2ed1757dadf1e5f775032b718d39d051f8e2f77e9bfa3eb5",
+    "checked_at": "2026-09-25T13:02:39.214715+00:00"
+  },
+  "lostark": {
+    "name": "Lost Ark",
+    "source_url": "https://store.steampowered.com/app/1599340/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1599340/header.jpg?t=1763571534",
+    "sha256": "8a4e9571f8c1433865c5884b2455465caac2662b9fa77facbb517b5a5a277cee",
+    "checked_at": "2026-09-25T13:02:39.335362+00:00"
+  },
+  "ffxiv": {
+    "name": "FINAL FANTASY XIV Online",
+    "source_url": "https://store.steampowered.com/app/39210/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/39210/header.jpg?t=1782870674",
+    "sha256": "02455318ed6e12cbc47195d46ab260218e605fd554cebf91939e57e8d8a8dbf3",
+    "checked_at": "2026-09-25T13:02:39.452559+00:00"
+  },
+  "msfs2024": {
+    "name": "Microsoft Flight Simulator 2024",
+    "source_url": "https://store.steampowered.com/app/2537590/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2537590/header.jpg?t=1787591449",
+    "sha256": "756b8e2b151a687b0ca155571ac8976f7c630aba77a7a7a7356f67bf528b023b",
+    "checked_at": "2026-09-25T13:02:39.688651+00:00"
+  },
+  "cities_skylines2": {
+    "name": "Cities: Skylines II",
+    "source_url": "https://store.steampowered.com/app/949230/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/949230/8fb6d4b60f7120ff56bea2efc92aee3a5bb7fe70/header_alt_assets_7.jpg?t=1789487974",
+    "sha256": "9e01dc2544941d97fe24c656d3d6570ce8220e4073aec9ec49c3b88e94f6c903",
+    "checked_at": "2026-09-25T13:02:39.584504+00:00"
+  },
+  "farming_sim": {
+    "name": "Farming Simulator 25",
+    "source_url": "https://store.steampowered.com/app/2300320/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2300320/c2a205133d23cd24faf3c152d972a1d0177661b8/header.jpg?t=1788874602",
+    "sha256": "2966c132b2927ac6b822fe895f5be68281c1ea48157a59374710905a5674b0f1",
+    "checked_at": "2026-09-25T13:02:39.712766+00:00"
+  },
+  "marvel_rivals": {
+    "name": "Marvel Rivals",
+    "source_url": "https://store.steampowered.com/app/2767030/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2767030/088fc787d8513a6f9782d03968e5ac1a01840087/header.jpg?t=1789119923",
+    "sha256": "27c9bc6e05e40185c1d3d17e0504a646739b01c68bdad44f82e6baa2c8c5418f",
+    "checked_at": "2026-09-25T13:02:39.861749+00:00"
+  },
+  "dragons_dogma2": {
+    "name": "Dragon's Dogma 2",
+    "source_url": "https://store.steampowered.com/app/2054970/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2054970/header.jpg?t=1788308490",
+    "sha256": "2c4e654114c6b747dadb9a7a46084629fb9e70daeade42ef63a2fc194fa01b47",
+    "checked_at": "2026-09-25T13:02:40.040599+00:00"
+  },
+  "dying_light2": {
+    "name": "Dying Light 2 Stay Human: Reloaded Edition",
+    "source_url": "https://store.steampowered.com/app/534380/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/534380/header.jpg?t=1788258144",
+    "sha256": "7fac6a047e20e7e5e57d33ce725f85208fb536fe75ff4136537a6f626e2b66ee",
+    "checked_at": "2026-09-25T13:02:40.143012+00:00"
+  },
+  "resident_evil4": {
+    "name": "Resident Evil 4",
+    "source_url": "https://store.steampowered.com/app/2050650/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2050650/header.jpg?t=1772502922",
+    "sha256": "33c8dcd2a189dec8c053773e10df4fef2d68cb1db73ab4401de5c078b8650e4b",
+    "checked_at": "2026-09-25T13:02:40.204349+00:00"
+  },
+  "cod_black_ops6": {
+    "name": "Call of Duty Black Ops 6",
+    "source_url": "https://www.callofduty.com/en/store/games/blackops6",
+    "image_url": "https://www.callofduty.com/content/dam/atvi/callofduty/cod-touchui/store/games/bo6/BO6_Banner.webp?imwidth=828",
+    "sha256": "e124c687d47485954405eace47e32e8963a767cadd656b75c6a943024c38d379",
+    "checked_at": "2026-09-25T13:02:39.916141+00:00"
+  },
+  "fortnite": {
+    "name": "Fortnite Battle Royale",
+    "source_url": "https://www.fortnite.com/",
+    "image_url": "https://cdn2.unrealengine.com/links-admin-FNECO_42-10_Tailgate_Keyart_DiscoverTile_480x270-4bceb7c5.jpg",
+    "sha256": "e2f5dfddab01452a79c3051496ecaac482ac0a03b072354ef448365b61d35fa7",
+    "checked_at": "2026-09-25T13:02:40.849144+00:00"
+  },
+  "dota2": {
+    "name": "Dota 2",
+    "source_url": "https://store.steampowered.com/app/570/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/570/header.jpg?t=1769535998",
+    "sha256": "ade5aebca98e763ae1d930f1fcc55a5d89b48a90f738ffd67bf118fc50c8272a",
+    "checked_at": "2026-09-25T13:02:37.217762+00:00"
+  },
+  "f1_24": {
+    "name": "F1® 24",
+    "source_url": "https://store.steampowered.com/app/2488620/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2488620/header.jpg?t=1788548633",
+    "sha256": "a23fea2c86244e25d4e453787fdfcdeb2825f26c195b11e965c0303e7dc4a22c",
+    "checked_at": "2026-09-25T13:02:37.233035+00:00"
+  },
+  "the_last_of_us1": {
+    "name": "The Last of Us™ Part I",
+    "source_url": "https://store.steampowered.com/app/1888930/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1888930/header.jpg?t=1750959031",
+    "sha256": "9a1955f3b297a29082f6b7a602f505c0f2eed1e2b9c9216356623595982f3c44",
+    "checked_at": "2026-09-25T13:02:37.218596+00:00"
+  },
+  "spider_man2": {
+    "name": "Marvel's Spider-Man 2",
+    "source_url": "https://store.steampowered.com/app/2651280/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2651280/header.jpg?t=1763569811",
+    "sha256": "758abef8aa65c40d1cfe5e7bbc308e2c7cd003f2e397dae92c0485ac956736a9",
+    "checked_at": "2026-09-25T13:02:37.573876+00:00"
+  },
+  "ratchet_clank": {
+    "name": "Ratchet & Clank: Rift Apart",
+    "source_url": "https://store.steampowered.com/app/1895880/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1895880/header.jpg?t=1787838873",
+    "sha256": "22084c918dcb06a118a4c377462dd0f8d28fd93700cef49afc3d87da6a22779f",
+    "checked_at": "2026-09-25T13:02:37.539992+00:00"
+  },
+  "space_marine2": {
+    "name": "Warhammer 40,000: Space Marine 2",
+    "source_url": "https://store.steampowered.com/app/2183900/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2183900/header.jpg?t=1787837240",
+    "sha256": "a51adee3dc2155f8f3b111c6dd978c08cd781e7aa085ea5772fb96f642a02488",
+    "checked_at": "2026-09-25T13:02:37.495819+00:00"
+  },
+  "expedition33": {
+    "name": "Clair Obscur: Expedition 33",
+    "source_url": "https://store.steampowered.com/app/1903340/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1903340/be3305b02d4db0dffa3458537118423bf2792d7e/header.jpg?t=1782830877",
+    "sha256": "46d1f4ff44db8766a752a19088103299d8312badd59f51b63dbc00e9a3c7993d",
+    "checked_at": "2026-09-25T13:02:37.871823+00:00"
+  }
+}

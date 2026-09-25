@@ -167,6 +167,14 @@ CATALOGS = {
 }
 
 GAME_OPTIONS = [
+    {"id": "dota2", "label": "도타 2", "category": "fps", "group": "FPS / 경쟁형", "genre": "moba"},
+    {"id": "f1_24", "label": "F1 24", "category": "game", "group": "일반 게임", "genre": "sim"},
+    {"id": "the_last_of_us1", "label": "더 라스트 오브 어스 파트 I", "category": "aaa", "group": "AAA / GOTY", "genre": "aaa"},
+    {"id": "spider_man2", "label": "마블 스파이더맨 2", "category": "openworld", "group": "오픈월드", "genre": "openworld"},
+    {"id": "ratchet_clank", "label": "라쳇 앤 클랭크: 리프트 어파트", "category": "aaa", "group": "AAA / GOTY", "genre": "aaa"},
+    {"id": "space_marine2", "label": "워해머 40,000: 스페이스 마린 2", "category": "aaa", "group": "AAA / GOTY", "genre": "aaa"},
+    {"id": "expedition33", "label": "클레르 옵스퀴르: 33 원정대", "category": "aaa", "group": "AAA / GOTY", "genre": "rpg"},
+
     {"id": "valorant", "label": "발로란트", "group": "FPS / 경쟁형", "category": "fps", "genre": "fps"},
     {"id": "csgo2", "label": "CS2", "group": "FPS / 경쟁형", "category": "fps", "genre": "fps"},
     {"id": "csgo", "label": "CS:GO", "group": "FPS / 경쟁형", "category": "fps", "genre": "fps"},

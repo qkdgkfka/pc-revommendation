@@ -74,9 +74,23 @@ class GameFpsCoverageTests(unittest.TestCase):
         self.assertNotIn("upscale", modes("gpu_rtx5070","valorant"))
 
 
-class AlwaysVisibleRecommendationTests(unittest.TestCase):
+class VerifiedInventoryRecommendationTests(unittest.TestCase):
     def setUp(self):
         server.RECOMMENDATION_CACHE.clear()
+        from datetime import datetime, timezone
+        inventory = {}
+        for kind in ("cpu","gpu","ram","mb","psu","storage"):
+            inventory[kind] = [
+                {**part, "price_source":"danawa_live", "price_status":"verified",
+                 "scraped_at":datetime.now(timezone.utc).isoformat(),
+                 "url":"https://prod.danawa.com/info/?pcode=123",
+                 "image_url":"https://img.danuri.io/verified-test-photo.jpg"}
+                for part in server.CATALOGS[kind]
+            ]
+        verified = patch.object(server, "verified_recommendation_inventory", return_value=inventory)
+        verified.start()
+        self.addCleanup(verified.stop)
+        self.addCleanup(server.RECOMMENDATION_CACHE.clear)
         for name,value in [("db_lookup_price",None),("db_lookup_benchmarks",[]),("resolve_verified_gpu_market_prices",{}),("refresh_recommendation_prices",None)]:
             patcher=patch.object(server,name,return_value=value)
             patcher.start()
@@ -98,19 +112,16 @@ class AlwaysVisibleRecommendationTests(unittest.TestCase):
                             self.assertGreaterEqual(row["fps"]["avg_fps"],previous["fps"]["avg_fps"])
                         previous=row
 
-    def test_price_refresh_regression_cannot_hide_low_or_invert_totals(self):
-        def reverse_prices(payload):
-            for tier,price in [("low",1000000),("mid",1500000),("high",900000)]:
-                row=payload["results"][tier]
-                for part in row["parts"].values():part["price"]=0
-                row["parts"]["gpu"]["price"]=price
-                server.recompute_plan_total(row)
-        with patch.object(server,"refresh_recommendation_prices",side_effect=reverse_prices):
+    def test_verified_prices_are_not_replaced_after_selection(self):
+        with patch.object(server,"refresh_recommendation_prices") as refresh:
             p=server.recommend({"budget":2000000,"game":"apex"})
-        self.assertTrue(p["results"]["low"]["parts"])
+        refresh.assert_not_called()
+        for row in p["results"].values():
+            self.assertEqual(6, len(row["parts"]))
+            self.assertEqual(sum(part["price"] for part in row["parts"].values()), row["totalPrice"])
+            self.assertTrue(all(part["verified"] for part in row["parts"].values()))
         prices=[r["totalPrice"] for r in p["results"].values()]
         self.assertEqual(sorted(prices),prices)
-        self.assertTrue(p["results"]["high"]["same_configuration"])
 
     def test_repeat_request_uses_cache_without_sharing_mutable_response(self):
         query={"budget":900000,"game":"apex"}

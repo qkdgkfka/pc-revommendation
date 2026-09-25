@@ -1,0 +1,44 @@
+{
+  "before": {
+    "cpu": 764,
+    "gpu": 532,
+    "mb": 450,
+    "ram": 576,
+    "storage": 724,
+    "psu": 427
+  },
+  "fetched": {
+    "cpu": 244,
+    "gpu": 345,
+    "mb": 362,
+    "ram": 364,
+    "storage": 453,
+    "psu": 360
+  },
+  "verified": {
+    "cpu": 244,
+    "gpu": 345,
+    "mb": 362,
+    "ram": 364,
+    "storage": 453,
+    "psu": 360
+  },
+  "photo_failed": {
+    "cpu": 0,
+    "gpu": 0,
+    "mb": 0,
+    "ram": 0,
+    "storage": 0,
+    "psu": 0
+  },
+  "external_failures": [],
+  "stored": {
+    "cpu": 896,
+    "gpu": 724,
+    "mb": 721,
+    "ram": 820,
+    "storage": 1113,
+    "psu": 720
+  },
+  "finished_at": "2026-09-25T11:48:45.974608+00:00"
+}

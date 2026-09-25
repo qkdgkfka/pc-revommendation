@@ -73,12 +73,13 @@ class BenchmarkCrawlerTests(unittest.TestCase):
             self.assertTrue(row["source_url"].startswith("https://"))
             self.assertTrue(row["chart_url"])
             self.assertEqual(len(row["evidence_sha256"]), 64)
-            self.assertEqual(row["cpu_id"], "cpu_r7_9800x3d")
+            from server_catalogs import CPU_CATALOG
+            self.assertIn(row["cpu_id"], {cpu["id"] for cpu in CPU_CATALOG})
             self.assertFalse(row["ray_tracing"])
             self.assertFalse(row["frame_generation"])
             self.assertEqual(row["upscaling"], "native")
             self.assertGreater(row["avg_fps"], 0)
-            key = tuple(row[field] for field in ("source_url", "game", "gpu_id", "resolution", "preset"))
+            key = tuple(row[field] for field in ("source_url", "game", "gpu_id", "cpu_id", "resolution", "preset"))
             self.assertNotIn(key, keys)
             keys.add(key)
 

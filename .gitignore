@@ -9,3 +9,5 @@ venv/
 *.log
 data/market_cache.json
 data/*.tmp
+
+data/product_images/

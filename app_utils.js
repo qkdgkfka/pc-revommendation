@@ -244,7 +244,7 @@ function priceProvenance(item) {
   if (price == null) return { status:'unavailable', text:'가격 미확인 · 판매처 확인 필요' };
   const source = String(item?.price_source || '');
   const shop = marketName(item?.shop || source);
-  const checked = item?.price_checked_at || item?.checked_at;
+  const checked = item?.price_checked_at || item?.scraped_at || item?.checked_at;
   const date = checked ? new Date(checked) : null;
   const checkedText = date && Number.isFinite(date.getTime())
     ? date.toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '';
@@ -357,9 +357,18 @@ function applyPriceResult(result) {
   if (result.price_source) target.price_source = result.price_source;
   if (result.product_name) target.product_name = result.product_name;
   if (result.image_url) target.image_url = bestProductImageUrl(target.image_url, result.image_url);
-  ['price_status','price_checked_at','source_url'].forEach(key => {
+  ['price_status','price_checked_at','scraped_at','source_url'].forEach(key => {
     if (result[key] != null) target[key] = result[key];
   });
+  const observedAt = result.price_checked_at || result.scraped_at;
+  if (observedAt) target.price_checked_at = observedAt;
+  if (result.price_status === 'verified' || result.price_status === 'cached') {
+    target.stale = false;
+    target.price_stale = false;
+  } else if (result.price_status === 'stale') {
+    target.stale = true;
+    target.price_stale = true;
+  }
   target.lookup_name = result.name || target.lookup_name || target.name;
 }
 
@@ -1028,7 +1037,7 @@ async function lookupLivePrices(items, options = {}) {
   if (!payloadItems.length) return [];
 
   const ctrl = new AbortController();
-  const timeout = setTimeout(() => ctrl.abort(), 12000);
+  const timeout = setTimeout(() => ctrl.abort(), 20000);
   try {
     const r = await fetch(baseUrl() + '/api/price-lookup', {
       method: 'POST',
@@ -1076,19 +1085,9 @@ async function refreshSelectedPrices() {
     updateCustomPrice();
   }
 }
-function fpsClass(fps, hz) {
-  return fps >= hz*1.1 ? 'over' : fps >= hz*0.85 ? 'near' : 'low_';
-}
 function workFillClass(score) {
   return score >= 75 ? 'work-great' : score >= 55 ? 'work-good' : score >= 35 ? 'work-ok' : 'work-poor';
 }
-function hzPillClass(cov) { return cov>=1.0?'hzp-great':cov>=0.7?'hzp-ok':'hzp-poor'; }
-function hzPillText(cov, hz) {
-  const p = Math.round(cov*100);
-  return cov>=1.1?`${hz}Hz 초과 달성 (${p}%)`:cov>=1.0?`${hz}Hz 달성 (${p}%)`:cov>=0.7?`${hz}Hz의 ${p}% 충족`:`${hz}Hz에 부족 (${p}%)`;
-}
-function valueIcon(l) { return {'목표 성능 여유':'✅','목표 성능 충족':'✅','거의 충족':'⚖️','최상 가성비':'🏆','좋은 가성비':'✅','적정':'⚖️','다소 부족':'⚠️','매우 부족':'❌'}[l]||'📊'; }
-
 function selectSingle(nodes, target) {
   nodes.forEach(n => n.classList.remove('selected'));
   target.classList.add('selected');

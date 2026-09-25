@@ -1,0 +1,121 @@
+{
+  "errors": [],
+  "failed": [],
+  "checks": [
+    {
+      "width": 1440,
+      "aiText": "DLSS Quality\n예상\n68.2 FPS\n\n예상 범위 44.3–92.1 FPS\n\nEpic · 기준 자료 1440p\n\n측정 출처\nDLSS Quality + FG 2×\n예상\n122.8 FPS\n실제 렌더링 61.4 FPS\n\n예상 범위 86–147.4 FPS\n\nNVIDIA App 오버라이드가 필요할 수 있음\n\n기능 지원 정보\nDLSS Quality + MFG 4×\n예상\n245.6 FPS\n실제 렌더링 61.4 FPS\n\n예상 범위 171.9–294.7 FPS\n\nNVIDIA App 오버라이드가 필요할 수 있음\n\n기능 지원 정보\n\nFG는 생성 프레임을 포함한 화면 표시 FPS입니다. 조작 반응 속도는 실제 렌더링 FPS와 다릅니다.\n\n예상값은 구성과 렌더링 부하를 반영한 계산값이며 실측값이 아닙니다.",
+      "customText": "DLSS Quality\n예상\n68.2 FPS\n\n예상 범위 44.3–92.1 FPS\n\nEpic · 기준 자료 1440p\n\n측정 출처\nDLSS Quality + FG 2×\n예상\n122.8 FPS\n실제 렌더링 61.4 FPS\n\n예상 범위 86–147.4 FPS\n\nNVIDIA App 오버라이드가 필요할 수 있음\n\n기능 지원 정보\nDLSS Quality + MFG 4×\n예상\n245.6 FPS\n실제 렌더링 61.4 FPS\n\n예상 범위 171.9–294.7 FPS\n\nNVIDIA App 오버라이드가 필요할 수 있음\n\n기능 지원 정보\n\nFG는 생성 프레임을 포함한 화면 표시 FPS입니다. 조작 반응 속도는 실제 렌더링 FPS와 다릅니다.\n\n예상값은 구성과 렌더링 부하를 반영한 계산값이며 실측값이 아닙니다.",
+      "unsupported": true,
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "aiText": "DLSS Quality\n예상\n68.2 FPS\n\n예상 범위 44.3–92.1 FPS\n\nEpic · 기준 자료 1440p\n\n측정 출처\nDLSS Quality + FG 2×\n예상\n122.8 FPS\n실제 렌더링 61.4 FPS\n\n예상 범위 86–147.4 FPS\n\nNVIDIA App 오버라이드가 필요할 수 있음\n\n기능 지원 정보\nDLSS Quality + MFG 4×\n예상\n245.6 FPS\n실제 렌더링 61.4 FPS\n\n예상 범위 171.9–294.7 FPS\n\nNVIDIA App 오버라이드가 필요할 수 있음\n\n기능 지원 정보\n\nFG는 생성 프레임을 포함한 화면 표시 FPS입니다. 조작 반응 속도는 실제 렌더링 FPS와 다릅니다.\n\n예상값은 구성과 렌더링 부하를 반영한 계산값이며 실측값이 아닙니다.",
+      "customText": "DLSS Quality\n예상\n68.2 FPS\n\n예상 범위 44.3–92.1 FPS\n\nEpic · 기준 자료 1440p\n\n측정 출처\nDLSS Quality + FG 2×\n예상\n122.8 FPS\n실제 렌더링 61.4 FPS\n\n예상 범위 86–147.4 FPS\n\nNVIDIA App 오버라이드가 필요할 수 있음\n\n기능 지원 정보\nDLSS Quality + MFG 4×\n예상\n245.6 FPS\n실제 렌더링 61.4 FPS\n\n예상 범위 171.9–294.7 FPS\n\nNVIDIA App 오버라이드가 필요할 수 있음\n\n기능 지원 정보\n\nFG는 생성 프레임을 포함한 화면 표시 FPS입니다. 조작 반응 속도는 실제 렌더링 FPS와 다릅니다.\n\n예상값은 구성과 렌더링 부하를 반영한 계산값이며 실측값이 아닙니다.",
+      "unsupported": true,
+      "overflow": false
+    }
+  ],
+  "games": 41,
+  "images": [
+    "dota2",
+    "f1_24",
+    "the_last_of_us1",
+    "spider_man2",
+    "ratchet_clank",
+    "space_marine2",
+    "expedition33",
+    "valorant",
+    "csgo2",
+    "csgo",
+    "overwatch2",
+    "apex",
+    "rainbow6",
+    "pubg",
+    "cyberpunk2077",
+    "baldurs_gate3",
+    "god_of_war_ragnarok",
+    "black_myth_wukong",
+    "witcher3",
+    "elden_ring",
+    "ghost_of_tsushima",
+    "red_dead_redemption2",
+    "horizon_forbidden_west",
+    "hogwarts_legacy",
+    "starfield",
+    "genshin_impact",
+    "wuthering_waves",
+    "zenless_zone_zero",
+    "lostark",
+    "wow",
+    "ffxiv",
+    "cities_skylines2",
+    "msfs2024",
+    "farming_sim",
+    "fortnite",
+    "marvel_rivals",
+    "cod_black_ops6",
+    "dragons_dogma2",
+    "dying_light2",
+    "resident_evil4",
+    "alan_wake2"
+  ],
+  "game_picker": {
+    "flows": [
+      {
+        "width": 1440,
+        "flow": "Ai",
+        "icons": true,
+        "clipping": {
+          "top": 448.46875,
+          "bottom": 728.46875,
+          "visible": true
+        },
+        "overflow": false
+      },
+      {
+        "width": 1440,
+        "flow": "Custom",
+        "icons": true,
+        "clipping": {
+          "top": 605.65625,
+          "bottom": 885.65625,
+          "visible": true
+        },
+        "overflow": false
+      },
+      {
+        "width": 390,
+        "flow": "Ai",
+        "icons": true,
+        "clipping": {
+          "top": 477.859375,
+          "bottom": 757.859375,
+          "visible": true
+        },
+        "overflow": false
+      },
+      {
+        "width": 390,
+        "flow": "Custom",
+        "icons": true,
+        "clipping": {
+          "top": 621.8125,
+          "bottom": 893,
+          "visible": true
+        },
+        "overflow": false
+      }
+    ],
+    "errors": [],
+    "iconCount": 41,
+    "imageFallback": true
+  },
+  "regression_tests": {
+    "python": 118,
+    "javascript": 9,
+    "failures": 0,
+    "notes": "Existing datetime.utcnow deprecation warnings remain."
+  }
+}

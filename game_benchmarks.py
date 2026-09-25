@@ -38,7 +38,10 @@ def _positive_number(value):
 @lru_cache(maxsize=1)
 def load_measurements():
     try:
-        payload = json.loads(SNAPSHOT_PATH.read_text(encoding="utf-8"))
+        from game_database import load_snapshot
+        payload = load_snapshot() if SNAPSHOT_PATH == Path(__file__).resolve().parent / "data/game_benchmarks.json" else None
+        if payload is None:
+            payload = json.loads(SNAPSHOT_PATH.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return ()
     if not isinstance(payload, dict) or not isinstance(payload.get("measurements"), list):

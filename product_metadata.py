@@ -334,6 +334,9 @@ def compatible_gpu_price_name(catalog_name: Any, price_name: Any) -> bool:
         return True
     if not price_key or catalog_key != price_key:
         return False
+    mobile = r"\b(?:rtx|gtx|rx)\s*\d{3,5}\s*m\b"
+    if bool(re.search(mobile, canonical_name(catalog_name))) != bool(re.search(mobile, canonical_name(price_name))):
+        return False
     target_number = gpu_model_number_from_key(catalog_key)
     extra_numbers = gpu_model_number_mentions(price_name) - ({target_number} if target_number else set())
     requested_vram = re.search(r"\b(\d+)\s*gb\b", canonical_name(catalog_name))
@@ -374,6 +377,11 @@ def compatible_price_name(catalog_name: Any, price_name: Any) -> bool:
     requested_ram = parse_ram_metadata(requested)
     if requested_ram.get("type"):
         listed_ram = parse_ram_metadata(listed)
+        kit_pattern = r"\b(\d+)\s*(?:gb)?\s*[x×*]\s*(\d+)\b"
+        requested_kit = re.search(kit_pattern, requested)
+        listed_kit = re.search(kit_pattern, listed)
+        if requested_kit and (not listed_kit or requested_kit.groups() != listed_kit.groups()):
+            return False
         for spec in ("type", "gb", "speed"):
             if requested_ram.get(spec) and requested_ram[spec] != listed_ram.get(spec):
                 return False

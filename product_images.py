@@ -1,5 +1,11 @@
 """Bounded, same-origin delivery of actual retailer product photographs."""
 from collections import OrderedDict
+from pathlib import Path
+import hashlib
+import tempfile
+import time
+
+DISK_CACHE_DIR = Path(__file__).resolve().parent / "data" / "product_images"
 from html.parser import HTMLParser
 from threading import RLock
 from time import monotonic
@@ -115,6 +121,28 @@ def image_content_type(data):
     return ''
 
 
+def disk_product_image(url):
+    path = DISK_CACHE_DIR / (hashlib.sha256(url.encode()).hexdigest() + ".img")
+    try:
+        if time.time() - path.stat().st_mtime > CACHE_SECONDS:
+            return None
+        data = path.read_bytes()
+        mime = image_content_type(data)
+        return (data, mime) if mime and len(data) <= MAX_BYTES else None
+    except OSError:
+        return None
+
+def persist_product_image(url, data):
+    try:
+        DISK_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        target = DISK_CACHE_DIR / (hashlib.sha256(url.encode()).hexdigest() + ".img")
+        with tempfile.NamedTemporaryFile(dir=DISK_CACHE_DIR, delete=False) as output:
+            output.write(data)
+            temporary = Path(output.name)
+        temporary.replace(target)
+    except OSError:
+        pass
+
 def fetch_product_image(value):
     url = retailer_image_url(value)
     if not url:
@@ -125,6 +153,9 @@ def fetch_product_image(value):
             _cache.move_to_end(url)
             return cached[1], cached[2]
         _cache.pop(url, None)
+    stored = disk_product_image(url)
+    if stored:
+        return stored
     host = urlparse(url).hostname or ''
     priority = image_source_priority(url)
     referer = ('https://www.compuzone.co.kr/' if priority == 0 else
@@ -144,6 +175,7 @@ def fetch_product_image(value):
     except (OSError, ValueError):
         # A transient failure never replaces an image with a cached placeholder.
         return None
+    persist_product_image(url, data)
     with _lock:
         _cache[url] = (monotonic(), data, content_type)
         while len(_cache) > 256 or sum(len(item[1]) for item in _cache.values()) > CACHE_BYTES:

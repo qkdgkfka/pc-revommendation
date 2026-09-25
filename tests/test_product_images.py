@@ -1,4 +1,6 @@
 import io
+import tempfile
+from pathlib import Path
 import unittest
 from unittest.mock import Mock, patch
 
@@ -8,8 +10,21 @@ import server_fixed as server
 
 class ProductImageTests(unittest.TestCase):
     def setUp(self):
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        disk = patch.object(images, "DISK_CACHE_DIR", Path(self.directory.name))
+        disk.start()
+        self.addCleanup(disk.stop)
         images._cache.clear()
         server.IMAGE_URL_CACHE.clear()
+
+    def test_disk_photo_survives_memory_cache_reset_without_network(self):
+        url = "https://img.danuri.io/persist.jpg"
+        data = b"\xff\xd8\xffreal-photo"
+        images.persist_product_image(url, data)
+        images._cache.clear()
+        with patch.object(images, "build_opener", side_effect=AssertionError("network")):
+            self.assertEqual((data, "image/jpeg"), images.fetch_product_image(url))
 
     def test_lazy_photo_wins_over_placeholder_src(self):
         html = '<img src="/images/noimg.gif" data-original="//img.danuri.io/ram.jpg">'
