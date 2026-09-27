@@ -1,0 +1,99 @@
+[
+  {
+    "input": {
+      "budget": 2000000,
+      "budget_min": 1000000,
+      "game": "cyberpunk2077",
+      "resolution": "1440",
+      "refresh": 60
+    },
+    "rows": [
+      {
+        "tier": "low",
+        "total": 1001360,
+        "fps": 63.6,
+        "cpu": "AMD 라이젠5-4세대 5500 (세잔) (해외구매)",
+        "gpu": "[GIGABYTE] 라데온 RX 7600 GAMING OC D6 8GB 제이씨현",
+        "ssd": "Sandisk SSD PLUS M.2 NVMe (500GB)",
+        "cpu_ref": "cpu_r5_5500",
+        "same": false
+      },
+      {
+        "tier": "mid",
+        "total": 1594220,
+        "fps": 75.5,
+        "cpu": "AMD 라이젠5-4세대 5500 (세잔) (해외구매)",
+        "gpu": "ASUS DUAL 지포스 RTX 5060 TI OC D7 8GB 인텍앤컴퍼니",
+        "ssd": "Fanxiang S501Q M.2 NVMe 해외구매 (512GB)",
+        "cpu_ref": "cpu_r5_5500",
+        "same": false
+      },
+      {
+        "tier": "high",
+        "total": 1996320,
+        "fps": 93.8,
+        "cpu": "AMD 라이젠5-4세대 5500 (세잔) (해외구매)",
+        "gpu": "[GIGABYTE] 라데온 RX 9070 GAMING OC D6 16GB 피씨디렉트",
+        "ssd": "Fanxiang S501Q M.2 NVMe 해외구매 (512GB)",
+        "cpu_ref": "cpu_r5_5500",
+        "same": false
+      }
+    ],
+    "seconds": 5.07,
+    "warning": null
+  },
+  {
+    "input": {
+      "budget": 3000000,
+      "budget_min": 1500000,
+      "game": "csgo2",
+      "resolution": "1080",
+      "refresh": 144
+    },
+    "rows": [
+      {
+        "tier": "low",
+        "total": 1791360,
+        "fps": 379.8,
+        "cpu": "AMD 라이젠9-6세대 9900X (그래니트 릿지) (벌크 병행)",
+        "gpu": "ASUS DUAL 지포스 RTX 5060 EVO OC D7 8GB 대원씨티에스",
+        "ssd": "Fanxiang S501Q M.2 NVMe 해외구매 (512GB)",
+        "cpu_ref": "cpu_r9_9900x",
+        "same": false
+      },
+      {
+        "tier": "mid",
+        "total": 2466670,
+        "fps": 472.7,
+        "cpu": "AMD 라이젠7-6세대 9800X3D (그래니트 릿지) (해외구매)",
+        "gpu": "PALIT 지포스 RTX 5060 Ti DUAL D7 8GB 이엠텍",
+        "ssd": "Fanxiang S501Q M.2 NVMe 해외구매 (512GB)",
+        "cpu_ref": "cpu_r7_9800x3d",
+        "same": false
+      },
+      {
+        "tier": "high",
+        "total": 2879730,
+        "fps": 521.7,
+        "cpu": "AMD 라이젠7-6세대 9800X3D (그래니트 릿지) (해외구매)",
+        "gpu": "GIGABYTE 지포스 RTX 5070 WINDFORCE OC SFF D7 12GB 피씨디렉트",
+        "ssd": "Fanxiang S501Q M.2 NVMe 해외구매 (512GB)",
+        "cpu_ref": "cpu_r7_9800x3d",
+        "same": false
+      }
+    ],
+    "seconds": 3.8,
+    "warning": null
+  },
+  {
+    "input": {
+      "budget": 300000,
+      "game": "cyberpunk2077",
+      "resolution": "1440",
+      "refresh": 60
+    },
+    "rows": [],
+    "seconds": 0.81,
+    "warning": "일부 등급에서 예산·호환성과 LOW → MID → HIGH 성능 순서를 모두 충족하는 구성을 찾지 못했습니다."
+  }
+]

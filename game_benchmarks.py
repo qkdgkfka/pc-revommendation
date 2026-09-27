@@ -170,6 +170,21 @@ def _smooth_limit(gpu_fps, cpu_fps):
     return lower / (1.0 + (lower / higher) ** _FRAME_POWER) ** (1.0 / _FRAME_POWER)
 
 
+def interpolated_gpu_observation(anchor, target_perf, rows, gpu_index):
+    """Interpolate only inside a measured, same-review/game/preset curve."""
+    peers=[r for r in rows if _test_group(r)==_test_group(anchor)
+           and r["resolution"]==anchor["resolution"] and r["gpu_id"] in gpu_index
+           and _performance(gpu_index[r["gpu_id"]],r["resolution"])]
+    perf=lambda r:_performance(gpu_index[r["gpu_id"]],r["resolution"])
+    lower=[r for r in peers if perf(r)<target_perf]
+    upper=[r for r in peers if perf(r)>target_perf]
+    if not lower or not upper:return None
+    a=max(lower,key=perf);b=min(upper,key=perf)
+    fraction=math.log(target_perf/perf(a))/math.log(perf(b)/perf(a))
+    value=math.exp(math.log(a["avg_fps"])*(1-fraction)+math.log(b["avg_fps"])*fraction)
+    return value,[a,b]
+
+
 def estimate_from_measurements(gpu, cpu, ram, game, resolution, preset, profile, catalogs):
     resolution = str(resolution)
     if resolution not in _RESOLUTIONS or preset not in _PRESETS:
@@ -205,10 +220,17 @@ def estimate_from_measurements(gpu, cpu, ram, game, resolution, preset, profile,
     cpu_anchor_fraction = .65 + .30 * weight
     reference_cpu_ceiling = float(cpu_anchor["avg_fps"]) * anchor_resolution_scale / cpu_anchor_fraction
     reference_average = float(row["avg_fps"])
+    curve=None
+    if not same_gpu:
+        by_game,_=_measurement_index(rows_key)
+        target_at_reference=_performance(gpu,row["resolution"])
+        if target_at_reference:
+            curve=interpolated_gpu_observation(row,target_at_reference,by_game.get(game,()),gpu_index)
+            if curve:reference_average=curve[0]
     reference_gpu_ceiling = reference_average / (
         1.0 - (reference_average / reference_cpu_ceiling) ** _FRAME_POWER
     ) ** (1.0 / _FRAME_POWER)
-    gpu_scale = target_gpu_perf / source_gpu_perf
+    gpu_scale = target_gpu_perf / (_performance(gpu,row["resolution"]) if curve else source_gpu_perf)
     gpu_scale *= quality_factor(preset, weight) / quality_factor(row["preset"], weight)
     gpu_ceiling = reference_gpu_ceiling * gpu_scale
     cpu_ceiling = reference_cpu_ceiling * cpu_ratio * _CPU_QUALITY[preset] / _CPU_QUALITY[row["preset"]]
@@ -217,7 +239,7 @@ def estimate_from_measurements(gpu, cpu, ram, game, resolution, preset, profile,
     ram_scale = .85 if gb <= 8 else .94 if gb < 16 else .98 if gb < 32 and profile.get("ram_hungry") else 1.0
     measured = same_gpu and same_cpu and same_resolution and same_preset and ram_scale == 1.0
     average = reference_average if measured else limited_average * ram_scale
-    scale = average / reference_average
+    scale = average / float(row["avg_fps"])
     low_is_estimated = row.get("low1_fps") is None or not measured
     low_ratio = min(1.0, _positive_number(profile.get("low1")) or .78)
     low = float(row.get("low1_fps") or reference_average * low_ratio) * scale
@@ -227,7 +249,7 @@ def estimate_from_measurements(gpu, cpu, ram, game, resolution, preset, profile,
     if any(token in row["preset_label"].lower() for token in ("custom", "competitive", "article settings")):
         missing.append("원문 개별 그래픽 설정 기준이며 일반 프리셋과 차이가 있을 수 있습니다")
     if not same_gpu:
-        missing.append("GPU 성능 지수로 보정")
+        missing.append("같은 게임·설정의 인접 GPU 실측 사이에서 보간" if curve else "GPU 성능 지수로 보정")
     if not same_cpu:
         missing.append("테스트 CPU 대비 처리 성능과 게임별 부하로 보정")
     if not same_resolution:
@@ -260,6 +282,7 @@ def estimate_from_measurements(gpu, cpu, ram, game, resolution, preset, profile,
         "note": "선택한 게임·해상도·옵션의 추정입니다. CPU 제한율은 추정 GPU 상한 대비 감소량이며 범용 병목 퍼센트가 아닙니다.",
     }
     evidence = {
+        "gpu_interpolation": ([{"gpu_id":r["gpu_id"],"avg_fps":r["avg_fps"],"source_url":r["source_url"]} for r in curve[1]] if curve else []),
         "method": "measured_benchmark" if measured else "benchmark_calibrated",
         "confidence": confidence, "range": {"min": round(average * (1 - uncertainty), 1), "max": round(average * (1 + uncertainty), 1)},
         "source_url": row["source_url"], "source_title": row["source_title"],

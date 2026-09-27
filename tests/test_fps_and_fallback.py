@@ -68,8 +68,10 @@ class GameFpsCoverageTests(unittest.TestCase):
         self.assertIn("fg2", current)
         self.assertNotIn("mfg4", current)
         self.assertIn("mfg4", new)
-        self.assertEqual(235.0, new["upscale_fg_measured"]["avg_fps"])
-        self.assertEqual("mode_measurement", new["upscale_fg_measured"]["method"])
+        # The old 235 FPS row did not identify Quality or FG factor.
+        self.assertNotIn("upscale_fg_measured", new)
+        self.assertLess(new["fg2"]["avg_fps"],2*new["upscale"]["avg_fps"])
+        self.assertLess(new["mfg4"]["avg_fps"],4*new["upscale"]["avg_fps"])
         self.assertGreater(new["fg2"]["avg_fps"],new["fg2"]["render_fps"])
         self.assertNotIn("upscale", modes("gpu_rtx5070","valorant"))
 
@@ -96,21 +98,12 @@ class VerifiedInventoryRecommendationTests(unittest.TestCase):
             patcher.start()
             self.addCleanup(patcher.stop)
 
-    def test_low_and_all_tiers_remain_visible_under_small_budgets(self):
+    def test_impossible_budget_does_not_return_over_budget_builds(self):
         for vendor in ("NVIDIA","AMD","ANY"):
-            for game in ("valorant","apex","marvel_rivals"):
-                with self.subTest(vendor=vendor,game=game):
-                    payload=server.recommend({"budget":300000,"game":game,"gpu_pref":vendor})
-                    previous=None
-                    for tier in ("low","mid","high"):
-                        row=payload["results"][tier]
-                        self.assertEqual(6,len(row["parts"]))
-                        self.assertTrue(row["compatibility"]["compatible"])
-                        self.assertTrue(server.is_recommendable_gpu(row["parts"]["gpu"]))
-                        if previous:
-                            self.assertGreaterEqual(row["totalPrice"],previous["totalPrice"])
-                            self.assertGreaterEqual(row["fps"]["avg_fps"],previous["fps"]["avg_fps"])
-                        previous=row
+            with self.subTest(vendor=vendor):
+                payload=server.recommend({"budget":300000,"game":"valorant","gpu_pref":vendor})
+                self.assertFalse(any(row.get("parts") for row in payload["results"].values()))
+                self.assertTrue(payload["warning"])
 
     def test_verified_prices_are_not_replaced_after_selection(self):
         with patch.object(server,"refresh_recommendation_prices") as refresh:

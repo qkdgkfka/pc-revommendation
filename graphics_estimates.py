@@ -7,6 +7,7 @@ from functools import lru_cache
 import json
 import re
 from pathlib import Path
+from rendering_calibration import calibration_data, upscale_prediction, fg_prediction
 
 NVIDIA_SOURCE = "https://www.nvidia.com/en-us/geforce/news/dlss-4-multi-frame-generation-out-now/"
 AMD_SOURCE = "https://www.amd.com/en/products/graphics/technologies/fidelityfx/supported-games.html"
@@ -43,10 +44,12 @@ def graphics_scenarios(gpu, cpu, game, resolution, fps, reference_estimator):
     identity = " ".join(str(gpu.get(k) or "") for k in ("name", "id", "performance_ref_id")).lower()
     nvidia = "rtx" in identity
     amd = "rx" in identity
+    technology = "DLSS" if nvidia else "FSR" if amd else None
+    fsr_support = calibration_data()["fsr_support"].get(game,{})
     fg_capable = bool(re.search(r"rtx[\s_-]*[45]\d{3}", identity))
     mfg_capable = bool(re.search(r"rtx[\s_-]*50\d{2}", identity))
     rows = [{"id": "native", "label": "기본 · RT / FG 끔", "avg_fps": native,
-             "render_fps": native, "range": fps["fps_range_by_option"]["high"],
+             "technology": technology, "render_fps": native, "range": fps["fps_range_by_option"]["high"],
              "supported": True, "generated": False, "method": fps["fps_source"], "note": "풀옵 · 네이티브"}]
     support=feature_support().get(game)
     dlss = support["dlss"] if support is not None else game in DLSS_GAMES
@@ -61,7 +64,7 @@ def graphics_scenarios(gpu, cpu, game, resolution, fps, reference_estimator):
     for row in sorted(graphics_measurements(),key=closeness,reverse=True):
         if row["game"] != game or not nvidia or not dlss:
             continue
-        if row["generated"] and (not fg_capable or not game_fg):
+        if row["generated"] or row["mode"] != "upscale":
             continue
         if row["mode"] in seen:continue
         seen.add(row["mode"])
@@ -71,8 +74,10 @@ def graphics_scenarios(gpu, cpu, game, resolution, fps, reference_estimator):
         value = round(row["avg_fps"] * scale, 1)
         exact = ((gpu.get("performance_ref_id") or gpu.get("id")) == row["gpu_id"]
                  and (cpu.get("performance_ref_id") or cpu.get("id")) == row["cpu_id"]
-                 and str(resolution) == row["resolution"] and row["preset"] == "high")
-        rows.append({"id": row["mode"], "label": row["label"], "supported": True,
+                 and str(resolution) == row["resolution"] and row["preset"] == "high"
+                 and abs(target_native-source_native)<=.1)
+        if not exact:continue
+        rows.append({"technology": technology, "id": row["mode"], "label": row["label"], "supported": True,
                      "avg_fps": row["avg_fps"] if exact else value,
                      "range": {"min": round(value * (.9 if exact else .65), 1), "max": round(value * (1.1 if exact else 1.35), 1)},
                      "render_fps": None if row["generated"] else value, "generated": row["generated"],
@@ -80,33 +85,38 @@ def graphics_scenarios(gpu, cpu, game, resolution, fps, reference_estimator):
                      "source_url": row["source_url"], "reference_resolution": row["resolution"], "preset_label":row.get("preset_label", row["preset"]),
                      "note": row["note"] + (" · 원문 구성 실측" if exact else " · 원문 GPU·CPU·해상도 대비 보정 추정")})
 
-    upscaler = "DLSS Quality" if nvidia and dlss else "FSR Quality" if amd and game in FSR_GAMES else None
+    upscaler = "DLSS Quality" if nvidia and dlss else (fsr_support.get("version","FSR")+" Quality") if amd and fsr_support.get("fsr") else None
     if upscaler:
-        # Model reduced pixel work, retaining CPU-limited work and overhead.
-        # The range, not the midpoint, is the useful precision of this scenario.
-        cpu_loss = float((fps.get("bottleneck") or {}).get("cpu_penalty_pct") or 0) / 100
-        gain = 1 + {"1080": .20, "1440": .32, "2160": .45}[resolution] * (1 - min(.95, cpu_loss))
-        render = round(native * gain, 1)
-        source = (support["source_url"] if support else NVIDIA_SOURCE) if nvidia else AMD_SOURCE
         calibrated=next((row for row in rows if row["id"]=="upscale"),None)
-        if calibrated:render=calibrated["avg_fps"]
-        if not calibrated:rows.append({"id": "upscale", "label": upscaler, "supported": True, "avg_fps": render, "render_fps": render,
-                     "range": {"min": round(native * .95, 1), "max": round(render * 1.25, 1)},
-                     "generated": False, "method": "workload_estimate", "source_url": source,
-                     "note": "실측 아님 · Quality 렌더링 부하와 CPU 병목을 반영한 대략적 범위 · 링크는 지원 정보"})
-        fg = (nvidia and fg_capable and game_fg) or (amd and game in FSR_FG_GAMES)
-        if fg:
-            for factor, key in [(2, "fg2")] + ([(4, "mfg4")] if mfg_capable and game_mfg else []):
-                render_after = round(render * .90, 1)
-                displayed = round(render_after * factor, 1)
-                rows.append({"id": key, "label": upscaler + (" + MFG 4×" if factor == 4 else " + FG 2×"),
-                             "supported": True, "avg_fps": displayed, "render_fps": render_after,
-                             "range": {"min": round(displayed * .7, 1), "max": round(displayed * 1.2, 1)},
-                             "generated": True, "method": "workload_estimate", "source_url": source,
-                             "support_note": ("NVIDIA App 오버라이드가 필요할 수 있음" if support and "NV" in support.get("mfg_note" if factor==4 else "fg_note","") else ""),
-                             "note": "실측 아님 · 생성 프레임 포함 표시 FPS · 조작 응답성은 실제 렌더 FPS 기준" + (" · 기본 FPS가 낮아 FG 효과 제한" if render_after < 50 else "")})
+        estimate=upscale_prediction(native,gpu,game,resolution,technology,fps.get("bottleneck") or {})
+        if calibrated:
+            render=calibrated["avg_fps"]
+        elif estimate:
+            render,samples=estimate
+            render=round(render,1)
+            rows.append({"id":"upscale","technology":technology,"label":upscaler,"supported":True,
+                         "avg_fps":render,"render_fps":render,"generated":False,
+                         "method":"mode_calibrated_estimate",
+                         "range":{"min":round(min(native,render)*.8,1),"max":round(render*1.25,1)},
+                         "source_url":samples[0]["source_url"],
+                         "calibration_sources":sorted({r["source_url"] for r in samples}),
+                         "note":"Quality 전후 실측 비율과 CPU 제한을 반영한 추정"})
+        else:
+            render=None
+        fg = (nvidia and fg_capable and game_fg) or (amd and fsr_support.get("fg") and bool(re.search(r"rx[\s_-]*[5679]\d{3}",identity)))
+        if fg and render:
+            for factor,key in [(2,"fg2")]+([(4,"mfg4")] if mfg_capable and game_mfg else []):
+                prediction=fg_prediction(render,gpu,game,resolution,technology,factor)
+                if prediction is None:continue
+                rows.append(dict(prediction,id=key,technology=technology,
+                    label=upscaler+(" + MFG 4×" if factor==4 else " + FG 2×"),
+                    supported=True,generated=True,method="workload_estimate",
+                    source_url=prediction["calibration_sources"][0],
+                    support_note=("NVIDIA App 오버라이드가 필요할 수 있음" if nvidia and support and "NV" in support.get("mfg_note" if factor==4 else "fg_note","") else ""),
+                    note="FG 전후 실측에서 구한 처리 시간으로 보정 · 다른 구성·장면은 추정"))
     if not any(row["id"] == "rt" or row["id"].startswith("rt_") for row in rows):
         rows.append({"id": "rt_unavailable", "label": "RT", "supported": False, "avg_fps": None, "method": "unavailable", "note": "이 게임·GPU의 검증된 RT 측정 자료 없음"})
     if not upscaler:
         rows.append({"id": "upscale_unavailable", "label": "DLSS / FSR · FG", "supported": False, "avg_fps": None, "method": "unavailable", "note": "게임·GPU 조합의 해당 기능 지원이 확인되지 않음"})
+    for row in rows:row.setdefault("technology",technology)
     return rows

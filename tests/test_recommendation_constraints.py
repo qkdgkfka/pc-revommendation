@@ -84,7 +84,7 @@ class RecommendationExclusionsTests(unittest.TestCase):
                        for tier in ("low", "mid", "high")]
         self.assertEqual(1, estimate.call_count)
         self.assertEqual(results[0]["fps_by_option"], results[2]["fps_by_option"])
-        self.assertLess(results[0]["target_fps"], results[2]["target_fps"])
+        self.assertEqual(results[0]["target_fps"], results[2]["target_fps"])
 
 
 if __name__ == "__main__":

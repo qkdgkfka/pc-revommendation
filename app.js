@@ -939,7 +939,7 @@ function renderResults(data) {
   placeholder.style.display = 'none';
   const cards = tiers.map(tier => {
     const r = results[tier];
-    if (!r?.parts || !Object.keys(r.parts).length) return `<div class="card ${tier}"><div class="tier-name">${labels[tier]}</div><p style="color:var(--muted);font-size:13px;margin-top:8px">판매가와 제품 사진이 확인된 호환 구성을 찾지 못했습니다. 잠시 후 다시 조회해주세요.</p></div>`;
+    if (!r?.parts || !Object.keys(r.parts).length) return `<div class="card ${tier}"><div class="tier-name">${labels[tier]}</div><p style="color:var(--muted);font-size:13px;margin-top:8px">판매가와 제품 사진이 확인된 부품으로 예산·호환 조건을 맞추지 못했습니다. 예산이나 선호 조건을 조정해주세요.</p></div>`;
 
     const parts   = r.parts  || {};
     const fps     = r.fps    || {};
