@@ -508,3 +508,76 @@
 .graphics-mode p,.graphics-panel>p,.graphics-mode-value span { font-size:12px; line-height:1.6; color:#475569; font-weight:500; margin:6px 0 0; overflow-wrap:anywhere; }
 .graphics-mode a { display:inline-block; margin-top:6px; font-size:12px; color:#1759b4; font-weight:600; }
 .graphics-panel .graphics-footnote { margin:0; }
+
+/* Direct selection: readable specification rows and comparison list. */
+.builder-head{display:block;}
+.builder-head>div:first-child{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+.builder-head .sec-title{margin:0;font-size:12px;letter-spacing:0;}
+.builder-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;justify-content:initial;}
+.builder-tab{border-radius:8px;padding:10px 5px;font-size:12px;}
+.builder-tab.active{box-shadow:none;}
+.builder-filter{padding:14px;background:#fbfcfe;border-radius:12px;}
+.filter-section-head{display:flex;justify-content:space-between;align-items:center;padding:4px 0 12px;font-size:13px;}
+.filter-section-head span{font-size:11px;color:var(--muted);}
+.filter-grid{display:block;border-top:1px solid var(--border);}
+.filter-group{display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px;padding:11px 0;border-bottom:1px solid var(--border);align-items:start;}
+.filter-label{margin:0;padding-top:7px;font-size:12px;line-height:1.4;letter-spacing:0;font-weight:650;color:#344966;}
+.filter-label small{display:block;font-size:10px;font-weight:500;color:var(--muted);margin-top:3px;}
+.filter-options{gap:6px;}
+.filter-check{border-width:1px;border-radius:6px;font-size:11px;font-weight:550;min-height:32px;padding:6px 9px;}
+.filter-check.selected{background:#eaf2ff;color:#1755bd;border-color:#7ca8ee;box-shadow:inset 0 0 0 1px #7ca8ee;}
+.filter-check.selected::before{content:'✓ ';}
+.filter-check:focus-visible,.active-filter-chip:focus-visible,.filter-more summary:focus-visible,.builder-tab:focus-visible{outline:3px solid #6ea6ff;outline-offset:2px;}
+.filter-more{display:contents;}
+.filter-more summary{cursor:pointer;font-size:11px;color:var(--accent);padding:7px 5px;}
+.filter-more[open]>.filter-options{flex-basis:100%;padding-top:5px;}
+.builder-filter-hint{font-size:11px;line-height:1.7;color:var(--muted);margin:12px 0 0;}
+.active-product-filters{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding-top:12px;margin-top:12px;border-top:1px dashed #c7d7eb;}
+.active-product-filters[hidden]{display:none;}
+.active-filter-label{font-size:11px;color:var(--muted);margin-right:4px;}
+.active-filter-label strong{color:var(--accent);}
+.active-filter-chip{display:flex;gap:8px;align-items:center;padding:6px 9px;border:1px solid #bed4f5;border-radius:6px;background:#fff;color:#1755bd;font-size:11px;cursor:pointer;}
+.active-filter-chip span{font-size:15px;line-height:1;}
+.product-list{grid-template-columns:1fr;gap:8px;max-height:650px;}
+.product-card{border-radius:10px;padding:14px;}
+.product-card-body{grid-template-columns:70px minmax(0,1fr) auto;align-items:center;gap:12px;}
+.product-thumb{width:70px;height:70px;border-radius:8px;}
+.product-name{font-size:13px;line-height:1.6;}
+.product-price{font-size:15px;}
+.product-badges{margin-top:7px;gap:4px;}
+.product-badge{border-radius:4px;font-weight:550;background:#f0f4f9;color:#52627b;}
+.product-select-indicator{border:1px solid #cbdaf1;background:#f5f8fd;color:var(--accent);border-radius:7px;padding:7px 9px;font-size:11px;white-space:nowrap;}
+.product-card.selected .product-select-indicator{color:#fff;background:var(--accent);border-color:var(--accent);}
+.product-empty strong{display:block;color:#344966;font-size:14px;}
+.product-empty p{font-size:12px;font-weight:500;line-height:1.8;margin:10px 0 18px;}
+@media(min-width:1121px){.custom-builder{grid-template-columns:minmax(0,1fr) 370px;}.build-side .build-card{position:sticky;top:20px;}}
+@media(max-width:720px){
+  .custom-hdr{padding:18px 16px 0;display:block;}.custom-hdr span{display:block;margin-top:6px;line-height:1.6;}
+  .custom-body{padding:16px 12px;}.product-browser{padding:12px;}.builder-filter{padding:10px;}
+  .filter-group{grid-template-columns:1fr;gap:7px;padding:12px 0;}.filter-label{padding:0;}.filter-label small{display:inline;margin-left:6px;}
+  .filter-check{min-height:36px;}.product-controls label{min-width:115px;}
+  .product-card-body{grid-template-columns:52px minmax(0,1fr);gap:9px;}.product-thumb{width:52px;height:52px;}
+  .product-select-indicator{grid-column:2;justify-self:start;}.product-card{padding:11px;}
+  .product-list{max-height:none;}.product-list-head{flex-wrap:wrap;}.filter-section-head span{font-size:10px;}
+}
+.spec-filter-panel>summary{cursor:pointer;list-style:none;gap:10px;}
+.spec-filter-panel>summary::-webkit-details-marker{display:none;}
+.spec-filter-panel>summary::after{content:'펼치기 +';color:var(--accent);font-size:11px;}
+.spec-filter-panel[open]>summary::after{content:'접기 −';}
+.spec-filter-panel>summary span{margin-left:auto;}
+.spec-filter-panel>summary:focus-visible{outline:3px solid #6ea6ff;outline-offset:2px;}
+@media(max-width:480px){.builder-tabs{grid-template-columns:repeat(3,minmax(0,1fr));}.builder-tab{white-space:nowrap;}}
+
+/* Socket checks stay visible without blocking manual selection. */
+#csCompatibility:not(:empty){margin-bottom:10px;}
+#csCompatibility .build-compatibility.incompatible{border:1px solid #e8b164;border-left:4px solid #cc7a13;background:#fff8eb;color:#77430f;}
+#csCompatibility .build-compatibility.unknown{border:1px solid #bdcce0;background:#f4f7fb;color:#435771;}
+#csCompatibility .build-compatibility.compatible{border:1px solid #b5dfc6;background:#f0faf4;color:#21663d;}
+.build-compatibility>strong{display:block;font-size:12px;line-height:1.7;}
+.build-compatibility>p{font-size:11px;font-weight:500;margin-top:8px;line-height:1.7;}
+.compatibility-parts{display:grid;gap:10px;margin:12px 0;}
+.compatibility-parts>div{display:grid;grid-template-columns:58px minmax(0,1fr);gap:8px;}
+.compatibility-parts dt{font-size:11px;font-weight:700;}
+.compatibility-parts dd{font-size:11px;font-weight:500;overflow-wrap:anywhere;}
+.compatibility-parts dd span{display:block;margin-top:3px;font-weight:650;}
+.gpu-series-trigger[aria-pressed="true"]{border-color:var(--accent);background:#edf4ff;color:var(--accent);font-weight:700;}

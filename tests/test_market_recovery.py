@@ -24,6 +24,8 @@ class MarketRecoveryTests(unittest.TestCase):
             replacement = patch.object(market_catalog, name, value)
             replacement.start()
             self.addCleanup(replacement.stop)
+        server.MARKET_SEARCH_CACHE.clear()
+        self.addCleanup(server.MARKET_SEARCH_CACHE.clear)
         self.addCleanup(server.MARKET_BROWSE_CACHE.clear)
         self.addCleanup(server.IMAGE_URL_CACHE.clear)
 
@@ -108,6 +110,7 @@ class MarketRecoveryTests(unittest.TestCase):
         for failure in failures:
             with self.subTest(failure=repr(failure)):
                 server.MARKET_BROWSE_CACHE.clear()
+                server.MARKET_SEARCH_CACHE.clear()
                 def fetch(url, provider, timeout):
                     if provider == "danawa":
                         raise failure

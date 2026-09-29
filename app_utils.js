@@ -31,13 +31,18 @@ function gpuBrand(item) {
   return value || 'unknown';
 }
 function withPartType(items, type) {
-  return (items || []).map(item => ({
+  return (items || []).map(item => {
+    const specs = builderSpecs(item, type);
+    return {
     ...item,
-    type: type === 'ram' ? (item.ram_type || (/^DDR[345]$/i.test(item.type || '') ? item.type : '')) : type,
+    ...(type === 'psu' && specs.watt ? {watt:specs.watt} : {}),
+    ...(['cpu','mb'].includes(type) && specs.socket !== 'unknown' ? {socket:specs.socket} : {}),
+    ...(type === 'mb' && specs.memoryTypes.length === 1 ? {ram_type:specs.memoryTypes[0]} : {}),
+    type: type === 'ram' ? (specs.memoryTypes[0] || '') : type,
     part_type: type,
     component_type: type,
     brand: type === 'gpu' ? gpuBrand(item) : item.brand,
-  }));
+  }; });
 }
 function fullProductName(item) {
   const name = String(item?.product_name || item?.name || '-');
@@ -55,6 +60,10 @@ function productManufacturer(item) {
     ['삼성', /samsung|삼성/i], ['SK하이닉스', /sk\s*hynix|하이닉스/i], ['마이크론', /micron|crucial|마이크론/i],
     ['WD', /western digital|\bwd\b|웨스턴디지털/i], ['Seagate', /seagate|씨게이트/i],
     ['G.SKILL', /g\.?skill|지스킬/i], ['CORSAIR', /corsair|커세어/i], ['TeamGroup', /teamgroup|팀그룹/i],
+    ['ESSENCORE KLEVV', /(?:essencore\s+)?klevv|essencore|에센코어|클레브/i], ['Kingston', /kingston|킹스톤/i],
+    ['Lexar', /lexar|렉사/i], ['ADATA', /adata|에이데이타/i],
+    ['KIOXIA', /kioxia|키오시아/i], ['PATRIOT', /patriot|패트리어트/i], ['Toshiba', /toshiba|도시바/i],
+    ['GeIL', /geil|게일/i], ['OLOy', /oloy|올로와이/i],
     ['마이크로닉스', /micronics|마이크로닉스/i], ['FSP', /\bfsp\b/i],
     ['Seasonic', /seasonic|시소닉/i], ['SuperFlower', /superflower|슈퍼플라워/i],
     ['ASRock', /asrock|애즈락/i], ['Intel', /intel|인텔/i], ['AMD', /\bamd\b|라이젠|ryzen/i],
@@ -314,7 +323,7 @@ function activeDanawaProducts(type) {
 
 function browseProductsFor(type) {
   const browse = browseStateFor(type);
-  const matches = browse.query === st.productQuery.trim() && browse.requestedSource === st.productSource;
+  const matches = browse.requestKey === builderSearchKey(type);
   if (matches && browse.loaded && browse.status !== 'unavailable') return browse.items;
   return baseCatalogFor(type);
 }
@@ -402,14 +411,27 @@ const BUILDER_PARTS = [
 ];
 const BUILDER_META = Object.fromEntries(BUILDER_PARTS.map(item => [item.key, item]));
 
-function rawCatalogFor(type) {
+function expandedBuilderCatalog(type) {
+  return !st.productFacets?.[type] && type !== 'gpu' && !String(st.productQuery || '').trim()
+    && Object.values(st.builderFilters[type] || {}).some(values => values.length);
+}
+function builderCatalogFor(type) {
   const browseItems = browseProductsFor(type);
-  if (type === 'gpu' && filterValues('gpu', 'model').length) return uniqueProducts([...browseItems, ...allKnownProductsFor('gpu')]);
+  if (!expandedBuilderCatalog(type)) return browseItems;
+  const saved = baseCatalogFor(type).filter(part => {
+    if (st.productSource === 'all') return true;
+    try {
+      const host = new URL(part.source_url || part.url || '').hostname;
+      return st.productSource === 'danawa' ? /(^|\.)danawa\.com$/.test(host) : /(^|\.)compuzone\.co\.kr$/.test(host);
+    } catch { return false; }
+  });
+  return uniqueProducts([...browseItems, ...saved]);
+}
+function rawCatalogFor(type) {
+  const browseItems = builderCatalogFor(type);
+
   if (type === 'gpu' || type === 'cpu' || type === 'ram') return browseItems;
-  if (type === 'mb') {
-    const { cpu, ram } = selectedCustomParts();
-    return compatibleMbs(cpu, ram, browseItems);
-  }
+  if (type === 'mb') return browseItems;
   if (['storage','hdd','psu','case','software'].includes(type)) return browseItems;
   return [];
 }
@@ -447,11 +469,32 @@ function cpuThreads(part) {
 }
 
 function gpuModelToken(part) {
-  const name = String(part?.product_name || part?.name || '');
-  const match = name.match(/\b(RTX|GTX|RX)\s*[- ]?\s*(\d{4})\s*(Ti\s*Super|Ti|Super|XTX|XT|GRE)?\b/i);
+  const pattern = /\b(RTX|GTX|RX)\s*[- ]?\s*(\d{4})\s*(Ti\s*Super|Ti|Super|XTX|XT|GRE)?\b/i;
+  const match = [part?.chipset,part?.gpu_model,part?.model,part?.product_name,part?.name]
+    .map(value => String(value || '').match(pattern)).find(Boolean);
   if (!match) return '';
   const suffix = (match[3] || '').toUpperCase().replace(/TI\s*SUPER/, 'Ti Super').replace('TI', 'Ti').replace('SUPER', 'Super');
   return `${match[1].toUpperCase()} ${match[2]}${suffix ? ` ${suffix}` : ''}`;
+}
+function gpuSeriesToken(part) {
+  const model = gpuModelToken(part);
+  if (!model) return '';
+  const [family, number] = model.split(' ');
+  if (family === 'RTX' && Number(number[2]) < 5) return '';
+  const structured = String(part?.series || '').replace(/\s+Series$/i,'').trim().toUpperCase();
+  return /^(?:RTX|GTX) \d{2}$|^RX \d000$/.test(structured) ? structured
+    : `${family} ${family === 'RX' ? number[0]+'000' : number.slice(0,2)}`;
+}
+function selectGpuSeries(label) {
+  if (st.builderPart !== 'gpu') return;
+  st.builderFilters.gpu = { ...(st.builderFilters.gpu || {}), series:[label.replace(/\s+Series$/i,'')], model:[] };
+  renderBuilderFilters();
+  renderProductList();
+  void refreshProductBrowserPrices();
+}
+function builderSearchKey(type, query = st.productQuery, source = st.productSource) {
+  const filters = Object.entries(st.builderFilters[type] || {}).filter(([,values]) => values.length).sort(([a],[b]) => a.localeCompare(b)).map(([key,values]) => [key,[...values].sort()]);
+  return JSON.stringify([type,String(query || '').trim(),source,st.productSort || 'popular',filters]);
 }
 
 function gpuSeriesGroups(items) {
@@ -463,8 +506,7 @@ function gpuSeriesGroups(items) {
     // Workstation RTX 4500/6000-style numbers are not GeForce generation models.
     if (family === 'RTX' && Number(number[2]) < 5) continue;
     const vendor = family === 'RX' ? 'AMD' : 'NVIDIA';
-    const generation = family === 'RX' ? `${number[0]}000` : number.slice(0, 2);
-    const label = `${family} ${generation} Series`;
+    const label = `${gpuSeriesToken(item)} Series`;
     if (!groups.has(label)) groups.set(label, { vendor, label, models:[] });
     if (!groups.get(label).models.includes(model)) groups.get(label).models.push(model);
   }
@@ -485,21 +527,19 @@ function preferredGpuProductForModel(model, available, references) {
 
 function selectGpuModel(model) {
   if (st.builderPart !== 'gpu') return;
-  st.builderFilters.gpu = { ...(st.builderFilters.gpu || {}), model:[model] };
+  st.builderFilters.gpu = { ...(st.builderFilters.gpu || {}), model:[model], series:[gpuSeriesToken({chipset:model})] };
   const selected = preferredGpuProductForModel(model, allKnownProductsFor('gpu'), baseCatalogFor('gpu'));
   if (selected) selectBuilderProduct('gpu', selected.id);
   else {
     renderBuilderFilters();
     renderProductList();
   }
+  void refreshProductBrowserPrices();
 }
 
 function psuRating(part) {
-  const name = String(part?.name || '').toLowerCase();
-  if (name.includes('platinum')) return 'Platinum';
-  if (name.includes('gold')) return 'Gold';
-  if (name.includes('bronze')) return 'Bronze';
-  return '';
+  const rating = builderSpecs(part, 'psu').rating;
+  return rating === 'unknown' ? '' : rating;
 }
 
 function valueSet(items, mapper) {
@@ -513,68 +553,91 @@ function rangeLabel(value, ranges) {
 }
 
 function builderFilterDefs(type) {
+  if (type !== 'gpu' && st.productFacets?.[type]) return st.productFacets[type];
   const items = rawCatalogFor(type);
+  const options = values => [...new Set(values.filter(v => v != null && v !== '' && v !== 'unknown').map(String))].map(v => [v,v]);
+  const fieldOptions = (key, defaults=[]) => [...options([...defaults, ...items.map(p => builderSpecs(p,type)[key])]), ['unknown','미확인']];
+  const sockets = fieldOptions('socket', ['AM5','AM4','LGA1851','LGA1700','LGA1200','LGA1151','STR5','STRX4']);
+  const brandNames = [...items, ...baseCatalogFor(type)].map(p => productManufacturer(p).label);
+  const popularBrands = ['삼성','SK하이닉스','마이크론','WD','Seagate','ESSENCORE KLEVV','G.SKILL','CORSAIR','TeamGroup','Kingston','Lexar','마이크로닉스','FSP','Seasonic','SuperFlower','ASUS','MSI','GIGABYTE','ASRock'];
+  const brands = options(brandNames).sort((a,b) => {
+    const rank = value => popularBrands.includes(value) ? popularBrands.indexOf(value) : 100;
+    return rank(a[0])-rank(b[0]) || a[1].localeCompare(b[1], 'ko');
+  });
+  const memory = [['DDR5','DDR5'],['DDR4','DDR4'],['DDR3','DDR3'],['unknown','미확인']];
   if (type === 'cpu') {
     return [
       { key:'vendor', label:'제조사', options:[['amd','AMD'],['intel','Intel']] },
-      { key:'socket', label:'소켓', options:valueSet(items, p => p.socket).map(v => [v, v]) },
+      { key:'socket', label:'소켓', options:sockets },
+      { key:'ramType', label:'메모리 규격', options:memory },
       { key:'cores', label:'코어 수', options:[['4-6','4-6코어'],['8-10','8-10코어'],['12-16','12-16코어'],['20-32','20코어 이상']] },
       { key:'threads', label:'스레드 수', options:[['8-12','8-12스레드'],['14-20','14-20스레드'],['24-32','24스레드 이상']] },
     ];
   }
   if (type === 'gpu') {
     return [
-      { key:'vendor', label:'제조사', options:[['nvidia','NVIDIA'],['amd','AMD']] },
+      { key:'vendor', label:'GPU 칩 제조사', options:[['nvidia','NVIDIA'],['amd','AMD']] },
       { key:'model', label:'GPU 모델', options:valueSet(items, gpuModelToken).map(v => [v, v]) },
       { key:'vram', label:'VRAM', options:valueSet(items, p => p.vram ? `${p.vram}` : '').sort((a,b)=>Number(a)-Number(b)).map(v => [v, `${v}GB`]) },
-      { key:'maker', label:'그래픽카드 브랜드', options:[['msi','MSI'],['gigabyte','Gigabyte'],['palit','Palit'],['colorful','Colorful'],['asus','ASUS'],['zotac','ZOTAC'],['galax','GALAX'],['emtek','Emtek']] },
+      { key:'maker', label:'그래픽카드 브랜드', options:[['msi','MSI'],['gigabyte','Gigabyte'],['palit','Palit'],['colorful','Colorful'],['asus','ASUS'],['zotac','ZOTAC'],['galax','GALAX'],['emtek','Emtek'],['sapphire','SAPPHIRE'],['powercolor','PowerColor'],['xfx','XFX'],['asrock','ASRock'],['inno3d','INNO3D']] },
     ];
   }
   if (type === 'mb') {
     return [
-      { key:'socket', label:'소켓', options:valueSet(items, p => p.socket).map(v => [v, v]) },
-      { key:'ramType', label:'메모리 규격', options:valueSet(items, p => p.ram_type).map(v => [v, v]) },
-      { key:'brand', label:'브랜드', options:valueSet(items, p => p.brand).map(v => [v, v]) },
+      { key:'platform', label:'플랫폼', options:[['amd','AMD'],['intel','Intel']] },
+      { key:'socket', label:'소켓', options:sockets },
+      { key:'ramType', label:'메모리 규격', options:memory },
+      { key:'brand', label:'제조사', options:brands },
     ];
   }
   if (type === 'ram') {
     return [
-      { key:'type', label:'규격', options:valueSet(items, p => p.type).map(v => [v, v]) },
+      { key:'type', label:'메모리 규격', options:memory },
+      { key:'color', label:'색상', options:[['White','화이트'],['Black','블랙'],['Silver','실버'],['Red','레드'],['unknown','미확인']] },
+      { key:'led', label:'LED / RGB', options:[['yes','LED 포함'],['no','LED 없음'],['unknown','미확인']] },
       { key:'gb', label:'용량', options:valueSet(items, p => p.gb).sort((a,b)=>Number(a)-Number(b)).map(v => [String(v), `${v}GB`]) },
       { key:'speed', label:'속도', options:valueSet(items, p => p.speed).sort((a,b)=>Number(a)-Number(b)).map(v => [String(v), `${v}MHz`]) },
-      { key:'brand', label:'브랜드', options:valueSet(items, p => p.brand).map(v => [v, v]) },
+      { key:'brand', label:'제조사', options:brands },
     ];
   }
   if (type === 'storage') {
     return [
-      { key:'capacity', label:'용량', options:valueSet(items, p => p.capacity || storageTbValue(p) * 1000).sort((a,b)=>Number(a)-Number(b)).map(v => [String(v), Number(v) >= 1000 ? `${Number(v)/1000}TB` : `${v}GB`]) },
-      { key:'tier', label:'등급', options:valueSet(items, p => p.tier).map(v => [v, v.toUpperCase()]) },
+      { key:'capacity', label:'용량', options:valueSet(items, p => p.capacity || storageTbValue(p) * 1000).sort((a,b)=>{ const common=[500,512,1000,2000,4000,8000,250,256]; const rank=v=>common.includes(Number(v))?common.indexOf(Number(v)):100+Number(v); return rank(a)-rank(b); }).map(v => [String(v), Number(v) >= 1000 ? `${Number(v)/1000}TB` : `${v}GB`]) },
+      { key:'interface', label:'인터페이스', options:[['NVMe','NVMe / PCIe'],['SATA','SATA'],['unknown','미확인']] },
+      { key:'formFactor', label:'폼팩터', options:[['M.2','M.2'],['2.5-inch','2.5인치'],['U.2','U.2'],['AIC','PCIe 카드'],['unknown','미확인']] },
+      { key:'pcie', label:'PCIe 세대', options:[['5','PCIe 5.0'],['4','PCIe 4.0'],['3','PCIe 3.0'],['unknown','미확인 / 해당 없음']] },
+      { key:'readSpeed', label:'순차 읽기', unit:'MB/s', options:BUILDER_SPEED_RANGES },
+      { key:'writeSpeed', label:'순차 쓰기', unit:'MB/s', options:BUILDER_SPEED_RANGES },
+      { key:'brand', label:'제조사', options:brands },
     ];
   }
   if (type === 'hdd') {
     return [
       { key:'capacity', label:'용량', options:valueSet(items, p => p.capacity).sort((a,b)=>Number(a)-Number(b)).map(v => [String(v), Number(v) >= 1000 ? `${Number(v)/1000}TB` : `${v}GB`]) },
       { key:'rpm', label:'회전수', options:valueSet(items, p => p.rpm).sort((a,b)=>Number(a)-Number(b)).map(v => [String(v), v ? `${v}RPM` : '추가 안 함']) },
-      { key:'brand', label:'브랜드', options:valueSet(items, p => p.brand).map(v => [v, v]) },
+      { key:'brand', label:'제조사', options:brands },
     ];
   }
   if (type === 'psu') {
     return [
-      { key:'watt', label:'용량', options:[['0-699','650W급'],['700-849','750W급'],['850-999','850W급'],['1000-2000','1000W 이상']] },
-      { key:'rating', label:'인증', options:valueSet(items, psuRating).map(v => [v, v]) },
-      { key:'brand', label:'브랜드', options:valueSet(items, p => p.brand).map(v => [v, v]) },
+      { key:'watt', label:'정격 출력', options:BUILDER_WATT_RANGES },
+      { key:'rating', label:'80 PLUS 인증', options:[...options(['Standard','Bronze','Silver','Gold','Platinum','Titanium']),['unknown','미확인']] },
+      { key:'modular', label:'케이블 연결', options:[['Full','풀모듈러'],['Semi','세미모듈러'],['Fixed','고정 케이블'],['unknown','미확인']] },
+      { key:'atx', label:'ATX 버전', options:[['3.1','ATX 3.1'],['3.0','ATX 3.0'],['2.x','ATX 2.x'],['unknown','미확인']] },
+      { key:'formFactor', label:'파워 규격', options:[['ATX','ATX'],['SFX','SFX'],['SFX-L','SFX-L'],['TFX','TFX'],['unknown','미확인']] },
+      { key:'brand', label:'제조사', options:brands },
     ];
   }
   if (type === 'case') {
     return [
       { key:'formFactor', label:'규격', options:valueSet(items, p => p.form_factor).map(v => [v, v]) },
-      { key:'brand', label:'브랜드', options:valueSet(items, p => p.brand).map(v => [v, v]) },
+      { key:'brand', label:'제조사', options:brands },
       { key:'color', label:'색상', options:valueSet(items, p => p.color).map(v => [v, v]) },
     ];
   }
   if (type === 'software') {
     return [
-      { key:'brand', label:'제조사', options:valueSet(items, p => p.brand).map(v => [v, v]) },
+      { key:'brand', label:'제조사', options:brands },
       { key:'license', label:'라이선스', options:valueSet(items, p => p.license).map(v => [v, v === 'none' ? '추가 안 함' : v]) },
     ];
   }
@@ -598,15 +661,30 @@ function toggleBuilderFilter(type, key, value) {
   if (type === 'gpu' && key === 'maker') st.csGpuMakers = [...current];
   renderBuilderFilters();
   renderProductList();
+  const button = [...document.querySelectorAll('#builderFilters [data-filter-key]')]
+    .find(btn => btn.dataset.filterKey === key && btn.dataset.filterValue === str);
+  button?.closest('details')?.setAttribute('open','');
+  button?.focus({preventScroll:true});
+  void refreshProductBrowserPrices();
 }
 
 function productMatchesFilters(type, part) {
+  if (type !== 'gpu' && part.specs && st.productFacets?.[type]) {
+    return Object.entries(st.builderFilters[type] || {}).every(([key, values]) => {
+      if (!values.length) return true;
+      const actual = Array.isArray(part.specs[key]) ? part.specs[key] : [String(part.specs[key] ?? '')];
+      return values.some(v => actual.includes(v) || (key === 'protocol' && v === 'NVMe' && actual.some(a => a.startsWith('NVMe'))));
+    });
+  }
   const f = st.builderFilters[type] || {};
+  const specs = builderSpecs(part,type);
   const has = key => Array.isArray(f[key]) && f[key].length > 0;
   const includes = (key, value) => !has(key) || f[key].includes(String(value));
+  const memoryMatches = key => !has(key) || f[key].some(v => specs.memoryTypes.length ? specs.memoryTypes.includes(v) : v === 'unknown');
   if (type === 'cpu') {
-    if (!includes('vendor', cpuVendor(part))) return false;
-    if (!includes('socket', part.socket)) return false;
+    if (!memoryMatches('ramType')) return false;
+    if (!includes('vendor', specs.platform !== 'unknown' ? specs.platform : cpuVendor(part))) return false;
+    if (!includes('socket', specs.socket)) return false;
     if (has('cores') && !f.cores.includes(rangeLabel(cpuCores(part), [
       {label:'4-6', min:4, max:6}, {label:'8-10', min:8, max:10}, {label:'12-16', min:12, max:16}, {label:'20-32', min:20, max:64},
     ]))) return false;
@@ -616,49 +694,54 @@ function productMatchesFilters(type, part) {
   }
   if (type === 'gpu') {
     if (!includes('vendor', gpuBrand(part))) return false;
+    if (!includes('series', gpuSeriesToken(part))) return false;
     if (!includes('model', gpuModelToken(part))) return false;
     if (!includes('vram', part.vram)) return false;
     if (has('maker')) {
-      const makerNames = { msi:['msi'], gigabyte:['gigabyte','기가바이트'], palit:['palit','팰릿'], colorful:['colorful','컬러풀'], asus:['asus','아수스'], zotac:['zotac','조텍'], galax:['galax','갤럭시'], emtek:['emtek','이엠텍'] };
+      const makerNames = { msi:['msi'], gigabyte:['gigabyte','기가바이트'], palit:['palit','팰릿'], colorful:['colorful','컬러풀'], asus:['asus','아수스'], zotac:['zotac','조텍'], galax:['galax','갤럭시'], emtek:['emtek','이엠텍'], sapphire:['sapphire','사파이어'], powercolor:['powercolor','파워컬러'], xfx:['xfx'], asrock:['asrock','애즈락'], inno3d:['inno3d','이노3d'] };
       const productName = String([part.name, part.product_name, part.brand, part.manufacturer].filter(Boolean).join(' ')).toLowerCase();
       if (!f.maker.some(maker => (makerNames[maker] || [maker]).some(name => productName.includes(name)))) return false;
     }
   }
   if (type === 'mb') {
-    if (!includes('socket', part.socket)) return false;
-    if (!includes('ramType', part.ram_type)) return false;
-    if (!includes('brand', part.brand)) return false;
+    if (!includes('socket', specs.socket)) return false;
+    if (!includes('platform', specs.platform)) return false;
+    if (!memoryMatches('ramType')) return false;
+    if (!includes('brand', productManufacturer(part).label)) return false;
   }
   if (type === 'ram') {
-    if (!includes('type', part.type)) return false;
+    if (!memoryMatches('type')) return false;
+    if (!includes('color', specs.color) || !includes('led', specs.led)) return false;
     if (!includes('gb', part.gb)) return false;
     if (!includes('speed', part.speed)) return false;
-    if (!includes('brand', part.brand)) return false;
+    if (!includes('brand', productManufacturer(part).label)) return false;
   }
   if (type === 'storage') {
     const capacity = part.capacity || storageTbValue(part) * 1000;
     if (!includes('capacity', capacity)) return false;
-    if (!includes('tier', part.tier)) return false;
+    if (!includes('interface', specs.interface) || !includes('formFactor', specs.formFactor) || !includes('pcie', specs.pcie)) return false;
+    if (!includes('readSpeed', builderRange(specs.readSpeed, BUILDER_SPEED_RANGES))) return false;
+    if (!includes('writeSpeed', builderRange(specs.writeSpeed, BUILDER_SPEED_RANGES))) return false;
+    if (!includes('brand', productManufacturer(part).label)) return false;
   }
   if (type === 'hdd') {
     if (!includes('capacity', part.capacity)) return false;
     if (!includes('rpm', part.rpm)) return false;
-    if (!includes('brand', part.brand)) return false;
+    if (!includes('brand', productManufacturer(part).label)) return false;
   }
   if (type === 'psu') {
-    if (has('watt') && !f.watt.includes(rangeLabel(part.watt, [
-      {label:'0-699', min:0, max:699}, {label:'700-849', min:700, max:849}, {label:'850-999', min:850, max:999}, {label:'1000-2000', min:1000, max:2000},
-    ]))) return false;
-    if (!includes('rating', psuRating(part))) return false;
-    if (!includes('brand', part.brand)) return false;
+    if (!includes('watt', builderRange(specs.watt, BUILDER_WATT_RANGES))) return false;
+    if (!includes('rating', specs.rating) || !includes('modular', specs.modular) || !includes('formFactor', specs.formFactor)) return false;
+    if (!includes('atx', specs.atx.startsWith('2.') ? '2.x' : specs.atx)) return false;
+    if (!includes('brand', productManufacturer(part).label)) return false;
   }
   if (type === 'case') {
     if (!includes('formFactor', part.form_factor)) return false;
-    if (!includes('brand', part.brand)) return false;
+    if (!includes('brand', productManufacturer(part).label)) return false;
     if (!includes('color', part.color)) return false;
   }
   if (type === 'software') {
-    if (!includes('brand', part.brand)) return false;
+    if (!includes('brand', productManufacturer(part).label)) return false;
     if (!includes('license', part.license)) return false;
   }
   const q = normalizeSearchText(st.productQuery);
@@ -666,7 +749,7 @@ function productMatchesFilters(type, part) {
   // Once the server has returned a live result page for this exact query,
   // Danawa has already performed the text search.  Re-filtering it locally
   // would incorrectly hide Korean/English model-name variants.
-  const queryAlreadyApplied = q && browse.loaded && browse.status !== 'unavailable' && browse.requestedSource === st.productSource && normalizeSearchText(browse.query) === q;
+  const queryAlreadyApplied = q && browse.loaded && browse.status !== 'unavailable' && browse.requestKey === builderSearchKey(type) && normalizeSearchText(browse.query) === q;
   if (q && !queryAlreadyApplied) {
     const haystack = normalizeSearchText([part.name, displayName(part), partMeta(part, type), gpuModelToken(part)].join(' '));
     if (!q.split(' ').every(term => haystack.includes(term))) return false;
@@ -704,17 +787,37 @@ function renderBuilderFilters() {
   const existingGpuHost = box.querySelector('[data-gpu-selector-root]');
   if (existingGpuHost && type === 'gpu') existingGpuHost.remove();
   else if (existingGpuHost) window.GpuModelSelector?.unmount(existingGpuHost);
-  box.innerHTML = builderFilterDefs(type).map(group => `
-    <div class="filter-group ${type === 'gpu' && group.key === 'model' ? 'gpu-model-filter' : ''}">
-      <div class="filter-label">${escapeHtml(group.label)}</div>
+  const defs = builderFilterDefs(type);
+  const openGroups = new Set([...box.querySelectorAll('details[open]')].map(el => el.dataset.group));
+  const filterButton = (group, [value,label]) => `<button type="button" class="filter-check ${filterHas(type,group.key,value) ? 'selected' : ''}" aria-pressed="${filterHas(type,group.key,value)}" data-filter-key="${escapeHtml(group.key)}" data-filter-value="${escapeHtml(value)}">${escapeHtml(label)}</button>`;
+  const groupButtons = group => {
+    const visible = group.options.slice(0,6).map(option => filterButton(group,option)).join('');
+    if (group.options.length <= 6) return visible || '<span class="product-source">선택 가능한 옵션 없음</span>';
+    return `${visible}<details class="filter-more" data-group="${group.key}" ${openGroups.has(group.key) ? 'open' : ''}><summary>옵션 더보기 ${group.options.length-6}</summary><div class="filter-options">${group.options.slice(6).map(option => filterButton(group,option)).join('')}</div></details>`;
+  };
+  box.innerHTML = defs.map(group => `
+    <div role="group" aria-label="${escapeHtml(group.label)}" class="filter-group ${type === 'gpu' && group.key === 'model' ? 'gpu-model-filter' : ''}">
+      <div class="filter-label">${escapeHtml(group.label)}${group.unit ? `<small>${escapeHtml(group.unit)}</small>` : ''}</div>
       <div class="filter-options">
-        ${type === 'gpu' && group.key === 'model' ? '<div data-gpu-selector-root></div>' : group.options.map(([value,label]) => `
-          <button type="button" class="filter-check ${filterHas(type, group.key, value) ? 'selected' : ''}" aria-pressed="${filterHas(type, group.key, value)}"
-            data-filter-key="${escapeHtml(group.key)}" data-filter-value="${escapeHtml(value)}">${escapeHtml(label)}</button>
-        `).join('') || '<span class="product-source">선택 가능한 옵션 없음</span>'}
+        ${type === 'gpu' && group.key === 'model' ? '<div data-gpu-selector-root></div>' : groupButtons(group)}
       </div>
     </div>
   `).join('');
+  const active = defs.flatMap(group => filterValues(type,group.key).map(value => ({key:group.key,value,label:group.options.find(([v]) => String(v) === value)?.[1] || value,group:group.label})));
+  if (type === 'gpu') filterValues(type,'series').forEach(value => active.unshift({key:'series',value,label:value,group:'GPU 시리즈'}));
+  const summary = document.getElementById('activeProductFilters');
+  if (summary) {
+    summary.hidden = !active.length;
+    summary.innerHTML = `<span class="active-filter-label">선택 조건 <strong>${active.length}</strong></span>` + active.map(item => `<button type="button" class="active-filter-chip" data-filter-key="${escapeHtml(item.key)}" data-filter-value="${escapeHtml(item.value)}" aria-label="${escapeHtml(item.group+' '+item.label+' 조건 해제')}">${escapeHtml(item.label)} <span aria-hidden="true">×</span></button>`).join('');
+    summary.querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => toggleBuilderFilter(type,btn.dataset.filterKey,btn.dataset.filterValue)));
+  }
+  const hint = document.getElementById('builderFilterHint');
+  if (hint) hint.textContent = type === 'storage' ? 'M.2는 크기·형태, SATA / NVMe는 연결 방식입니다. 속도는 판매처에 기재된 순차 전송 속도입니다.'
+    : type === 'gpu' ? '시리즈 버튼으로 전체 세대를 검색하고, 모델 버튼으로 칩셋을 좁힐 수 있습니다. 브랜드와 VRAM 조건도 함께 적용됩니다.'
+    : type === 'ram' ? '색상과 LED는 제품명·상세 사양에 표시된 정보로 구분합니다. 표시가 없으면 미확인입니다.'
+    : type === 'mb' ? '모든 메인보드를 살펴볼 수 있습니다. 선택한 CPU와의 소켓 호환 여부는 내 부품 구성에서 확인하세요.'
+    : type === 'psu' ? '80 PLUS는 전력 효율 인증입니다. 정격 출력·케이블 연결·ATX 버전도 함께 비교하세요.'
+    : '같은 항목은 여러 조건 중 하나, 다른 항목은 모든 조건에 맞는 제품을 찾습니다.';
   if (type === 'gpu') {
     const placeholder = box.querySelector('[data-gpu-selector-root]');
     if (existingGpuHost) placeholder.replaceWith(existingGpuHost);
@@ -724,6 +827,8 @@ function renderBuilderFilters() {
       groups:gpuSeriesGroups(allKnownProductsFor('gpu'))
         .filter(group => !vendors.length || vendors.includes(group.vendor.toLowerCase())),
       selectedModel:filterValues('gpu', 'model')[0] || '',
+      selectedSeries:filterValues('gpu', 'series')[0] || '',
+      onSelectSeries:selectGpuSeries,
       onSelectModel:selectGpuModel,
     });
   }
@@ -746,24 +851,27 @@ function renderProductList() {
   const footer = document.getElementById('productListFooter');
   const moreButton = document.getElementById('loadMoreProductsBtn');
   const note = document.getElementById('productBrowseNote');
-  const currentResults = browse.query === st.productQuery.trim() && browse.requestedSource === st.productSource;
+  const currentResults = browse.requestKey === builderSearchKey(type);
   const usingMarket = currentResults && browse.loaded && browse.status !== 'unavailable';
   const shop = marketName(st.productSource);
   if (title) title.textContent = meta?.label || '제품';
-  if (listTitle) listTitle.textContent = usingMarket ? `${shop} 검색 결과` : '부품 카탈로그';
+  if (listTitle) listTitle.textContent = expandedBuilderCatalog(type) ? '보유 카탈로그 + 검색 결과' : usingMarket ? `${shop} 검색 결과` : '부품 카탈로그';
   if (orderLabel) {
     if (browse.loading) orderLabel.textContent = `${shop} 검색 중…`;
+    else if (expandedBuilderCatalog(type)) orderLabel.textContent = '보유 제품 기준';
     else if (usingMarket) orderLabel.textContent = st.productSort === 'popular' ? (browse.sortLabel || '검색처 기본순') : '불러온 제품 기준';
     else orderLabel.textContent = '카탈로그 기준';
   }
-  if (count) count.textContent = `${products.length}개 표시${usingMarket && browse.total != null ? ` / 검색 ${Number(browse.total).toLocaleString('ko-KR')}개` : ''}`;
+  if (count) count.textContent = `${products.length}개 표시${usingMarket && !expandedBuilderCatalog(type) && browse.total != null ? ` / 검색 ${Number(browse.total).toLocaleString('ko-KR')}개` : ''}`;
   if (note) {
     const failures = usingMarket ? Object.entries(browse.sourceStatus || {}).filter(([, value]) => ['unavailable','error'].includes(typeof value === 'string' ? value : value?.status)).map(([key]) => marketName(key)) : [];
     note.textContent = browse.loading ? '판매처의 제품과 가격을 불러오고 있습니다.'
       : !usingMarket && browse.error ? `${browse.error} 카탈로그의 이전 확인가·참고가를 표시합니다. 가격 갱신으로 다시 시도할 수 있어요.`
+      : usingMarket && browse.partial ? '일부 결과를 먼저 표시합니다. 제품 더 보기로 같은 조건의 검색을 이어갈 수 있어요.'
       : usingMarket && browse.status === 'stale' ? '이전에 확인한 검색 결과입니다. 각 가격의 확인 시각을 확인해주세요.'
       : failures.length ? `${failures.join(', ')} 연결이 지연되어 응답한 판매처의 결과를 표시합니다.`
-      : '필터와 정렬은 불러온 제품에 적용됩니다. 마우스를 올리거나 키보드로 선택하면 대표 이미지를 볼 수 있어요.';
+      : expandedBuilderCatalog(type) ? '선택 조건을 저장된 전체 카탈로그까지 적용했습니다. 제품별 가격 확인 시각을 확인해주세요.'
+      : '선택 조건에 맞는 제품을 50개씩 불러옵니다. 가격·이름 정렬은 불러온 제품 기준입니다.';
   }
   if (footer) footer.hidden = !(usingMarket && browse.hasMore);
   if (moreButton) {
@@ -776,7 +884,8 @@ function renderProductList() {
   if (!products.length) {
     list.innerHTML = browse.loading
       ? '<div class="product-empty">판매처에서 제품을 검색하고 있습니다…</div>'
-      : '<div class="product-empty">조건에 맞는 제품이 없습니다. 필터를 줄이거나 검색어를 지워보세요.</div>';
+      : '<div class="product-empty"><strong>조건에 맞는 제품이 없습니다</strong><p>선택 조건을 줄이거나 검색어를 변경해 보세요.<br>상세 사양이 없는 제품은 ‘미확인’에서 찾을 수 있습니다.</p><button type="button" class="mini-btn ghost" id="clearEmptyFiltersBtn">선택 조건 지우기</button></div>';
+    document.getElementById('clearEmptyFiltersBtn')?.addEventListener('click', () => document.getElementById('resetProductFiltersBtn')?.click());
     return;
   }
   list.innerHTML = products.map(part => {
@@ -789,12 +898,13 @@ function renderProductList() {
           ${partThumb(part, type, 'product-thumb')}
           <div class="product-info">
             <div class="product-top">
-              <div class="product-name" title="${escapeHtml(fullProductName(part))}">${escapeHtml(displayName(part))}</div>
+              <div class="product-name">${escapeHtml(fullProductName(part))}</div>
               <div class="product-price">${price != null ? money(price) : '가격 미확인'}</div>
             </div>
             ${badges.length ? `<div class="product-badges">${badges.map(b => `<span class="product-badge">${escapeHtml(b)}</span>`).join('')}</div>` : ''}
             <div class="product-source">${priceProvenanceHtml(part)}</div>
           </div>
+          <span class="product-select-indicator">${selected ? '선택됨 ✓' : '+ 담기'}</span>
         </div>
       </button>`;
   }).join('');
@@ -805,12 +915,15 @@ function renderProductList() {
 }
 
 function productBadges(part, type) {
-  if (type === 'cpu' || type === 'gpu') return [];
-  if (type === 'ram') return [part.type, part.gb ? `${part.gb}GB` : '', part.speed ? `${part.speed}MHz` : ''].filter(Boolean);
+  const specs = builderSpecs(part, type);
+  const known = value => value && value !== 'unknown' ? value : '';
+  if (type === 'cpu') return [known(specs.socket), ...specs.memoryTypes].filter(Boolean);
+  if (type === 'gpu') return [];
+  if (type === 'ram') return [...specs.memoryTypes, part.gb ? `${part.gb}GB` : '', part.speed ? `${part.speed}MT/s` : '', {White:'화이트',Black:'블랙',Silver:'실버',Red:'레드'}[specs.color], {yes:'LED 포함',no:'LED 없음'}[specs.led]].filter(Boolean);
   if (type === 'mb') return [part.socket, part.ram_type, part.brand].filter(Boolean);
-  if (type === 'storage') return [part.capacity ? (part.capacity >= 1000 ? `${part.capacity/1000}TB` : `${part.capacity}GB`) : '', part.tier?.toUpperCase()].filter(Boolean);
+  if (type === 'storage') return [part.capacity ? (part.capacity >= 1000 ? `${part.capacity/1000}TB` : `${part.capacity}GB`) : '', known(specs.formFactor), known(specs.interface), specs.pcie !== 'unknown' ? `PCIe ${specs.pcie}.0` : '', specs.readSpeed ? `읽기 ${specs.readSpeed.toLocaleString('ko-KR')} MB/s` : '읽기 미확인', specs.writeSpeed ? `쓰기 ${specs.writeSpeed.toLocaleString('ko-KR')} MB/s` : '쓰기 미확인'].filter(Boolean);
   if (type === 'hdd') return [part.capacity ? `${part.capacity/1000}TB` : '추가 안 함', part.rpm ? `${part.rpm}RPM` : '', part.brand].filter(Boolean);
-  if (type === 'psu') return [part.watt ? `${part.watt}W` : '', psuRating(part), part.brand].filter(Boolean);
+  if (type === 'psu') return [specs.watt ? `${specs.watt}W` : '', psuRating(part) ? `80 PLUS ${psuRating(part)}` : '인증 미확인', {Full:'풀모듈러',Semi:'세미모듈러',Fixed:'고정 케이블'}[specs.modular], specs.atx !== 'unknown' ? `ATX ${specs.atx}` : ''].filter(Boolean);
   if (type === 'case') return [part.form_factor, part.color, part.brand].filter(Boolean);
   if (type === 'software') return [part.license === 'none' ? '추가 안 함' : part.license, part.brand].filter(Boolean);
   return [];
@@ -910,20 +1023,27 @@ async function loadDanawaProducts(type = st.builderPart, options = {}) {
   const browse = browseStateFor(type);
   const query = String(options.query ?? st.productQuery ?? '').trim();
   const source = options.source || st.productSource;
-  const append = Boolean(options.append && browse.loaded && browse.query === query && browse.requestedSource === source);
+  const requestKey = builderSearchKey(type,query,source);
+  const append = Boolean(options.append && browse.loaded && browse.requestKey === requestKey);
   if (append && (browse.loading || !browse.hasMore)) return;
   invalidateProductRequest(type);
   const page = append ? Math.max(1, Number(browse.page || 0) + 1) : 1;
   const requestId = ++danawaBrowseRequestToken;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20000);
+  const timeout = setTimeout(() => controller.abort(), 30000);
   browse.requestId = requestId;
   browse.controller = controller;
   browse.loading = true;
   browse.error = '';
   if (type === st.builderPart) renderProductList();
   try {
-    const params = new URLSearchParams({ type, query, source, page:String(page), limit:'40' });
+    const params = new URLSearchParams({ type, query, source, page:String(page), limit:'50',sort:st.productSort || 'popular' });
+    if (append && browse.cursor) params.set('cursor',browse.cursor);
+    if (type !== 'gpu') params.set('filters',JSON.stringify(st.builderFilters[type] || {}));
+    if (type === 'gpu') ['series','model','maker','vendor','vram'].forEach(key => {
+      const values = filterValues(type,key);
+      if (values.length) params.set(key,values.join(','));
+    });
     if (options.force) params.set('refresh', '1');
     const response = await fetch(baseUrl() + '/api/products?' + params.toString(), { signal:controller.signal });
     const data = await response.json();
@@ -931,12 +1051,19 @@ async function loadDanawaProducts(type = st.builderPart, options = {}) {
     if (browse.requestId !== requestId) return;
     // Selected SKUs survive a new search, page replacement, or source switch.
     Object.entries(selectedCustomParts()).forEach(([key, part]) => rememberBrowseProduct(key, part));
+    if (data.facets && type !== 'gpu') {
+      st.productFacets = {...(st.productFacets || {}), [type]:data.facets};
+      if (type === st.builderPart) renderBuilderFilters();
+    }
     const items = withPartType(data.items || [], type);
-    browse.items = append ? uniqueProducts([...browse.items, ...items]) : uniqueProducts(items);
-    browse.page = page;
+    browse.items = append && !data.reset ? uniqueProducts([...browse.items, ...items]) : uniqueProducts(items);
+    browse.page = data.reset ? 1 : page;
+    browse.cursor = data.cursor || '';
+    browse.requestKey = requestKey;
     browse.query = query;
     browse.requestedSource = source;
     browse.hasMore = Boolean(data.has_more);
+    browse.partial = Boolean(data.partial);
     browse.total = data.total == null ? null : Number(data.total);
     browse.status = data.status || (items.length ? 'live' : 'empty');
     browse.sourceStatus = data.source_status || {};
@@ -977,7 +1104,7 @@ function refreshProductBrowserPrices(options = {}) {
   const browse = browseStateFor(type);
   const query = String(options.query ?? st.productQuery ?? '').trim();
   const source = options.source || st.productSource;
-  if (!options.force && !options.append && browse.loaded && browse.status !== 'unavailable' && browse.query === query && browse.requestedSource === source && Date.now() - browse.loadedAt < 300000) {
+  if (!options.force && !options.append && browse.loaded && browse.status !== 'unavailable' && browse.requestKey === builderSearchKey(type,query,source) && Date.now() - browse.loadedAt < 300000) {
     return Promise.resolve();
   }
   return loadDanawaProducts(type, { ...options, query, source });
@@ -986,9 +1113,9 @@ function refreshProductBrowserPrices(options = {}) {
 function populateMbs(cpu, ram, keepId = '') {
   const sel = document.getElementById('csMb');
   if (!sel) return;
-  const items = compatibleMbs(cpu, ram, allKnownProductsFor('mb'));
+  const items = allKnownProductsFor('mb');
   sel.innerHTML = '<option value="">선택 필요</option>' + items.map(it =>
-    `<option value="${it.id}">${catalogPriceLabel(it)}</option>`
+    `<option value="${escapeHtml(it.id)}">${escapeHtml(catalogPriceLabel(it))}</option>`
   ).join('');
   if (keepId && items.some(it => it.id === keepId)) sel.value = keepId;
 }
@@ -1205,4 +1332,26 @@ function importRecommendedBuild(tier) {
   renderProductList();
   setActiveView('custom');
   window.requestAnimationFrame(() => document.getElementById('customSection').scrollIntoView({ behavior:'smooth', block:'start' }));
+}
+
+function compatibilityHtml(cpu, mb) {
+  const result = socketCompatibility(cpu,mb);
+  if (result.status === 'incomplete') return '';
+  if (result.status === 'compatible') {
+    return `<div class="build-compatibility compatible"><strong>✓ CPU · 메인보드 소켓 호환</strong><p>${escapeHtml(result.cpuSocket)} · BIOS와 CPU 지원 목록은 제조사에서 확인해주세요.</p></div>`;
+  }
+  const title = result.status === 'incompatible'
+    ? '⚠ 선택한 CPU와 메인보드의 소켓이 호환되지 않습니다.'
+    : 'CPU · 메인보드 소켓 확인 필요';
+  const detail = result.status === 'incompatible'
+    ? 'CPU 또는 메인보드를 같은 소켓의 제품으로 변경해주세요.'
+    : '소켓 정보가 부족해 호환 여부를 판단할 수 없습니다. 제조사 상세 사양을 확인해주세요.';
+  const socketLabel = socket => socket === 'unknown' ? '미확인' : socket;
+  return `<div class="build-compatibility ${result.status}">
+    <strong>${escapeHtml(title)}</strong>
+    <dl class="compatibility-parts">
+      <div><dt>CPU</dt><dd>${escapeHtml(fullProductName(cpu))}<span>CPU 소켓: ${escapeHtml(socketLabel(result.cpuSocket))}</span></dd></div>
+      <div><dt>메인보드</dt><dd>${escapeHtml(fullProductName(mb))}<span>메인보드 소켓: ${escapeHtml(socketLabel(result.motherboardSocket))}</span></dd></div>
+    </dl><p>${escapeHtml(detail)}</p>
+  </div>`;
 }

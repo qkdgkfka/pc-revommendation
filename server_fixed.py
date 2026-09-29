@@ -37,13 +37,17 @@ import sqlite3
 import traceback
 import copy
 import time
+from product_filters import enrich as enrich_product, normalize_specs, clean_filters, matches_specs, facets as product_facets, FIELDS as PRODUCT_FILTER_FIELDS
 from market_catalog import remember_products, saved_products
+from market_search import ProductPager, RetailQueryStream
+from threading import RLock
 # Preserve existing helper imports for scripts/tests while implementation lives
 # in the shared metadata module.
 from product_metadata import (
     DANAWA_BROWSE_DEFAULT_QUERIES, GPU_MAKER_ALIASES, GPU_MAKER_LABELS, canonical_name,
     capacity_mb_from_text, clean_visible_text, compatible_gpu_price_name, compatible_price_name,
     gpu_exact_model_key, gpu_maker_label, gpu_maker_normalize, gpu_model_number_from_key,
+    gpu_search_metadata, gpu_series_key,
     gpu_model_number_mentions, image_name_tokens, infer_brand, infer_cpu_metadata,
     infer_gpu_vram, infer_hdd_rpm, infer_mb_metadata, infer_psu_watt,
     model_tokens, normalize_browse_part_type, normalize_gpu_maker_prefs, normalize_product_url,
@@ -824,6 +828,8 @@ COMPUZONE_CATEGORY_IDS = {
     "software": "1011",
 }
 MARKET_BROWSE_CACHE: Dict[Tuple[Any, ...], Dict[str, Any]] = {}
+MARKET_SEARCH_CACHE: Dict[Tuple[Any, ...], ProductPager] = {}
+MARKET_SEARCH_LOCK = RLock()
 
 
 def compuzone_browse_url(part_type: str, query: str = "", page: int = 1, limit: int = 40) -> str:
@@ -922,7 +928,10 @@ def saved_market_page(part_type: str, query: str, page: int, limit: int, provide
         if item_provider != provider or not market_component_name_valid(part_type, item["name"]):
             continue
         if query:
-            if model_tokens(query) or re.search(r"\d\s*(?:GB|TB)\b", query, re.I):
+            if part_type == 'gpu' and gpu_series_key(query):
+                if gpu_search_metadata(item).get('series') != gpu_series_key(query):
+                    continue
+            elif model_tokens(query) or re.search(r"\d\s*(?:GB|TB)\b", query, re.I):
                 if not compatible_price_name(query, item["name"]):
                     continue
             elif not all(token in canonical_name(item["name"]) for token in canonical_name(query).split()):
@@ -950,7 +959,13 @@ def _market_source_page(part_type: str, query: str, page: int, limit: int, provi
     if cached and not refresh and (now - cached["fetched_at"]).total_seconds() < DANAWA_BROWSE_CACHE_TTL_SECONDS:
         return {**cached["payload"], "cached": True}
     query_used = query or DANAWA_BROWSE_DEFAULT_QUERIES[part_type]
-    url = danawa_browse_url(query_used, page, limit) if provider == "danawa" else compuzone_browse_url(part_type, query, page, limit)
+    series = gpu_series_key(query) if part_type == 'gpu' else ''
+    # AMD generation labels aren't literal chipsets. Search the retailer's
+    # Radeon family and apply the normalized generation after parsing.
+    if series.startswith('RX '):
+        query_used = "라데온"
+    provider_query = query_used if query else ''
+    url = danawa_browse_url(query_used, page, limit) if provider == "danawa" else compuzone_browse_url(part_type, provider_query, page, limit)
     base = {"provider": provider, "page": page, "source_url": url, "items": [], "total": None, "has_more": False, "cached": False}
     try:
         html = _market_fetch_html(url, provider, timeout)
@@ -970,7 +985,11 @@ def _market_source_page(part_type: str, query: str, page: int, limit: int, provi
         items = [item for item in all_items if market_component_name_valid(part_type, item["name"])]
         # Broad category search remains broad; explicit model/capacity constraints
         # must not silently return a different variant from a grouped result.
-        if query and (model_tokens(query) or re.search(r'\d\s*(?:GB|TB)\b', query, re.I)):
+        if part_type == 'gpu':
+            items = [{**item, **gpu_search_metadata(item)} for item in items]
+        if series:
+            items = [item for item in items if item.get('series') == series]
+        elif query and (model_tokens(query) or re.search(r'\d\s*(?:GB|TB)\b', query, re.I)):
             items = [item for item in items if compatible_price_name(query, item["name"])]
         payload = {**base, "status": "live" if items else "empty", "items": items, "has_more": has_more,
                    "checked_at": now.isoformat(timespec="seconds") + "Z", "raw_count": raw_count}
@@ -991,50 +1010,116 @@ def _market_source_page(part_type: str, query: str, page: int, limit: int, provi
         saved = saved_market_page(part_type, query, page, limit, provider)
         if saved["items"]:
             return {**base, **saved, "error": "판매처 연결 지연으로 저장된 확인 가격을 표시합니다."}
-        return {**base, "status": "unavailable", "error": ("다나와" if provider == "danawa" else "컴퓨존") + " 상품 목록을 불러오지 못했습니다."}
+        return {**base, "status": "unavailable", "query_failed": isinstance(error, ValueError), "error": ("다나와" if provider == "danawa" else "컴퓨존") + " 상품 목록을 불러오지 못했습니다."}
 
 
-def market_products_response(part_type: Any, query: Any = "", page: Any = 1, limit: Any = 40, refresh: Any = False, source: Any = "all", persist: bool = True) -> Dict[str, Any]:
+def market_products_response(part_type: Any, query: Any = "", page: Any = 1, limit: Any = 50, refresh: Any = False, source: Any = "all", persist: bool = True,
+                             series: Any = "", model: Any = "", maker: Any = "", sort: Any = "popular", vendor: Any = "", vram: Any = "", cursor: Any = "", filters: Any = None) -> Dict[str, Any]:
     ctype = normalize_browse_part_type(part_type)
     provider = normalize_text(source) or "all"
     if not ctype or provider not in {"all", "danawa", "compuzone"}:
         return {"ok": False, "status": "invalid", "error": "지원하지 않는 부품 종류 또는 판매처입니다.", "items": []}
     query = clean_visible_text(query)[:120]
     page = max(1, min(100, safe_int(page, 1)))
-    # Compuzone serves fixed 20-row scroll batches. Use that same page size for
-    # both sources so subsequent pages do not skip products.
-    limit = 20 if provider == "compuzone" else max(8, min(40, safe_int(limit, 40)))
+    limit = max(1, min(100, safe_int(limit, 50)))
+    sort = sort if sort in {"popular", "price_asc", "price_desc", "name"} else "popular"
+    series = gpu_series_key(series) or (gpu_series_key(query) if ctype == "gpu" else "")
+    model_key = gpu_exact_model_key(model)
+    makers = normalize_gpu_maker_prefs(maker)
+    vendors = [v.lower() for v in str(vendor or '').split(',') if v]
+    vrams = [safe_int(v) for v in str(vram or '').split(',') if v]
+    filters = clean_filters(ctype, filters)
+    source_query = query or (query_model_name(model) if model_key else series)
     force = refresh is True or normalize_text(refresh) in {"1", "true", "yes"}
     providers = ["danawa", "compuzone"] if provider == "all" else [provider]
-    with ThreadPoolExecutor(max_workers=len(providers)) as executor:
-        futures = [executor.submit(_market_source_page, ctype, query, page, 20 if p == "compuzone" else limit, p, force, 8.0, persist) for p in providers]
-        results = [future.result() for future in futures]
-    items = []
-    # Interleave retailers without treating two different SKUs as interchangeable.
-    for index in range(max((len(result["items"]) for result in results), default=0)):
-        items.extend(result["items"][index] for result in results if index < len(result["items"]))
-    # Collected verified SKUs remain selectable beyond the retailer's first page.
-    known = {item["id"] for item in items}
-    stored_pages = [saved_market_page(ctype, query, page, limit, p, verified_only=True) for p in providers]
-    for stored in stored_pages:
-        for item in stored["items"]:
-            if item["id"] not in known:
-                items.append(item)
-                known.add(item["id"])
-    statuses = [result["status"] for result in results]
-    if any(stored["items"] for stored in stored_pages):
-        statuses.append("cached")
-    status = "live" if "live" in statuses else "cached" if "cached" in statuses else "stale" if "stale" in statuses else "empty" if "empty" in statuses else "unavailable"
+
+    def matches(item):
+        if not matches_specs(normalize_specs(item, ctype), filters):
+            return False
+        name = item.get("product_name") or item.get("name") or ""
+        if not market_component_name_valid(ctype, name):
+            return False
+        if ctype == 'gpu':
+            metadata = gpu_search_metadata(item)
+            if series and metadata.get('series') != series:
+                return False
+            if model_key and gpu_exact_model_key(metadata.get('chipset')) != model_key:
+                return False
+            if makers and metadata.get('manufacturer') not in makers:
+                return False
+            if vendors and metadata.get('vendor', '').lower() not in vendors:
+                return False
+            if vrams and safe_int(item.get('vram')) not in vrams:
+                return False
+        if query and not gpu_series_key(query):
+            if model_tokens(query) or re.search(r'\d\s*(?:GB|TB)\b', query, re.I):
+                return compatible_price_name(query, name)
+            return item.get('_query_applied') or all(token in canonical_name(name) for token in canonical_name(query).split())
+        return True
+
+    def saved():
+        rows = []
+        for row in saved_products(ctype):
+            host = urlparse(row.get('url', '')).hostname or ''
+            retail = 'compuzone' if 'compuzone' in host else 'danawa'
+            if retail in providers:
+                rows.append({**row, **gpu_search_metadata(row)} if ctype == 'gpu' else row)
+        return rows
+
+    def source_fetch(p, q, n):
+        result = _market_source_page(ctype, q, n, 20 if p == 'compuzone' else 40, p, force, 4.0, persist)
+        return {**result, 'items':[{**row, '_query_applied':not query or normalize_text(query) in normalize_text(q)} for row in result['items']]}
+
+    queries = [source_query]
+    if ctype == 'gpu' and series and not model_key:
+        # Search models that actually exist in structured reference/saved data.
+        # This queries real listings; it never manufactures retail products.
+        chipsets = {metadata['chipset'] for row in CATALOGS.get('gpu', []) + saved_products('gpu')
+                    for metadata in [gpu_search_metadata(row)] if metadata.get('series') == series}
+        prefix = query if query and not gpu_series_key(query) else ''
+        queries += [f'{prefix} {chipset}'.strip() for chipset in sorted(chipsets)]
+        queries = list(dict.fromkeys(queries))
+        if len(makers) == 1:
+            queries = [f"{gpu_maker_label(makers[0])} {q}" for q in queries]
+
+    key = (ctype, normalize_text(query), provider, limit, series, model_key, tuple(sorted(makers)), sort, tuple(sorted(vendors)), tuple(sorted(vrams)), tuple((k,tuple(v)) for k,v in sorted(filters.items())), persist)
+    reset = False
+    cursor = str(cursor or "")[:80]
+    with MARKET_SEARCH_LOCK:
+        pager = MARKET_SEARCH_CACHE.get((key, cursor) if cursor else key)
+        if not pager or (force and page == 1) or time.monotonic() - pager.created_at > 300:
+            stream = RetailQueryStream(providers, queries, source_fetch) if len(queries) > 1 else None
+            pager = ProductPager(providers,
+                stream.next if stream else lambda p,n: source_fetch(p, source_query, n),
+                saved, matches, lambda item: product_page_key(item.get('url')) or item.get('id'), sort)
+            pager.cursor = secrets.token_urlsafe(12)
+            MARKET_SEARCH_CACHE[key] = pager
+            MARKET_SEARCH_CACHE[(key, pager.cursor)] = pager
+            if cursor:
+                page, reset = 1, True
+            while len(MARKET_SEARCH_CACHE) > 128:
+                oldest = min(MARKET_SEARCH_CACHE.values(), key=lambda p:p.created_at)
+                for old_key in [k for k,p in MARKET_SEARCH_CACHE.items() if p is oldest]:
+                    MARKET_SEARCH_CACHE.pop(old_key, None)
+    result = pager.page(page, limit)
+    items = [enrich_product({k:v for k,v in row.items() if k != '_query_applied'}, ctype) for row in result['items']]
+    sources = result['results']
+    statuses = [row.get('price_status') for row in items]
+    status = "live" if 'verified' in statuses else "cached" if 'cached' in statuses else "stale" if 'stale' in statuses else "empty" if result['has_more'] or all(r['status'] != 'unavailable' for r in sources.values()) else "unavailable"
     return {
         "ok": status != "unavailable", "status": status, "type": ctype,
-        "query": query, "query_used": query or DANAWA_BROWSE_DEFAULT_QUERIES[ctype],
-        "page": page, "limit": limit, "items": items, "total": None,
-        "has_more": any(result["has_more"] for result in results + stored_pages),
-        "source": provider, "source_status": {result["provider"]: result["status"] for result in results},
-        "source_urls": {result["provider"]: result["source_url"] for result in results},
-        "cached": bool(results) and all(result["cached"] for result in results),
-        "sort": "popular", "sort_label": "판매처 인기상품순",
-        "error": next((result.get("error", "") for result in results if result.get("error")), ""),
+        "query": query, "query_used": source_query or DANAWA_BROWSE_DEFAULT_QUERIES[ctype],
+        "page": page, "limit": limit, "items": items, "cursor": pager.cursor, "reset": reset,
+        "total": len(pager.rows) if not any(pager.more.values()) else None,
+        "has_more": result['has_more'], "partial": result['partial'],
+        "source": provider, "source_status": {p:r['status'] for p,r in sources.items()},
+        "source_urls": {p:r['source_url'] for p,r in sources.items()},
+        "cached": bool(sources) and all(r['cached'] for r in sources.values()),
+        "facets": product_facets(ctype, saved_products(ctype) + list(pager.rows.values()), filters),
+        "spec_filters": filters,
+        "sort": sort, "sort_label": {"popular":"검색처 기본순", "price_asc":"낮은 가격순", "price_desc":"높은 가격순", "name":"제품명순"}[sort],
+        "filters": {"series":series, "model":str(model or ''), "maker":makers, "vendor":vendors, "vram":vrams},
+        "error": next((r.get("error", "") for r in sources.values() if r.get("error")), ""),
     }
 
 
@@ -3873,9 +3958,9 @@ def recommend(user: Any) -> Dict[str, Any]:
 # HTTP helpers
 # ─────────────────────────────────────────────────────────────
 
-def catalog_response() -> Dict[str, Any]:
+def catalog_response(compact: bool = False) -> Dict[str, Any]:
     def catalog_part(part: Dict[str, Any], part_type: str) -> Dict[str, Any]:
-        return {**part, **summarize_part(part, part_type)}
+        return enrich_product({**part, **summarize_part(part, part_type)}, part_type)
 
     response = {
         "gpus": [catalog_part(p, "gpu") for p in GPU_CATALOG],
@@ -3903,8 +3988,12 @@ def catalog_response() -> Dict[str, Any]:
         "hdd": "hdds", "mb": "mbs", "psu": "psus", "case": "cases",
         "software": "software",
     }
+    response["filter_facets"] = {}
     for part_type, key in catalog_keys.items():
         retail = saved_products(part_type)
+        response["filter_facets"][part_type] = product_facets(part_type, retail + response[key])
+        if compact:
+            continue
         known = {part["id"] for part in response[key]}
         response[key].extend(part for part in retail if part["id"] not in known)
         known.update(part["id"] for part in retail)
@@ -4299,17 +4388,27 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if path == "/api/catalog":
-            send_json(self, 200, catalog_response())
+            send_json(self, 200, catalog_response(compact=params.get("compact") == "1"))
             return
 
         if path in {"/api/products", "/api/danawa-products"}:
+            try:
+                spec_filters = json.loads(params.get("filters") or "{}")
+                if not isinstance(spec_filters, dict): raise ValueError()
+            except (ValueError, TypeError):
+                send_json(self, 400, {"ok":False,"error":"필터 형식이 올바르지 않습니다.","items":[]})
+                return
+            kind = normalize_browse_part_type(params.get("type") or params.get("part_type") or "")
+            spec_filters.update({key:params[key].split(',') for key,_ in PRODUCT_FILTER_FIELDS.get(kind,[]) if params.get(key)})
             payload = market_products_response(
                 params.get("type") or params.get("part_type") or "",
                 params.get("query") or "",
                 params.get("page") or 1,
-                params.get("limit") or 40,
+                params.get("limit") or 50,
                 params.get("refresh") or "",
                 params.get("source") or ("danawa" if path == "/api/danawa-products" else "all"),
+                series=params.get("series", ""), model=params.get("model", ""), maker=params.get("maker", ""),
+                sort=params.get("sort", "popular"), vendor=params.get("vendor", ""), vram=params.get("vram", ""), cursor=params.get("cursor", ""), filters=spec_filters,
             )
             send_json(self, 200 if payload.get("ok") else 502, payload)
             return

@@ -76,7 +76,12 @@
               </label>
               <button type="button" class="mini-btn ghost" id="resetProductFiltersBtn">필터 초기화</button>
             </div>
+            <details class="spec-filter-panel" open>
+              <summary class="filter-section-head"><strong>상세 조건</strong><span>항목별 중복 선택 가능</span></summary>
             <div class="filter-grid" id="builderFilters"></div>
+            <p class="builder-filter-hint" id="builderFilterHint"></p>
+            </details>
+            <div class="active-product-filters" id="activeProductFilters" hidden></div>
           </div>
 
           <div class="product-list-head">
@@ -99,8 +104,8 @@
               </div>
               <button type="button" class="mini-btn ghost" id="clearBuildBtn">초기화</button>
             </div>
+            <div id="csCompatibility" role="status" aria-live="polite" aria-atomic="true"></div>
             <div class="build-cart" id="buildCart"></div>
-            <div id="csCompatibility"></div>
             <div class="spec-total">
               <span class="spec-total-label">부품 합계</span>
               <span class="spec-total-price" id="csTotalPrice">₩0</span>
@@ -271,6 +276,7 @@
 <script src="graphics_details.js"></script>
 <script src="gpu_selector.js"></script>
 <script src="app_data.js"></script>
+<script src="builder_specs.js"></script>
 <script src="app_utils.js"></script>
 <script src="product_images.js"></script>
 <script src="game_picker.js"></script>

@@ -71,7 +71,7 @@ python3 crawl_game_benchmarks.py
 
 ```sh
 python3 -m unittest discover -s tests -v
-node --test tests/test_builder_ui.js
+node --test tests/test_builder*.js
 ```
 
 > [!IMPORTANT]  
@@ -94,8 +94,10 @@ node --test tests/test_builder_ui.js
 | `component_compatibility.py` | CPU·메인보드·RAM 호환성 |
 | `game_benchmarks.py`, `graphics_estimates.py` | 게임 실측 자료 및 그래픽 옵션 추정 |
 | `app.js`, `app_utils.js`, `app_data.js` | 화면 상태/이벤트, 부품 선택/렌더링, 오프라인 기본 데이터 |
+| `builder_specs.js` | 직접 선택 필터용 소켓·DDR, SSD 속도/인터페이스, RAM 색상/LED, 파워 규격 해석 |
+| `market_search.py` | 판매처 배치에서 50개 검색 페이지 구성, 검색 커서·SKU 중복 제거·GPU 칩셋 검색 순회 |
 | `product_images.js` | 추천과 직접 선택에서 공유하는 이미지·미리보기·오류 대체 표시 |
-| `gpu_selector.js`, `vendor/react/` | GPU 모델 선택에만 사용하는 React 컴포넌트와 런타임 |
+| `gpu_selector.js`, `vendor/react/` | GPU 시리즈 전체 검색 및 정확한 모델 선택용 React 컴포넌트와 런타임 |
 | `tests/` | Python 회귀 검사 및 Node 기반 프론트엔드 로직 검사 |
 
 제품의 `image_url`은 이미지 주소이며 구매 주소와 별개입니다. 기존 API 호환성을 위해
@@ -110,3 +112,12 @@ node --test tests/test_builder_ui.js
 `artifacts/`의 과거 모델 파일은 현재 서버가 로드하지 않지만, 출처 확인 전까지 보존합니다.
 `data/`의 기준 데이터와 `vendor/react/`는 배포에 포함해야 합니다.
 `.gjc/`, `node_modules/`, 로그, Python 캐시, 실행 중 생성되는 시장 캐시는 Git 추적 대상이 아닙니다.
+
+직접 선택의 상세 조건은 같은 항목 내 OR, 항목 간 AND로 적용됩니다. 검색어 없이
+필터를 선택하면 판매처 조건을 유지하면서 저장된 전체 카탈로그도 함께 검색합니다.
+
+직접 선택에서는 CPU와 메인보드의 소켓을 정규화해 비교합니다. 소켓이 다르면
+내 부품 구성 상단에 제품명과 소켓을 표시하고, 정보가 없으면 확인 필요로 안내합니다.
+CPU를 변경해도 선택한 메인보드를 유지하며 다른 소켓의 제품도 계속 검색할 수 있습니다.
+SSD 속도는 판매처에 기재된 순차 읽기·쓰기 MB/s이며, 누락된 사양은 `미확인`으로
+분류합니다. M.2 폼팩터와 SATA/NVMe 인터페이스, 80 PLUS와 다른 인증은 구분합니다.

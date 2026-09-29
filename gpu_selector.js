@@ -14,12 +14,13 @@
     }, model.replace(/^(RTX|GTX|RX)\s+/, ''));
   }
 
-  function GPUSeriesPill({ group, expanded, selectedModel, onToggle, onSelectModel }) {
+  function GPUSeriesPill({ group, expanded, selectedModel, selectedSeries, onToggle, onSelectModel }) {
     const id = `gpu-models-${group.label.replace(/\W+/g, '-').toLowerCase()}`;
     return h('div', { className:`gpu-series-pill${expanded ? ' expanded' : ''}` },
       h('button', {
         type:'button', className:'gpu-series-trigger',
         'aria-expanded':expanded, 'aria-controls':id,
+        'aria-pressed':group.label.replace(/\s+Series$/,'') === selectedSeries,
         onClick:() => onToggle(group.label),
       }, group.label, group.models.includes(selectedModel) ? h('span', { className:'gpu-series-dot', 'aria-hidden':true }) : null),
       h('div', { className:'gpu-model-track', id, 'aria-hidden':!expanded },
@@ -31,27 +32,30 @@
     );
   }
 
-  function GPUBrandSection({ brand, groups, openSeries, selectedModel, onToggle, onSelectModel }) {
+  function GPUBrandSection({ brand, groups, openSeries, selectedModel, selectedSeries, onToggle, onSelectModel }) {
     return h('section', { className:'gpu-brand-section', 'aria-label':brand },
       h('div', { className:'gpu-vendor-label' }, brand),
       h('div', { className:'gpu-series-list' }, groups.map(group => h(GPUSeriesPill, {
         key:group.label, group, expanded:openSeries === group.label,
-        selectedModel, onToggle, onSelectModel,
+        selectedModel, selectedSeries, onToggle, onSelectModel,
       }))),
     );
   }
 
-  function GPUSelector({ groups, selectedModel, onSelectModel }) {
+  function GPUSelector({ groups, selectedModel, selectedSeries, onSelectModel, onSelectSeries }) {
     const [openSeries, setOpenSeries] = React.useState('');
     const visibleOpenSeries = groups.some(group => group.label === openSeries) ? openSeries : '';
-    const onToggle = label => setOpenSeries(current => current === label ? '' : label);
+    const onToggle = label => {
+      setOpenSeries(current => current === label ? '' : label);
+      onSelectSeries(label);
+    };
     const brands = ['NVIDIA', 'AMD'];
     return groups.length
       ? h('div', { className:'gpu-selector' }, brands.map(brand => {
           const brandGroups = groups.filter(group => group.vendor === brand);
           return brandGroups.length ? h(GPUBrandSection, {
             key:brand, brand, groups:brandGroups, openSeries:visibleOpenSeries,
-            selectedModel, onToggle, onSelectModel,
+            selectedModel, selectedSeries, onToggle, onSelectModel,
           }) : null;
         }))
       : h('span', { className:'product-source' }, '선택 가능한 옵션 없음');

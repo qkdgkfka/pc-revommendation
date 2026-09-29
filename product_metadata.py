@@ -436,3 +436,38 @@ def image_name_tokens(name: Any, part_type: str) -> set:
         text = re.sub(r"80\s*(?:plus|\+)|gold|bronze|silver|platinum|titanium", " ", text)
         text = re.sub(r"atx\s*(\d)\.(\d)", r"atx\1\2", text)
     return set(re.findall(r"[a-z0-9가-힣]+", text))
+
+
+def gpu_series_key(value: Any) -> str:
+    """Generation labels are distinct from exact chipsets (RX 9000 != RX 9070)."""
+    match = re.fullmatch(r'\s*(RTX|GTX|RX)\s*[- ]?\s*(\d{2}|\d000)(?:\s+series)?\s*', str(value or ''), re.I)
+    if not match:
+        return ''
+    family, generation = match.groups()
+    if (family.upper() == 'RX') != (len(generation) == 4):
+        return ''
+    return f'{family.upper()} {generation}'
+
+
+def gpu_search_metadata(item: Dict[str, Any]) -> Dict[str, str]:
+    """Prefer structured chipset data; parse a retail title only at ingestion."""
+    match = None
+    for value in [item.get('chipset'), item.get('gpu_model'), item.get('model'), item.get('product_name'), item.get('name')]:
+        match = re.search(r'\b(RTX|GTX|RX)\s*[- ]?\s*(\d{4})\s*(Ti\s*Super|Ti|Super|XTX|XT|GRE)?\b', str(value or ''), re.I)
+        if match:
+            break
+    if not match:
+        return {}
+    family, number, modifier = match.groups()
+    family = family.upper()
+    suffix = {'TISUPER':'Ti Super', 'TI':'Ti', 'SUPER':'Super', 'XTX':'XTX', 'XT':'XT', 'GRE':'GRE'}.get(re.sub(r'\s+', '', modifier or '').upper(), '')
+    chipset = f'{family} {number}' + (f' {suffix}' if suffix else '')
+    gaming = family != 'RTX' or int(number[2]) >= 5
+    generation = number[0] + '000' if family == 'RX' else number[:2]
+    return {
+        'vendor': 'AMD' if family == 'RX' else 'NVIDIA',
+        'family': 'Radeon RX' if family == 'RX' else f'GeForce {family}' if gaming else 'RTX workstation',
+        'series': (gpu_series_key(item.get('series')) or f'{family} {generation}') if gaming else '',
+        'chipset': chipset,
+        'manufacturer': gpu_maker_normalize(item.get('manufacturer')) or gpu_maker_normalize(item.get('product_name') or item.get('name')),
+    }

@@ -79,6 +79,7 @@ class MarketplaceParserTests(unittest.TestCase):
 class MarketplaceAvailabilityTests(unittest.TestCase):
     def setUp(self):
         server.MARKET_BROWSE_CACHE.clear()
+        server.MARKET_SEARCH_CACHE.clear()
         self.persist = patch.object(server, 'remember_products')
         self.persist.start()
         empty_saved = patch.object(server, 'saved_products', return_value=[])
@@ -88,10 +89,11 @@ class MarketplaceAvailabilityTests(unittest.TestCase):
     def tearDown(self):
         self.persist.stop()
         server.MARKET_BROWSE_CACHE.clear()
+        server.MARKET_SEARCH_CACHE.clear()
 
     def test_filtering_rows_does_not_hide_upstream_next_page(self):
         with patch.object(server, '_market_fetch_html', return_value=danawa_group()):
-            result = server.market_products_response('storage', 'Samsung 990 PRO 2TB', 1, 40, False, 'danawa')
+            result = server._market_source_page('storage', 'Samsung 990 PRO 2TB', 1, 40, 'danawa')
         self.assertTrue(result['has_more'])
         self.assertEqual('live', result['status'])
         self.assertEqual(1, len(result['items']))
@@ -109,6 +111,7 @@ class MarketplaceAvailabilityTests(unittest.TestCase):
             server.market_products_response('storage', '', 1, 40, False, 'danawa')
         for cached in server.MARKET_BROWSE_CACHE.values():
             cached['fetched_at'] = datetime.utcnow() - timedelta(minutes=10)
+        server.MARKET_SEARCH_CACHE.clear()
         with patch.object(server, '_market_fetch_html', side_effect=TimeoutError):
             result = server.market_products_response('storage', '', 1, 40, False, 'danawa')
         self.assertEqual('stale', result['status'])
@@ -117,7 +120,7 @@ class MarketplaceAvailabilityTests(unittest.TestCase):
 
     def test_compuzone_page_offset_does_not_skip_fixed_twenty_row_batch(self):
         with patch.object(server, '_market_fetch_html', return_value=compuzone_row()) as fetch:
-            server.market_products_response('gpu', '', 2, 40, False, 'compuzone')
+            server._market_source_page('gpu', '', 2, 20, 'compuzone')
         self.assertIn('StartNum=20', fetch.call_args.args[0])
 
 

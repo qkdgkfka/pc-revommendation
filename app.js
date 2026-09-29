@@ -386,9 +386,10 @@ function initDropdowns() {
 
 async function loadServerCatalog() {
   try {
-    const r = await fetch(baseUrl()+'/api/catalog', { signal:AbortSignal.timeout(5000) });
+    const r = await fetch(baseUrl()+'/api/catalog?compact=1', { signal:AbortSignal.timeout(5000) });
     if (!r.ok) throw new Error('catalog unavailable');
     const d = await r.json();
+    if (d.filter_facets) st.productFacets = d.filter_facets;
 
     const serverGpus = withPartType(d.gpus || [], 'gpu');
     GPUS_NVIDIA = seedCatalogItems(serverGpus.filter(g => g.brand === 'nvidia'));
@@ -586,12 +587,6 @@ function customFpsKey(gpu, cpu, ram, game, resolution, refresh) {
   return [gpu?.id, cpu?.id, ram?.id, game, resolution, refresh].join('|');
 }
 
-function compatibilityHtml(cpu, mb) {
-  if (!cpu?.socket || !mb?.socket) return '';
-  const ok = String(cpu.socket).trim().toUpperCase() === String(mb.socket).trim().toUpperCase();
-  return `<div class="build-compatibility ${ok ? 'compatible' : 'incompatible'}">CPU · 메인보드 소켓 ${ok ? '호환' : '비호환'}</div>`;
-}
-
 function fpsRequestPart(part) {
   if (!part?.performance_ref_id) return part?.id || '';
   return {
@@ -754,6 +749,7 @@ document.getElementById('productSourceSelect')?.addEventListener('change', event
 document.getElementById('productSortSelect')?.addEventListener('change', event => {
   st.productSort = event.target.value;
   renderProductList();
+  void refreshProductBrowserPrices();
 });
 
 document.getElementById('resetProductFiltersBtn')?.addEventListener('click', () => {
@@ -761,6 +757,7 @@ document.getElementById('resetProductFiltersBtn')?.addEventListener('click', () 
   if (st.builderPart === 'gpu') st.csGpuMakers = [];
   renderBuilderFilters();
   renderProductList();
+  void refreshProductBrowserPrices();
 });
 
 const refreshProductsBtn = document.getElementById('refreshProductsBtn');

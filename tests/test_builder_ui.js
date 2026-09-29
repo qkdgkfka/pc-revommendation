@@ -9,7 +9,7 @@ const context = vm.createContext({
   st: { builderFilters: {}, csGpuMakers: [] },
   danawaBrowseByType: {},
 });
-for (const file of ['app_utils.js', 'product_images.js']) {
+for (const file of ['builder_specs.js', 'app_utils.js', 'product_images.js']) {
   vm.runInContext(fs.readFileSync(file, 'utf8'), context);
 }
 
