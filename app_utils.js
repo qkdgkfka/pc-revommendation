@@ -781,6 +781,7 @@ function selectedIdForType(type) {
 }
 
 function renderBuilderFilters() {
+  if (window.ManualBuilder) { window.ManualBuilder.refresh(); return; }
   const type = st.builderPart;
   const box = document.getElementById('builderFilters');
   if (!box) return;
@@ -838,6 +839,7 @@ function renderBuilderFilters() {
 }
 
 function renderProductList() {
+  if (window.ManualBuilder) { window.ManualBuilder.refresh(); return; }
   const type = st.builderPart;
   const meta = BUILDER_META[type];
   const browse = browseStateFor(type);
@@ -952,7 +954,9 @@ function selectBuilderProduct(type, id) {
 function setBuilderPart(type) {
   clearTimeout(productSearchTimer);
   invalidateProductRequest(st.builderPart);
+  st.productQueries = {...(st.productQueries || {}), [st.builderPart]:st.productQuery};
   st.builderPart = BUILDER_META[type] ? type : 'cpu';
+  st.productQuery = st.productQueries[st.builderPart] || '';
   document.querySelectorAll('#builderTabs .builder-tab').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.part === st.builderPart);
     btn.setAttribute('aria-pressed', String(btn.dataset.part === st.builderPart));
@@ -977,6 +981,7 @@ function clearBuilderProduct(type) {
 }
 
 function renderBuildCart() {
+  if (window.ManualBuilder) { window.ManualBuilder.refresh(); return; }
   const box = document.getElementById('buildCart');
   if (!box) return;
   const parts = selectedCustomParts();

@@ -11,7 +11,7 @@ class ProductFilterTests(unittest.TestCase):
           ('ram','G.SKILL DDR5-6000 CL30 32GB (16GB×2)','PC용 / 1.35V / RGB / 화이트', {'memory_type':['DDR5'],'capacity_gb':['32'],'speed':['6000'],'cl':['30']}),
           ('storage','Samsung SSD 2TB M.2 2280','PCIe 4.0 x4 / NVMe 1.4 / TLC / 3D NAND / 읽기: 7,000MB/s / 쓰기: 6,500MB/s', {'form_factor':['M.2 2280'],'interface':['PCIe 4.0 x4'],'protocol':['NVMe'],'capacity_gb':['2000'],'nand':['TLC']}),
           ('psu','Seasonic 850W ATX 3.1','ATX 파워 / 80 PLUS Gold / Full Modular / 12V-2x6', {'form_factor':['ATX'],'watt_range':['800–899W'],'rating':['Gold'],'modular':['Full']}),
-          ('hdd','Seagate NAS HDD 8TB','3.5인치 / SATA3 / 7200 RPM / 캐시: 256MB', {'usage':['NAS'],'capacity_gb':['8000'],'rpm':['7200']}),
+          ('hdd','Seagate NAS HDD 8TB','NAS용(3.5인치) / SATA3 / 7,200 RPM / 캐시: 256MB', {'usage':['NAS'],'capacity_gb':['8000'],'rpm':['7200']}),
         ]
         for kind,name,spec,filters in examples:
             with self.subTest(kind=kind):

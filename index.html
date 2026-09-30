@@ -6,6 +6,7 @@
   <title>PC 견적 도우미</title>
   <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet"/>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="manual_builder.css">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect x=%274%27 y=%276%27 width=%2724%27 height=%2717%27 rx=%273%27 fill=%27%232563eb%27/%3E%3Cpath d=%27M10 27h12M16 23v4%27 stroke=%27%232563eb%27 stroke-width=%273%27/%3E%3C/svg%3E">
 </head>
 <body>
@@ -27,94 +28,10 @@
   </section>
 
   <!-- ═══ CUSTOM SPEC SECTION ═══ -->
-  <div class="custom-wrap app-view" id="customSection" hidden>
-    <div class="custom-hdr">
-      <h2>직접 사양 선택하기</h2>
-      <span>부품을 고르면 예상 성능을 바로 계산해드려요</span>
-    </div>
-    <div class="custom-body">
-      <div class="custom-builder">
-        <section class="product-browser">
-          <div class="builder-head">
-            <div>
-              <div class="sec-title">제품 선택</div>
-              <h3 id="builderCategoryTitle">CPU</h3>
-            </div>
-            <div class="builder-tabs" id="builderTabs">
-              <button type="button" class="builder-tab active" data-part="cpu">CPU</button>
-              <button type="button" class="builder-tab" data-part="mb">메인보드</button>
-              <button type="button" class="builder-tab" data-part="gpu">GPU</button>
-              <button type="button" class="builder-tab" data-part="ram">RAM</button>
-              <button type="button" class="builder-tab" data-part="storage">SSD</button>
-              <button type="button" class="builder-tab" data-part="hdd">HDD</button>
-              <button type="button" class="builder-tab" data-part="psu">파워</button>
-              <button type="button" class="builder-tab" data-part="case">케이스</button>
-              <button type="button" class="builder-tab" data-part="software">소프트웨어</button>
-            </div>
-          </div>
-
-          <div class="builder-filter">
-            <div class="product-search-row">
-              <input id="productSearchInput" class="product-search-input" type="search" aria-label="부품 검색" placeholder="제품명, 칩셋, 소켓 검색"/>
-              <button type="button" class="mini-btn" id="refreshProductsBtn">가격 갱신</button>
-            </div>
-            <div class="product-controls">
-              <label>가격 검색처
-                <select id="productSourceSelect" class="product-control-select">
-                  <option value="all">다나와 + 컴퓨존</option>
-                  <option value="danawa">다나와</option>
-                  <option value="compuzone">컴퓨존</option>
-                </select>
-              </label>
-              <label>불러온 제품 정렬
-                <select id="productSortSelect" class="product-control-select">
-                  <option value="popular">검색처 기본순</option>
-                  <option value="price_asc">낮은 가격순</option>
-                  <option value="price_desc">높은 가격순</option>
-                  <option value="name">제품명순</option>
-                </select>
-              </label>
-              <button type="button" class="mini-btn ghost" id="resetProductFiltersBtn">필터 초기화</button>
-            </div>
-            <details class="spec-filter-panel" open>
-              <summary class="filter-section-head"><strong>상세 조건</strong><span>항목별 중복 선택 가능</span></summary>
-            <div class="filter-grid" id="builderFilters"></div>
-            <p class="builder-filter-hint" id="builderFilterHint"></p>
-            </details>
-            <div class="active-product-filters" id="activeProductFilters" hidden></div>
-          </div>
-
-          <div class="product-list-head">
-            <span id="productListTitle">선택 가능한 제품</span>
-            <span class="product-list-meta"><span id="productOrderLabel">가격 검색 준비 중</span><span id="productCount">0개</span></span>
-          </div>
-          <p class="product-browse-note" id="productBrowseNote" role="status" aria-live="polite">제품에 마우스를 올리거나 키보드로 선택하면 대표 이미지를 볼 수 있어요.</p>
-          <div class="product-list" id="productList" aria-busy="false"></div>
-          <div class="product-list-footer" id="productListFooter" hidden>
-            <button type="button" class="mini-btn ghost" id="loadMoreProductsBtn">제품 더 보기</button>
-          </div>
-        </section>
-
-        <aside class="build-side">
-          <section class="build-card">
-            <div class="build-card-head">
-              <div>
-                <div class="sec-title">선택한 견적</div>
-                <h3>내 부품 구성</h3>
-              </div>
-              <button type="button" class="mini-btn ghost" id="clearBuildBtn">초기화</button>
-            </div>
-            <div id="csCompatibility" role="status" aria-live="polite" aria-atomic="true"></div>
-            <div class="build-cart" id="buildCart"></div>
-            <div class="spec-total">
-              <span class="spec-total-label">부품 합계</span>
-              <span class="spec-total-price" id="csTotalPrice">₩0</span>
-            </div>
-            <div class="build-price-note" id="csPriceNote" aria-live="polite"></div>
-            <div class="build-value-summary" id="csBuildValue" aria-live="polite">부품을 선택하면 1프레임당 가격을 계산합니다.</div>
-            <div class="buy-links" id="csBuyLinks"></div>
-          </section>
-
+  <div class="app-view" id="customSection" hidden>
+    <div id="manualBuilderRoot"></div>
+    <div hidden aria-hidden="true" id="builderCalculationBridge">
+      <span id="csTotalPrice"></span><span id="csPriceNote"></span><span id="csBuildValue"></span>
           <div class="legacy-selects" hidden>
             <select class="spec-select" id="csGpu"></select>
             <select class="spec-select" id="csCpu"></select>
@@ -127,7 +44,8 @@
             <select class="spec-select" id="csSoftware"></select>
           </div>
 
-          <section class="use-panel">
+    </div>
+          <section class="use-panel" id="legacyPerformance" hidden>
             <div class="mode-toggle">
               <button class="mode-btn active" id="csModeGame">게임</button>
               <button class="mode-btn" id="csModeWork">작업</button>
@@ -156,9 +74,6 @@
               <div id="csWorkChart"><div class="no-spec"><div class="no-spec-text">부품을 선택해주세요</div></div></div>
             </div>
           </section>
-        </aside>
-      </div>
-    </div>
   </div>
 
   <!-- ═══ BUDGET RECOMMEND SECTION ═══ -->
@@ -277,9 +192,10 @@
 <script src="gpu_selector.js"></script>
 <script src="app_data.js"></script>
 <script src="builder_specs.js"></script>
-<script src="app_utils.js"></script>
+<script src="app_utils.js?v=20260930"></script>
 <script src="product_images.js"></script>
 <script src="game_picker.js"></script>
     <script src="app.js"></script>
+<script src="manual_builder.js"></script>
 </body>
 </html>

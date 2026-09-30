@@ -121,15 +121,15 @@ def _normalize(kind, source):
             protocol=first(r'NVMe\s*([12]\.\d)',text)
             d['protocol']=('NVMe '+protocol) if protocol else 'NVMe' if re.search(r'NVMe',text,re.I) else ''
             d['nand']=first(r'\b(TLC|QLC|MLC|SLC)\b',text).upper()
-            d['nand_structure']=first(r'\b([23]D)\s*NAND',text).upper()
+            d['nand_structure']=first(r'\b([23]D)\s*(?:NAND|낸드)',text).upper()
             d['dram']='no' if re.search(r'DRAM\s*(?:미탑재|없음|리스|less)|DRAM[- ]?less',text,re.I) else 'yes' if re.search(r'DRAM\s*(?:탑재|캐시\s*있음)|DDR[34]\s*캐시',text,re.I) else ''
             for key,term in [('read','읽기|read'),('write','쓰기|write')]:
                 match = re.search(r'(?:'+term+r')\s*(?:속도)?\s*[:：]?\s*(?:최대)?\s*([\d,.]+)\s*(GB/s|MB/s|M)(?=\b|/|\s|$)',text,re.I)
                 speed=number(p.get(key+'_speed')) or (number(match[1])*(1000 if match[2].lower()=='gb/s' else 1) if match else 0)
                 d[key+'_speed']=speed; d[key+'_range']=bucket(speed,SPEED_RANGES)
         else:
-            d['usage']=next((v for v,pat in [('NAS',r'\bNAS\b'),('Surveillance','감시|녹화|surveillance'),('Enterprise','기업용|enterprise'),('Laptop','노트북|laptop'),('Desktop','데스크탑|데스크톱|PC용|desktop')] if re.search(pat,text,re.I)),'')
-            d['rpm']=first(r'(\d{4,5})\s*RPM',text) or p.get('rpm','')
+            d['usage']=next((v for v,pat in [('NAS',r'\bNAS(?:용|\b)'),('Surveillance','감시|녹화|surveillance'),('Enterprise','기업용|enterprise'),('Laptop','노트북|laptop'),('Desktop','데스크탑|데스크톱|PC용|desktop')] if re.search(pat,text,re.I)),'')
+            d['rpm']=first(r'([\d,]{4,6})\s*RPM',text).replace(',','') or p.get('rpm','')
             d['cache_mb']=first(r'(\d+)\s*MB\s*(?:캐시|cache)',text) or first(r'(?:캐시|cache)\s*[:：]?\s*(\d+)\s*MB',text)
     elif kind == 'psu':
         watts=first(r'\b(\d{3,4})\s*W\b',name) or first(r'정격\s*출력\s*[:：]?\s*(\d{3,4})\s*W',spec) or p.get('watt','')
@@ -150,7 +150,7 @@ def single_capacity(spec):
     return int(float(n)*(1000 if unit.upper()=='TB' else 1))
 
 def board_form(text):
-    return next((v for v,pat in [('E-ATX',r'\bE[- ]?ATX\b'),('M-ATX',r'\b(?:M[- ]?ATX|micro[- ]?ATX)\b'),('Mini-ITX',r'\bmini[- ]?ITX\b'),('ATX',r'\bATX\b')] if re.search(pat,text,re.I)),'')
+    return next((v for v,pat in [('E-ATX',r'\bE[- ]?ATX\b'),('M-ATX',r'\b(?:M[- ]?ATX|micro[- ]?ATX)\b'),('Mini-ITX',r'\b(?:mini|M)[- ]?ITX\b'),('ATX',r'\bATX\b')] if re.search(pat,text,re.I)),'')
 
 def clean_filters(kind, filters):
     allowed={k for k,_ in FIELDS.get(kind,[])}
@@ -201,6 +201,13 @@ def facets(kind, rows, selected=None):
             counts.update(str(v) for v in set(values) if v not in ('',None))
         for v in selected.get(key,[]): counts.setdefault(v,0)
         if not counts: continue
-        order=sorted(counts, key=lambda v:(priority.index(v) if v in priority else 100, -counts[v],v))
+        preferred = {
+            'cpu_family':['Core Ultra','Core i5','Core i7','Core i9','Ryzen 5','Ryzen 7','Ryzen 9'],
+            'generation':['Intel 14','Intel 13','Intel 12','Ryzen 9000','Ryzen 8000','Ryzen 7000','Ryzen 5000'],
+            'cores':['6','8','12','14','16','24'], 'threads':['12','16','20','24','28','32'],
+            'speed':['6000','5600','6400','7200','3600','3200'],
+            'manufacturer':['ASUS','MSI','GIGABYTE','ASRock','Samsung','SK hynix','Micron','Seagate','Western Digital'],
+        }.get(key, priority)
+        order=sorted(counts, key=lambda v:(preferred.index(v) if v in preferred else 100, -counts[v],v))
         result.append({'key':key,'label':label,'options':[[v,option_label(key,v)] for v in order], 'counts':dict(counts)})
     return result
