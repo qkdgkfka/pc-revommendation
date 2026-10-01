@@ -1,3 +1,4 @@
+from backend_patch import patch_backend
 import unittest
 from recommendation_policy import cpu_allowed, cpu_preference, gpu_product_band, storage_preference
 
@@ -62,5 +63,5 @@ class PolicyTests(unittest.TestCase):
         import random
         from unittest.mock import patch
         import server_fixed as s
-        with patch.object(s,"cached_part_price",return_value=100000), patch.object(s,"estimate_fps_bundle",side_effect=AssertionError("must not evaluate")):
+        with patch_backend(s,"cached_part_price",return_value=100000), patch_backend(s,"estimate_fps_bundle",side_effect=AssertionError("must not evaluate")):
             self.assertEqual(s.build_tier_candidates({"budget":300000},"low",random.Random(1)),[])

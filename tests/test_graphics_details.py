@@ -1,3 +1,4 @@
+from rendering_fixture import install_rendering_fixture
 import unittest
 from unittest.mock import patch
 from graphics_estimates import graphics_scenarios
@@ -7,6 +8,7 @@ from server_catalogs import GPU_CATALOG,CPU_CATALOG
 
 class GraphicsDetailsTests(unittest.TestCase):
     def setUp(self):
+        install_rendering_fixture(self)
         self.gpu=next(g for g in GPU_CATALOG if g["id"]=="gpu_rtx5070")
         self.cpu=next(c for c in CPU_CATALOG if c["id"]=="cpu_r7_9800x3d")
         self.fps=estimate_fps_bundle(self.gpu,self.cpu,{"gb":32},"expedition33","1440",144,"mid",["rpg"])
@@ -47,7 +49,7 @@ class GraphicsDetailsTests(unittest.TestCase):
         from server_fixed import summarize_part,resolve_fps_part
         from unittest.mock import patch
         retail={**self.gpu,"id":"compuzone_gpu_example","performance_ref_id":self.gpu["id"]}
-        with patch("server_fixed.db_lookup_price_info",return_value=None):
+        with patch("pcbuilder.database.db_lookup_price_info",return_value=None):
             response=summarize_part(retail,"gpu")
         resolved,identifier=resolve_fps_part("gpu",response)
         self.assertIsNotNone(resolved)
@@ -72,7 +74,7 @@ class GraphicsDetailsTests(unittest.TestCase):
     def test_removed_fg_explanation_is_not_rendered(self):
         from pathlib import Path
         self.assertNotIn("FG는 생성 프레임을 포함한 화면 표시 FPS입니다.",
-                         Path("graphics_details.js").read_text(encoding="utf8"))
+                         (Path(__file__).resolve().parents[1] / "src/components/GraphicsDetails.jsx").read_text(encoding="utf8"))
 
     def test_amd_uses_own_fsr_calibration(self):
         fps=dict(self.fps,fps_by_option=dict(self.fps["fps_by_option"],high=40))

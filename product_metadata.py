@@ -6,13 +6,16 @@ Purchase-page URLs and `image_url` remain separate fields at every boundary.
 """
 from __future__ import annotations
 
-from html import unescape
 import math
 import re
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from server_catalogs import COMMON_GPU_MODEL_NUMBERS
+from product_parsing import (
+    PRODUCT_VARIANT_TOKENS, canonical_name, clean_visible_text,
+    model_tokens_from_text, normalize_text, parse_price_value, strip_html,
+)
 
 DANAWA_BROWSE_DEFAULT_QUERIES = {
     "cpu": "CPU",
@@ -40,25 +43,6 @@ def safe_int(v: Any, default: int = 0) -> int:
         return int(float(v))
     except Exception:
         return default
-
-def normalize_text(v: Any) -> str:
-    return " ".join(str(v or "").strip().lower().split())
-
-def canonical_name(v: Any) -> str:
-    t = normalize_text(v)
-    for token in ["geforce", "radeon", "graphics", "graphic", "series", "desktop", "(tm)", "(r)", "processor"]:
-        t = t.replace(token, "")
-    return t.replace("  ", " ").strip()
-
-def clean_visible_text(value: Any) -> str:
-    return re.sub(r"\s+", " ", unescape(str(value or ""))).strip()
-
-def parse_price_value(text: Any) -> Optional[int]:
-    digits = re.sub(r"[^\d]", "", str(text or ""))
-    if not digits:
-        return None
-    value = int(digits)
-    return value if value >= 1000 else None
 
 GPU_MAKER_ALIASES: Dict[str, Tuple[str, ...]] = {
     "msi": ("msi", "엠에스아이"),
@@ -153,9 +137,6 @@ def query_model_name(query: Any) -> str:
             if vram:
                 q += f" {vram.group(1)}GB"
     return q
-
-def strip_html(value: str) -> str:
-    return clean_visible_text(re.sub(r"<[^>]+>", " ", value or ""))
 
 def normalize_browse_part_type(value: Any) -> str:
     key = normalize_text(value)
@@ -290,22 +271,7 @@ def normalize_product_url(url: Any) -> str:
     return urlunsplit((scheme, netloc, path, query, ""))
 
 def model_tokens(v: Any) -> set:
-    t = canonical_name(v)
-    patterns = [
-        r"\b(?:rtx|gtx|rx)\s*\d{3,5}\b",
-        r"\bultra\s*[3579]?\s*\d{3}[a-z]*\b",
-        r"\bi[3579][-\s]?\d{4,5}[a-z]*\b",
-        r"\b(?:a|b|h|x|z)\d{3,4}\b",
-        r"\bddr[45]\b",
-        r"\b\d+\s*(?:gb|tb|w)\b",
-        r"\b\d{4,5}x3d\b",
-        r"\b\d{3}[a-z]\b",
-        r"\b\d{4,5}[a-z]{0,3}\b",
-    ]
-    found = []
-    for pattern in patterns:
-        found.extend(re.findall(pattern, t))
-    return {re.sub(r"[^a-z0-9]", "", x) for x in found}
+    return model_tokens_from_text(canonical_name(v))
 
 def gpu_exact_model_key(v: Any) -> str:
     t = canonical_name(v).replace("-", " ")
@@ -347,7 +313,7 @@ def compatible_gpu_price_name(catalog_name: Any, price_name: Any) -> bool:
 
 def variant_tokens(v: Any) -> set:
     words = set(canonical_name(v).replace("-", " ").split())
-    return words & {"super", "ti", "xtx", "xt", "gre", "x3d", "kf", "f", "k", "u"}
+    return words & PRODUCT_VARIANT_TOKENS
 
 def compatible_price_name(catalog_name: Any, price_name: Any) -> bool:
     """Reject a nearby model or a cheaper capacity/edition of the requested item.

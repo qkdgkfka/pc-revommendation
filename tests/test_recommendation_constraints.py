@@ -1,3 +1,4 @@
+from backend_patch import patch_backend
 import random
 import unittest
 from unittest.mock import patch
@@ -66,7 +67,7 @@ class RecommendationExclusionsTests(unittest.TestCase):
 
     def test_retail_only_rtx30_inventory_never_reenters_fallback(self):
         gpu = component("gpu", "gpu_rtx3060")
-        with patch.object(server, "db_lookup_price", return_value=None):
+        with patch_backend(server, "db_lookup_price", return_value=None):
             for tier in ("low", "mid", "high"):
                 result = server.build_tier_candidates({"budget": 1500000, "gpu_market_prices": {gpu["id"]: gpu}}, tier, random.Random(1))
                 self.assertTrue(result)
@@ -79,7 +80,7 @@ class RecommendationExclusionsTests(unittest.TestCase):
         gpu = component("gpu", "gpu_rtx5070")
         cpu = component("cpu", "cpu_r5_7600")
         ram = component("ram", "ram_32_ddr5")
-        with patch.object(server, "estimate_fps_bundle", wraps=server.estimate_fps_bundle) as estimate:
+        with patch_backend(server, "estimate_fps_bundle", wraps=server.estimate_fps_bundle) as estimate:
             results = [server.CandidateEvaluationCache(request, tier, 1500000, {}, [], [], shared).fps_for(gpu, cpu, ram)
                        for tier in ("low", "mid", "high")]
         self.assertEqual(1, estimate.call_count)

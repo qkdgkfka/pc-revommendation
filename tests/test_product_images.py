@@ -1,3 +1,4 @@
+from backend_patch import patch_backend
 import io
 import tempfile
 from pathlib import Path
@@ -12,7 +13,7 @@ class ProductImageTests(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
-        disk = patch.object(images, "DISK_CACHE_DIR", Path(self.directory.name))
+        disk = patch_backend(images, "DISK_CACHE_DIR", Path(self.directory.name))
         disk.start()
         self.addCleanup(disk.stop)
         images._cache.clear()
@@ -23,7 +24,7 @@ class ProductImageTests(unittest.TestCase):
         data = b"\xff\xd8\xffreal-photo"
         images.persist_product_image(url, data)
         images._cache.clear()
-        with patch.object(images, "build_opener", side_effect=AssertionError("network")):
+        with patch_backend(images, "build_opener", side_effect=AssertionError("network")):
             self.assertEqual((data, "image/jpeg"), images.fetch_product_image(url))
 
     def test_lazy_photo_wins_over_placeholder_src(self):
@@ -31,14 +32,14 @@ class ProductImageTests(unittest.TestCase):
         self.assertEqual('https://img.danuri.io/ram.jpg', server.image_from_danawa_block(html, 'https://prod.danawa.com/'))
 
     def test_failed_lookup_can_be_retried(self):
-        with patch.object(server, 'saved_products', return_value=[]), patch.object(server, 'fetch_market_top_product', side_effect=[None, {'image_url': 'https://img.danuri.io/psu.jpg'}]) as lookup:
+        with patch_backend(server, 'saved_products', return_value=[]), patch_backend(server, 'fetch_market_top_product', side_effect=[None, {'image_url': 'https://img.danuri.io/psu.jpg'}]) as lookup:
             self.assertEqual('', server.resolve_part_image_url('Example PSU', 'psu'))
             self.assertEqual('https://img.danuri.io/psu.jpg', server.resolve_part_image_url('Example PSU', 'psu'))
             self.assertEqual(2, lookup.call_count)
 
     def test_saved_photo_does_not_require_fresh_price_search(self):
         photo = 'https://img.danuri.io/ssd.jpg'
-        with patch.object(server, 'saved_products', return_value=[{'name': 'Samsung 990 PRO 1TB', 'image_url': photo, 'stale': True}]), patch.object(server, 'fetch_market_top_product') as lookup:
+        with patch_backend(server, 'saved_products', return_value=[{'name': 'Samsung 990 PRO 1TB', 'image_url': photo, 'stale': True}]), patch_backend(server, 'fetch_market_top_product') as lookup:
             self.assertEqual(photo, server.resolve_part_image_url('Samsung 990 PRO 1TB', 'storage'))
             lookup.assert_not_called()
 
@@ -52,7 +53,7 @@ class ProductImageTests(unittest.TestCase):
         handler = Mock()
         handler.wfile = io.BytesIO()
         data = b'\xff\xd8\xffphoto'
-        with patch.object(server, 'fetch_product_image', return_value=(data, 'image/jpeg')):
+        with patch_backend(server, 'fetch_product_image', return_value=(data, 'image/jpeg')):
             server.send_part_image(handler, {'name': 'RAM', 'type': 'ram', 'image_url': 'https://img.danuri.io/ram.jpg'})
         handler.send_response.assert_called_once_with(200)
         handler.send_header.assert_any_call('Content-Type', 'image/jpeg')
@@ -62,16 +63,16 @@ class ProductImageTests(unittest.TestCase):
     def test_failure_placeholder_is_not_cached(self):
         handler = Mock()
         handler.wfile = io.BytesIO()
-        with patch.object(server, 'resolve_part_image_url', return_value=''):
+        with patch_backend(server, 'resolve_part_image_url', return_value=''):
             server.send_part_image(handler, {'name': 'SSD', 'type': 'storage'})
         handler.send_header.assert_any_call('Cache-Control', 'no-store')
 
     def test_failed_server_fetch_offers_valid_photo_to_browser(self):
         handler = Mock(wfile=io.BytesIO())
         photo = 'https://img.danuri.io/ram.jpg'
-        with patch.object(server, 'saved_products', return_value=[]), \
-             patch.object(server, 'fetch_product_image', return_value=None), \
-             patch.object(server, 'resolve_part_image_url', return_value=''):
+        with patch_backend(server, 'saved_products', return_value=[]), \
+             patch_backend(server, 'fetch_product_image', return_value=None), \
+             patch_backend(server, 'resolve_part_image_url', return_value=''):
             server.send_part_image(handler, {'name': 'Example RAM', 'type': 'ram', 'image_url': photo})
         handler.send_response.assert_called_once_with(302)
         handler.send_header.assert_any_call('Location', photo)
@@ -81,10 +82,10 @@ class ProductImageTests(unittest.TestCase):
     def test_product_page_is_never_used_as_image_redirect(self):
         handler = Mock(wfile=io.BytesIO())
         page = 'https://prod.danawa.com/info/?pcode=123'
-        with patch.object(server, 'saved_products', return_value=[]), \
-             patch.object(server, 'fetch_product_image', return_value=None), \
-             patch.object(server, 'resolve_part_image_url', return_value=''), \
-             patch.object(server, 'fetch_product_page_image', return_value=''):
+        with patch_backend(server, 'saved_products', return_value=[]), \
+             patch_backend(server, 'fetch_product_image', return_value=None), \
+             patch_backend(server, 'resolve_part_image_url', return_value=''), \
+             patch_backend(server, 'fetch_product_page_image', return_value=''):
             server.send_part_image(handler, {'name': 'Example RAM', 'type': 'ram',
                                              'image_url': page, 'product_url': page})
         handler.send_response.assert_called_once_with(200)
@@ -93,9 +94,9 @@ class ProductImageTests(unittest.TestCase):
     def test_other_retail_page_is_not_used_as_image_redirect(self):
         handler = Mock(wfile=io.BytesIO())
         page = 'https://www.corsair.com/us/en/p/psu/example'
-        with patch.object(server, 'saved_products', return_value=[]), \
-             patch.object(server, 'fetch_product_image', return_value=None), \
-             patch.object(server, 'resolve_part_image_url', return_value=''):
+        with patch_backend(server, 'saved_products', return_value=[]), \
+             patch_backend(server, 'fetch_product_image', return_value=None), \
+             patch_backend(server, 'resolve_part_image_url', return_value=''):
             server.send_part_image(handler, {'name': 'Example PSU', 'type': 'psu', 'image_url': page})
         handler.send_response.assert_called_once_with(200)
 
@@ -106,7 +107,7 @@ class ProductImageTests(unittest.TestCase):
     def test_saved_sku_url_ignores_search_parameters_and_translated_name(self):
         row = {'name': '삼성전자 SSD', 'url': 'https://prod.danawa.com/info/?pcode=123&keyword=SSD',
                'image_url': 'https://img.danuri.io/ssd.jpg'}
-        with patch.object(server, 'saved_products', return_value=[row]):
+        with patch_backend(server, 'saved_products', return_value=[row]):
             self.assertEqual(row['image_url'], server.resolve_part_image_url(
                 'Samsung SSD', 'storage', 'https://prod.danawa.com/info/?pcode=123'))
 
@@ -116,7 +117,7 @@ class ProductImageTests(unittest.TestCase):
             {'name': '삼성전자 990 PRO M.2 NVMe (1TB)', 'image_url': 'https://img.danuri.io/pro.jpg'},
             {'name': '삼성전자 990 EVO Plus M.2 NVMe (1TB)', 'image_url': 'https://img.danuri.io/right.jpg'},
         ]
-        with patch.object(server, 'saved_products', return_value=rows), patch.object(server, 'fetch_market_top_product', return_value=None):
+        with patch_backend(server, 'saved_products', return_value=rows), patch_backend(server, 'fetch_market_top_product', return_value=None):
             self.assertEqual(rows[2]['image_url'], server.resolve_part_image_url('Samsung 990 EVO Plus NVMe SSD 1TB', 'storage'))
 
     def test_compuzone_photo_is_preferred_and_failure_tries_next_source(self):
@@ -128,7 +129,7 @@ class ProductImageTests(unittest.TestCase):
         data = b'\xff\xd8\xffreal-photo'
         def fetch(url):
             return (data, 'image/jpeg') if url == rows[0]['image_url'] else None
-        with patch.object(server, 'saved_products', return_value=rows), patch.object(server, 'fetch_product_image', side_effect=fetch):
+        with patch_backend(server, 'saved_products', return_value=rows), patch_backend(server, 'fetch_product_image', side_effect=fetch):
             self.assertEqual(rows[1]['image_url'], server.resolve_part_image_url('Example SSD 1TB', 'storage'))
             server.send_part_image(handler, {'name': 'Example SSD 1TB', 'type': 'storage'})
         self.assertEqual(data, handler.wfile.getvalue())
@@ -136,7 +137,7 @@ class ProductImageTests(unittest.TestCase):
     def test_real_sku_does_not_borrow_photo_from_similar_product(self):
         row = {'name': 'Samsung 990 PRO 1TB', 'url': 'https://prod.danawa.com/info/?pcode=999',
                'image_url': 'https://img.danuri.io/wrong.jpg'}
-        with patch.object(server, 'saved_products', return_value=[row]), patch.object(server, 'fetch_market_top_product', return_value=None):
+        with patch_backend(server, 'saved_products', return_value=[row]), patch_backend(server, 'fetch_market_top_product', return_value=None):
             self.assertEqual('', server.resolve_part_image_url('Samsung 990 PRO 1TB', 'storage',
                              'https://prod.danawa.com/info/?pcode=123'))
 

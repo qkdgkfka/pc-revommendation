@@ -1,3 +1,4 @@
+from backend_patch import patch_backend
 """Search/pagination regressions at the API/provider HTML boundary."""
 import unittest
 from unittest.mock import patch
@@ -29,8 +30,8 @@ class ProductBrowsingTests(unittest.TestCase):
     def setUp(self):
         s.MARKET_BROWSE_CACHE.clear()
         getattr(s, 'MARKET_SEARCH_CACHE', {}).clear()
-        self.saved = patch.object(s, 'saved_products', return_value=[])
-        self.persist = patch.object(s, 'remember_products')
+        self.saved = patch_backend(s, 'saved_products', return_value=[])
+        self.persist = patch_backend(s, 'remember_products')
         self.saved.start(); self.persist.start()
         self.addCleanup(self.saved.stop); self.addCleanup(self.persist.stop)
 
@@ -44,7 +45,7 @@ class ProductBrowsingTests(unittest.TestCase):
 
     def test_category_pages_fill_fifty_after_provider_pagination(self):
         for kind in ['mb', 'cpu', 'ram', 'storage', 'psu', 'hdd', 'gpu']:
-            with self.subTest(kind=kind), patch.object(s, '_market_fetch_html', side_effect=self.provider(kind)) as fetch:
+            with self.subTest(kind=kind), patch_backend(s, '_market_fetch_html', side_effect=self.provider(kind)) as fetch:
                 first = s.market_products_response(kind, source='danawa', limit=50)
                 second = s.market_products_response(kind, source='danawa', limit=50, page=2)
                 self.assertEqual(50, len(first['items']))
@@ -54,7 +55,7 @@ class ProductBrowsingTests(unittest.TestCase):
                 self.assertGreaterEqual(fetch.call_count, 3)
 
     def test_refresh_does_not_shift_an_existing_cursor(self):
-        with patch.object(s, '_market_fetch_html', side_effect=self.provider('mb')):
+        with patch_backend(s, '_market_fetch_html', side_effect=self.provider('mb')):
             first = s.market_products_response('mb', source='danawa', limit=50)
             s.market_products_response('mb', source='danawa', limit=50, refresh=True)
             second = s.market_products_response('mb', source='danawa', limit=50, page=2, cursor=first['cursor'])
@@ -71,7 +72,7 @@ class ProductBrowsingTests(unittest.TestCase):
             for code in range(start + 10000, min(start + 10020, 10121)):
                 rows.append(f'<li id="li-pno-{code}"><a class="prdTxt" href="../product/product_detail.htm?ProductNo={code}&MediumDivNo=1013">ASUS B850 AM5 SKU {code}</a><div class="prd_price" data-price="200000"></div></li>')
             return '<ul>' + ''.join(rows) + '</ul>'
-        with patch.object(s, '_market_fetch_html', side_effect=fetch):
+        with patch_backend(s, '_market_fetch_html', side_effect=fetch):
             first = s.market_products_response('mb', source='compuzone', limit=50)
             second = s.market_products_response('mb', source='compuzone', limit=50, page=2, cursor=first['cursor'])
         self.assertEqual((50,50), (len(first['items']),len(second['items'])))
@@ -80,14 +81,14 @@ class ProductBrowsingTests(unittest.TestCase):
 
     def test_live_and_saved_alias_ids_deduplicate_by_retail_sku(self):
         old = dict(id='old-alias',name='ASUS B850 AM5',price=999000,price_status='cached',url='https://prod.danawa.com/info/?pcode=10000&cate=112751')
-        with patch.object(s, 'saved_products', return_value=[old]), patch.object(s, '_market_fetch_html', side_effect=self.provider('mb',17)):
+        with patch_backend(s, 'saved_products', return_value=[old]), patch_backend(s, '_market_fetch_html', side_effect=self.provider('mb',17)):
             result = s.market_products_response('mb', source='danawa',limit=50)
         self.assertEqual(17,len(result['items']))
         self.assertNotIn('old-alias',[r['id'] for r in result['items']])
         self.assertNotIn(999000,[r['price'] for r in result['items']])
 
     def test_fewer_than_fifty_returns_all_and_stops(self):
-        with patch.object(s, '_market_fetch_html', side_effect=self.provider('mb', 17)):
+        with patch_backend(s, '_market_fetch_html', side_effect=self.provider('mb', 17)):
             result = s.market_products_response('mb', source='danawa', limit=50)
         self.assertEqual(17, len(result['items']))
         self.assertFalse(result['has_more'])
@@ -100,14 +101,14 @@ class ProductBrowsingTests(unittest.TestCase):
                  ('RX 6000', ['RX 6950 XT', 'RX 6800 XT', 'RX 6600'])]
         for series, models in pairs:
             names = [f'ASUS {model} 16GB' for model in models] + ['NVIDIA RTX 4500 Ada', 'ASUS RTX 2080']
-            with self.subTest(series=series), patch.object(s, '_market_fetch_html', return_value=html_rows('gpu', 0, len(names), names)):
+            with self.subTest(series=series), patch_backend(s, '_market_fetch_html', return_value=html_rows('gpu', 0, len(names), names)):
                 result = s.market_products_response('gpu', series, source='danawa', limit=50)
             self.assertEqual(len(models), len(result['items']))
             self.assertEqual({series}, {p['series'] for p in result['items']})
 
     def test_series_maker_specific_chipset_and_sort_compose(self):
         names = ['ASUS RTX 4070 SUPER', 'MSI RTX 4070 SUPER', 'ASUS RTX 4070 Ti SUPER', 'ASUS RTX 4060', 'ASUS RTX 5070']
-        with patch.object(s, '_market_fetch_html', return_value=html_rows('gpu', 0, len(names), names)):
+        with patch_backend(s, '_market_fetch_html', return_value=html_rows('gpu', 0, len(names), names)):
             result = s.market_products_response('gpu', series='RTX 40', maker='asus', sort='price_desc', source='danawa')
             exact = s.market_products_response('gpu', series='RTX 40', maker='asus', model='RTX 4070 SUPER', source='danawa')
         self.assertEqual(3, len(result['items']))
@@ -119,7 +120,7 @@ class ProductBrowsingTests(unittest.TestCase):
             query = parse_qs(urlparse(url).query)['query'][0]
             name = 'ASUS RTX 4070' if '4070' in query else 'ASUS RTX 5070'
             return html_rows('gpu', 0, 40, [name + f' SKU {i}' for i in range(40)])
-        with patch.object(s, '_market_fetch_html', side_effect=fetch), patch.dict(s.CATALOGS, {'gpu':[{'name':'RTX 4070'}, {'name':'RTX 4080'}]}):
+        with patch_backend(s, '_market_fetch_html', side_effect=fetch), patch.dict(s.CATALOGS, {'gpu':[{'name':'RTX 4070'}, {'name':'RTX 4080'}]}):
             result = s.market_products_response('gpu', series='RTX 40', maker='asus', limit=50, source='danawa')
         self.assertEqual(40, len(result['items']))
         self.assertTrue(all(p['series'] == 'RTX 40' for p in result['items']))
@@ -131,7 +132,7 @@ class ProductBrowsingTests(unittest.TestCase):
                 return html_rows('gpu',0,0)
             name = 'ASUS RTX 4070' if 'ASUS' in query else 'MSI RTX 4070'
             return html_rows('gpu',0,17,[name]*17)
-        with patch.object(s,'_market_fetch_html',side_effect=fetch), patch.dict(s.CATALOGS,{'gpu':[{'chipset':'RTX 4070'}]}):
+        with patch_backend(s,'_market_fetch_html',side_effect=fetch), patch.dict(s.CATALOGS,{'gpu':[{'chipset':'RTX 4070'}]}):
             result = s.market_products_response('gpu','ASUS',series='RTX 40',source='danawa',limit=50)
         self.assertEqual(17,len(result['items']))
         self.assertTrue(all(row['manufacturer']=='asus' for row in result['items']))
@@ -140,18 +141,18 @@ class ProductBrowsingTests(unittest.TestCase):
         def fetch(url,provider,timeout=8):
             query = parse_qs(urlparse(url).query)['query'][0]
             return '<html>Unrecognized search page</html>' if query == 'RTX 40' else html_rows('gpu',0,17,['ASUS RTX 4070']*17)
-        with patch.object(s,'_market_fetch_html',side_effect=fetch), patch.dict(s.CATALOGS,{'gpu':[{'chipset':'RTX 4070'}]}):
+        with patch_backend(s,'_market_fetch_html',side_effect=fetch), patch.dict(s.CATALOGS,{'gpu':[{'chipset':'RTX 4070'}]}):
             result = s.market_products_response('gpu',series='RTX 40',source='danawa',limit=50)
         self.assertEqual(17,len(result['items']))
 
     def test_live_translated_text_matches_are_not_removed_again(self):
         names = ['인텔 코어i5-14세대 14400F 정품']
-        with patch.object(s, '_market_fetch_html', return_value=html_rows('cpu', 0, 1, names)):
+        with patch_backend(s, '_market_fetch_html', return_value=html_rows('cpu', 0, 1, names)):
             result = s.market_products_response('cpu', 'Intel', source='danawa',limit=50)
         self.assertEqual(1,len(result['items']))
 
     def test_search_cache_remains_bounded_with_query_and_cursor_keys(self):
-        with patch.object(s, '_market_fetch_html', return_value=html_rows('cpu',0,0)):
+        with patch_backend(s, '_market_fetch_html', return_value=html_rows('cpu',0,0)):
             for i in range(150):
                 s.market_products_response('cpu',f'query-{i}',source='danawa')
         self.assertLessEqual(len(s.MARKET_SEARCH_CACHE),128)
@@ -160,7 +161,7 @@ class ProductBrowsingTests(unittest.TestCase):
         self.assertEqual('RTX 40', s.gpu_search_metadata({'chipset':'RTX 4070 SUPER', 'name':'RTX 5070 promotion'})['series'])
 
     def test_repeated_provider_rows_and_saved_overlap_do_not_duplicate(self):
-        with patch.object(s, '_market_fetch_html', return_value=html_rows('mb', 0, 40)):
+        with patch_backend(s, '_market_fetch_html', return_value=html_rows('mb', 0, 40)):
             first = s.market_products_response('mb', source='danawa', limit=50)
             second = s.market_products_response('mb', source='danawa', limit=50, page=2)
         self.assertEqual(40, len(first['items']))

@@ -1,3 +1,4 @@
+from backend_patch import patch_backend
 import unittest
 from unittest.mock import patch
 from product_filters import normalize_specs, matches_specs, facets
@@ -44,7 +45,7 @@ class ProductFilterTests(unittest.TestCase):
         s.MARKET_SEARCH_CACHE.clear()
         rows=[{'id':str(i),'name':'ASUS B650 PLUS','socket':'AM5' if i%2 else 'AM4','spec_text':'DDR5 / ATX', 'url':f'https://prod.danawa.com/info/?pcode={10000+i}', 'image_url':f'https://example.com/{i}.png','price':200000-i,'price_status':'cached'} for i in range(240)]
         empty={'items':[],'has_more':False,'status':'empty','source_url':'','cached':False}
-        with patch.object(s,'saved_products',return_value=rows),patch.object(s,'_market_source_page',return_value=empty):
+        with patch_backend(s,'saved_products',return_value=rows),patch_backend(s,'_market_source_page',return_value=empty):
             filters={'socket':['AM5'],'memory_type':['DDR5'],'form_factor':['ATX']}
             a=s.market_products_response('mb',filters=filters,sort='price_asc',source='danawa')
             b=s.market_products_response('mb',filters=filters,sort='price_asc',source='danawa',page=2,cursor=a['cursor'])
@@ -55,7 +56,7 @@ class ProductFilterTests(unittest.TestCase):
         self.assertTrue(all(r['specs']['socket']=='AM5' and r['image_url'] and r['url'] for r in allrows))
 
     def test_compact_catalog_does_not_send_retail_inventory(self):
-        with patch.object(s,'saved_products',return_value=[{'id':'retail-test','name':'ASUS B650','socket':'AM5'}]):
+        with patch_backend(s,'saved_products',return_value=[{'id':'retail-test','name':'ASUS B650','socket':'AM5'}]):
             data=s.catalog_response(compact=True)
         self.assertNotIn('retail-test',{r['id'] for r in data['mbs']})
         self.assertTrue(data['filter_facets']['mb'])

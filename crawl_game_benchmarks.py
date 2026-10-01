@@ -222,6 +222,9 @@ def crawl(output=DEFAULT_OUTPUT):
         snapshot["pending_measurements"] = previous.get("pending_measurements", [])
         snapshot["graphics_measurements"].extend(r for r in previous.get("graphics_measurements", []) if r.get("source_url") not in refreshed)
         snapshot["feature_support"] = previous.get("feature_support", {})
+        for key in ("fg_calibration", "upscale_calibration", "fsr_support"):
+            if key in previous:
+                snapshot[key] = previous[key]
     output.parent.mkdir(parents=True, exist_ok=True)
     temporary = output.with_suffix(".tmp")
     temporary.write_text(json.dumps(snapshot, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

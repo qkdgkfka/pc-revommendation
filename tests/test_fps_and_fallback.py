@@ -1,3 +1,5 @@
+from backend_patch import patch_backend
+from rendering_fixture import install_rendering_fixture
 import copy
 import random
 import unittest
@@ -13,7 +15,7 @@ def part(kind, identifier):
 
 class GameFpsCoverageTests(unittest.TestCase):
     def test_every_selectable_game_returns_finite_ordered_fps_at_all_resolutions(self):
-        with patch.object(server, "db_lookup_benchmarks", return_value=[]):
+        with patch_backend(server, "db_lookup_benchmarks", return_value=[]):
             values = set()
             for game in server.GAME_OPTIONS:
                 for resolution in ("1080", "1440", "2160"):
@@ -58,6 +60,7 @@ class GameFpsCoverageTests(unittest.TestCase):
             self.assertEqual(expected, server.normalized_game_key(value))
 
     def test_graphics_modes_respect_gpu_and_game_support(self):
+        install_rendering_fixture(self)
         def modes(gpu, game):
             result = server.fps_estimate_response({"gpu":gpu,"cpu":"cpu_r7_9800x3d","ram":"ram_32_ddr5","game":game,"resolution":"1440"})
             return {r["id"]:r for r in result["fps"]["graphics_modes"]}
@@ -89,12 +92,12 @@ class VerifiedInventoryRecommendationTests(unittest.TestCase):
                  "image_url":"https://img.danuri.io/verified-test-photo.jpg"}
                 for part in server.CATALOGS[kind]
             ]
-        verified = patch.object(server, "verified_recommendation_inventory", return_value=inventory)
+        verified = patch_backend(server, "verified_recommendation_inventory", return_value=inventory)
         verified.start()
         self.addCleanup(verified.stop)
         self.addCleanup(server.RECOMMENDATION_CACHE.clear)
         for name,value in [("db_lookup_price",None),("db_lookup_benchmarks",[]),("resolve_verified_gpu_market_prices",{}),("refresh_recommendation_prices",None)]:
-            patcher=patch.object(server,name,return_value=value)
+            patcher=patch_backend(server,name,return_value=value)
             patcher.start()
             self.addCleanup(patcher.stop)
 
@@ -106,7 +109,7 @@ class VerifiedInventoryRecommendationTests(unittest.TestCase):
                 self.assertTrue(payload["warning"])
 
     def test_verified_prices_are_not_replaced_after_selection(self):
-        with patch.object(server,"refresh_recommendation_prices") as refresh:
+        with patch_backend(server,"refresh_recommendation_prices") as refresh:
             p=server.recommend({"budget":2000000,"game":"apex"})
         refresh.assert_not_called()
         for row in p["results"].values():
@@ -120,7 +123,7 @@ class VerifiedInventoryRecommendationTests(unittest.TestCase):
         query={"budget":900000,"game":"apex"}
         a=server.recommend(query)
         a["results"]["low"]["parts"].clear()
-        with patch.object(server,"build_tier_candidates",side_effect=AssertionError("cache miss")):
+        with patch_backend(server,"build_tier_candidates",side_effect=AssertionError("cache miss")):
             b=server.recommend(query)
         self.assertTrue(b["engine"]["cached"])
         self.assertTrue(b["results"]["low"]["parts"])

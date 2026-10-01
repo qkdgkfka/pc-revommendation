@@ -153,18 +153,3 @@ def imported_products(part_type=None):
     if not isinstance(products, dict):
         return {} if part_type is None else []
     return products if part_type is None else list(products.get(part_type, []))
-
-
-def save_imported_product(part, duplicate):
-    """Atomic, idempotent insertion; duplicate is checked again under the lock."""
-    with _lock:
-        products = imported_products()
-        for old in products.get(part["component_type"], []):
-            if duplicate(old, part):
-                return old, False
-        products.setdefault(part["component_type"], []).append(part)
-        IMPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
-        temporary = IMPORT_PATH.with_suffix(".tmp")
-        temporary.write_text(json.dumps({"schema_version": 1, "products": products}, ensure_ascii=False, indent=2), encoding="utf-8")
-        temporary.replace(IMPORT_PATH)
-        return part, True

@@ -7,7 +7,7 @@
 - `game_snapshot`: 출처·수집 시각·NVIDIA 공식 기능 지원 기록.
 - `game_predictions`: 실제로 계산한 구성별 모드 예측. CPU/GPU·게임·해상도·기본 옵션 FPS·병목 정보·모델/근거 버전을 키에 포함합니다. 실측 테이블과 별개입니다.
 - `data/game_benchmarks.json`: 이동·검토 가능한 원본 스냅샷 및 DB 읽기 실패 시 대체 자료.
-- `data/game_icons.json`, `assets/game-icons/`: 공식 게임 이미지의 출처·확인 시각과 로컬 이미지.
+- `data/game_icons.json`, `public/assets/game-icons/`: 공식 게임 이미지의 출처·확인 시각과 로컬 이미지.
 
 예측기는 DB의 검증된 기본 FPS 행을 읽습니다. 보류 자료는 예측에 쓰지 않습니다. DB 기록 실패는 정상 FPS 응답을 막지 않습니다. 데이터 갱신 후 서버를 재시작하면 메모리 캐시가 갱신됩니다.
 

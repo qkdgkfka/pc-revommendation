@@ -1,3 +1,4 @@
+from backend_patch import patch_backend
 import unittest
 from datetime import datetime, timezone
 from unittest.mock import patch
@@ -15,9 +16,9 @@ class VerifiedInventoryTests(unittest.TestCase):
         return row
 
     def inventory(self, rows, photo):
-        with patch.object(s, "market_products_response", side_effect=lambda kind, **kw: {"items": rows if kind == "cpu" else []}), \
-             patch.object(s, "saved_products", return_value=[]), \
-             patch.object(s, "fetch_product_image", return_value=photo):
+        with patch_backend(s, "market_products_response", side_effect=lambda kind, **kw: {"items": rows if kind == "cpu" else []}), \
+             patch_backend(s, "saved_products", return_value=[]), \
+             patch_backend(s, "fetch_product_image", return_value=photo):
             return s.verified_recommendation_inventory()
 
     def test_valid_quote_and_decodable_photo_are_required(self):
@@ -29,7 +30,7 @@ class VerifiedInventoryTests(unittest.TestCase):
 
     def test_missing_category_never_falls_back_to_reference_parts(self):
         s.RECOMMENDATION_CACHE.clear()
-        with patch.object(s, "verified_recommendation_inventory", return_value={k: [] for k in ("cpu","gpu","ram","mb","storage","psu")}):
+        with patch_backend(s, "verified_recommendation_inventory", return_value={k: [] for k in ("cpu","gpu","ram","mb","storage","psu")}):
             result=s.recommend({"budget":2000000})
         self.assertFalse(any(p and p.get("parts") for p in result["results"].values()))
         self.assertIn("사진", result["warning"])

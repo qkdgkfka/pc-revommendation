@@ -1,3 +1,4 @@
+from backend_patch import patch_backend
 """Regression cases for observed retail quotes and outage recovery."""
 import tempfile
 import time
@@ -21,7 +22,7 @@ class MarketRecoveryTests(unittest.TestCase):
         self.addCleanup(self.directory.cleanup)
         for name, value in (("DATA_DIR", folder), ("SNAPSHOT_PATH", folder / "snapshot.json"),
                             ("CACHE_PATH", folder / "cache.json")):
-            replacement = patch.object(market_catalog, name, value)
+            replacement = patch_backend(market_catalog, name, value)
             replacement.start()
             self.addCleanup(replacement.stop)
         server.MARKET_SEARCH_CACHE.clear()
@@ -40,7 +41,7 @@ class MarketRecoveryTests(unittest.TestCase):
     def test_outage_after_restart_returns_saved_quotes_with_original_date(self):
         row = self.quote()
         market_catalog.remember_products("cpu", [row])
-        with patch.object(server, "_market_fetch_html", side_effect=TimeoutError):
+        with patch_backend(server, "_market_fetch_html", side_effect=TimeoutError):
             result = server.market_products_response("cpu", "14600KF", source="danawa")
         self.assertTrue(result["ok"])
         self.assertEqual("cached", result["status"])
@@ -54,7 +55,7 @@ class MarketRecoveryTests(unittest.TestCase):
             self.quote(id="compuzone_cpu_456", url="https://www.compuzone.co.kr/product/product_detail.htm?ProductNo=456"),
             self.quote(id="danawa_cpu_789", name="Intel Core i5-14600K"),
         ])
-        with patch.object(server, "_market_fetch_html", side_effect=TimeoutError):
+        with patch_backend(server, "_market_fetch_html", side_effect=TimeoutError):
             result = server.market_products_response("cpu", "14600KF", source="danawa")
         self.assertEqual("stale", result["status"])
         self.assertEqual(["danawa_cpu_123"], [item["id"] for item in result["items"]])
@@ -63,7 +64,7 @@ class MarketRecoveryTests(unittest.TestCase):
     def test_current_exact_ssd_price_is_not_replaced_by_old_catalog_estimate(self):
         html = danawa_group("storage", [("101", "1TB", 331560)]).replace(
             "Samsung 990 PRO M.2 NVMe", "Samsung 990 EVO Plus M.2 NVMe")
-        with patch.object(server, "_market_fetch_html", return_value=html):
+        with patch_backend(server, "_market_fetch_html", return_value=html):
             result = server.fetch_market_top_product(
                 "Samsung 990 EVO Plus NVMe SSD 1TB", "storage",
                 catalog_price=105000, source="danawa")
@@ -73,20 +74,20 @@ class MarketRecoveryTests(unittest.TestCase):
 
     def test_price_observation_time_is_not_replaced_when_quote_is_stored(self):
         row = self.quote(price_checked_at="2026-09-20T11:00:00Z")
-        with patch.object(server, "_ensure_db_connection", return_value=None):
+        with patch_backend(server, "_ensure_db_connection", return_value=None):
             result = server.store_danawa_price({"name":row["name"]}, "cpu", row)
         self.assertEqual("2026-09-20T11:00:00Z", result["scraped_at"])
 
     def test_saved_quote_remains_cached_in_recommendation_and_lookup(self):
         row = self.quote(price_status="cached", price_source="danawa_snapshot")
-        with patch.object(server, "_ensure_db_connection", return_value=None):
+        with patch_backend(server, "_ensure_db_connection", return_value=None):
             info = server.store_danawa_price({"name": row["name"]}, "cpu", row)
         part = {"name": row["name"], "price_checked_at": "2020-01-01T00:00:00Z"}
         server.apply_price_info_to_part(part, info)
         self.assertEqual("cached", part["price_status"])
         self.assertEqual(row["price_checked_at"], part["scraped_at"])
         self.assertEqual(row["price_checked_at"], part["price_checked_at"])
-        with patch.object(server, "resolve_recommendation_price_cache",
+        with patch_backend(server, "resolve_recommendation_price_cache",
                           return_value={("cpu", server.canonical_name(row["name"])): info}):
             result = server.price_lookup_response({"items":[{"type":"cpu", "name":row["name"]}]})
         self.assertEqual("cached", result["results"][0]["price_status"])
@@ -96,9 +97,9 @@ class MarketRecoveryTests(unittest.TestCase):
             time.sleep(1.6)
             return self.quote(name=name)
         wanted = {("cpu", str(i)): ({"name":f"Test CPU {i}", "price":300000}, "cpu") for i in range(7)}
-        with patch.object(server, "db_lookup_price_info", return_value=None), \
-             patch.object(server, "fetch_market_top_product", side_effect=lookup), \
-             patch.object(server, "_ensure_db_connection", return_value=None):
+        with patch_backend(server, "db_lookup_price_info", return_value=None), \
+             patch_backend(server, "fetch_market_top_product", side_effect=lookup), \
+             patch_backend(server, "_ensure_db_connection", return_value=None):
             result = server.resolve_recommendation_price_cache(wanted)
         self.assertEqual(7, sum(value is not None for value in result.values()))
 
@@ -115,21 +116,21 @@ class MarketRecoveryTests(unittest.TestCase):
                     if provider == "danawa":
                         raise failure
                     return compuzone_row()
-                with patch.object(server, "_market_fetch_html", side_effect=fetch):
+                with patch_backend(server, "_market_fetch_html", side_effect=fetch):
                     result = server.market_products_response("gpu", source="all")
                 self.assertTrue(result["ok"])
                 self.assertEqual("live", result["status"])
                 self.assertTrue(any(item["shop"] == "Compuzone" for item in result["items"]))
 
     def test_programming_errors_are_not_reported_as_retailer_outages(self):
-        with patch.object(server, "_market_fetch_html", side_effect=RuntimeError("bug")):
+        with patch_backend(server, "_market_fetch_html", side_effect=RuntimeError("bug")):
             with self.assertRaises(RuntimeError):
                 server.market_products_response("cpu", source="danawa")
 
     def test_collected_verified_products_extend_live_browse_pages(self):
         row = self.quote(image_checked_at="2026-09-25T00:00:00Z")
         market_catalog.remember_products("cpu", [row])
-        with patch.object(server, "_market_fetch_html", return_value=danawa_group("cpu")):
+        with patch_backend(server, "_market_fetch_html", return_value=danawa_group("cpu")):
             result = server.market_products_response("cpu", source="danawa")
         self.assertIn(row["id"], [part["id"] for part in result["items"]])
 
@@ -143,7 +144,7 @@ class MarketRecoveryTests(unittest.TestCase):
         ):
             with self.subTest(part_type=part_type):
                 row = {"name":listed, "image_url":"https://img.danuri.io/wrong.jpg"}
-                with patch.object(server, "saved_products", return_value=[row]):
+                with patch_backend(server, "saved_products", return_value=[row]):
                     self.assertEqual([], server.saved_part_image_urls(requested, part_type))
 
     def test_gpu_price_match_rejects_mobile_and_other_suffixes(self):

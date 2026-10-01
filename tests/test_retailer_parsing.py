@@ -1,3 +1,4 @@
+from backend_patch import patch_backend
 """The runtime and offline crawler must retain the same HTML price extraction."""
 import unittest
 from unittest.mock import patch
@@ -19,7 +20,7 @@ class RetailerParserRegressionTests(unittest.TestCase):
         for adapter in (server, crawler):
             for soup in (adapter.BeautifulSoup, None):
                 with self.subTest(adapter=adapter.__name__, regex=soup is None):
-                    with patch.object(adapter, "BeautifulSoup", soup):
+                    with patch_backend(adapter, "BeautifulSoup", soup):
                         row = adapter.parse_danawa_top_product(
                             html, "https://prod.danawa.com/", "FSP Hydro 750W", "psu",
                         )

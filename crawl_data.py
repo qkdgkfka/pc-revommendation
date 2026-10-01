@@ -5,13 +5,22 @@ from __future__ import annotations
 
 import csv
 import re
-from retailer_parsing import danawa_candidate_blocks, price_from_danawa_block
+from retailer_parsing import (
+    append_danawa_query_suffix, category_from_danawa_block as shared_category_from_danawa_block,
+    danawa_category_label_matches, danawa_gpu_name_rejected, danawa_regex_products,
+    danawa_soup_products, danawa_url_category_id,
+    first_anchor_from_block as shared_first_anchor_from_block,
+)
+from product_parsing import (
+    PRODUCT_VARIANT_TOKENS, model_tokens_from_text, normalize_whitespace as clean_text,
+    parse_price_value, remove_product_marketing_terms, strip_html_tags,
+)
 import time
 import sqlite3
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
-from urllib.parse import parse_qsl, quote_plus, urljoin, urlsplit
+from urllib.parse import quote_plus, urljoin
 from urllib.request import Request, urlopen
 
 try:
@@ -276,8 +285,6 @@ def normalize_setting(raw: str) -> str:
             return v
     return "high"
 
-def clean_text(s: str) -> str:
-    return re.sub(r"\s+", " ", s).strip()
 
 def to_float(s: str) -> Optional[float]:
     m = re.search(r"(\d[\d,]*\.?\d*)", s.replace(" ", ""))
@@ -362,31 +369,13 @@ def upsert_price(conn: sqlite3.Connection, component_id: int, shop: str,
 def danawa_search_url(query: str) -> str:
     return "https://search.danawa.com/dsearch.php?query=" + quote_plus(query.strip())
 
-def parse_price_value(text: str) -> Optional[int]:
-    digits = re.sub(r"[^\d]", "", text or "")
-    if not digits:
-        return None
-    value = int(digits)
-    return value if value >= 1000 else None
 
 def strip_html(s: str) -> str:
-    return clean_text(re.sub(r"<[^>]+>", " ", s or ""))
+    return clean_text(strip_html_tags(s))
 
 def canonical_product_name(value: str) -> str:
-    t = clean_text(value).lower()
-    for token in ["geforce", "radeon", "graphics", "graphic", "series", "desktop", "(tm)", "(r)", "processor"]:
-        t = t.replace(token, "")
-    return clean_text(t)
+    return clean_text(remove_product_marketing_terms(clean_text(value).lower()))
 
-def danawa_url_category_id(url: str) -> str:
-    try:
-        parts = urlsplit(url or "")
-    except Exception:
-        return ""
-    for key, value in parse_qsl(parts.query, keep_blank_values=True):
-        if key.lower() == "cate" and value:
-            return value
-    return ""
 
 def danawa_url_category_matches(part_type: str, url: str) -> bool:
     ctype = clean_text(part_type).lower()
@@ -428,58 +417,21 @@ def price_sane_for_part(part_type: str, price: int, query: str) -> bool:
     return price >= 1000
 
 def danawa_category_matches(part_type: str, category: str) -> bool:
-    ctype = clean_text(part_type).lower()
-    label = clean_text(category).lower()
-    if not ctype or not label:
-        return False if ctype == "gpu" else True
-    expected = {
-        "gpu": ("그래픽", "vga"),
-        "cpu": ("cpu", "프로세서"),
-        "ram": ("ram", "메모리"),
-        "memory": ("ram", "메모리"),
-        "storage": ("ssd", "hdd", "저장", "스토리지"),
-        "ssd": ("ssd", "저장", "스토리지"),
-        "psu": ("파워", "power"),
-        "mb": ("메인보드", "mainboard", "motherboard"),
-        "motherboard": ("메인보드", "mainboard", "motherboard"),
-    }.get(ctype)
-    return True if not expected else any(token in label for token in expected)
+    return danawa_category_label_matches(
+        clean_text(part_type).lower(), clean_text(category).lower(), extended_types=False,
+    )
 
 def danawa_query_for_part(query: str, part_type: str) -> str:
-    q = clean_text(query)
-    ctype = clean_text(part_type).lower()
-    suffix = {
-        "gpu": "그래픽카드",
-        "ram": "메모리",
-        "memory": "메모리",
-        "storage": "SSD",
-        "ssd": "SSD",
-        "psu": "파워",
-        "mb": "메인보드",
-        "motherboard": "메인보드",
-    }.get(ctype, "")
-    if suffix and suffix.lower() not in q.lower():
-        return f"{q} {suffix}"
-    return q
+    return append_danawa_query_suffix(
+        clean_text(query), clean_text(part_type).lower(), extended_types=False,
+    )
 
 def danawa_name_rejected(part_type: str, product_name: str, category: str = "") -> bool:
     ctype = clean_text(part_type).lower()
     name = clean_text(product_name).lower()
     label = clean_text(category).lower()
     if ctype == "gpu":
-        if not name:
-            return True
-        reject_tokens = [
-            "조립pc", "조립 pc", "완본체", "본체", "데스크탑", "데스크톱", "컴퓨터", "pc방",
-            "노트북", "워크스테이션", "서버", "미니pc", "베어본", "egpu",
-            "쿨러", "cooler", "cooling", "팬", "fan", "수냉", "워터블럭", "water block",
-            "백플레이트", "backplate", "라디에이터", "radiator", "방열판", "히트싱크",
-            "지지대", "거치대", "브라켓", "라이저", "riser", "케이블", "cable", "가방", "케이스",
-            "섀시", "샤시", "chassis", "no hardware",
-            "교체품", "부품용", "중고", "리퍼", "refurb", "채굴", "mining",
-        ]
-        compact = re.sub(r"\s+", "", name)
-        return any(token in name or token.replace(" ", "") in compact for token in reject_tokens)
+        return danawa_gpu_name_rejected(name)
     if label and danawa_category_matches(part_type, label):
         return False
     if ctype in {"ram", "memory"}:
@@ -495,30 +447,14 @@ def danawa_name_rejected(part_type: str, product_name: str, category: str = "") 
     return False
 
 def category_from_danawa_block(block: str) -> str:
-    m = re.search(r"id=[\"']productItem_categoryInfo_[^\"']+[\"'][^>]+value=[\"']([^\"']+)[\"']", block, re.I)
-    return clean_text(m.group(1)) if m else ""
+    return shared_category_from_danawa_block(block, clean_text=clean_text)
 
 def product_model_tokens(value: str) -> set:
-    t = re.sub(r"\s+", " ", value.lower())
-    patterns = [
-        r"\b(?:rtx|gtx|rx)\s*\d{3,5}\b",
-        r"\bultra\s*[3579]?\s*\d{3}[a-z]*\b",
-        r"\bi[3579][-\s]?\d{4,5}[a-z]*\b",
-        r"\b(?:a|b|h|x|z)\d{3,4}\b",
-        r"\bddr[45]\b",
-        r"\b\d+\s*(?:gb|tb|w)\b",
-        r"\b\d{4,5}x3d\b",
-        r"\b\d{3}[a-z]\b",
-        r"\b\d{4,5}[a-z]{0,3}\b",
-    ]
-    out = []
-    for pattern in patterns:
-        out.extend(re.findall(pattern, t))
-    return {re.sub(r"[^a-z0-9]", "", x) for x in out}
+    return model_tokens_from_text(re.sub(r"\s+", " ", value.lower()))
 
 def product_variant_tokens(value: str) -> set:
     words = set(re.sub(r"[^a-z0-9]+", " ", value.lower()).split())
-    return words & {"super", "ti", "xtx", "xt", "gre", "x3d", "kf", "f", "k", "u"}
+    return words & PRODUCT_VARIANT_TOKENS
 
 def compatible_product_name(query: str, product_name: str) -> bool:
     q_models = product_model_tokens(query)
@@ -556,18 +492,7 @@ def danawa_candidate_valid(part_type: str, query: str, product_name: str,
 
 
 def first_anchor_from_block(block: str) -> Tuple[str, str]:
-    name_area = re.search(
-        r"<p\b[^>]+class=[\"'][^\"']*prod_name[^\"']*[\"'][^>]*>(.*?)</p>",
-        block,
-        re.I | re.S,
-    )
-    area = name_area.group(1) if name_area else block
-    link_match = re.search(r"<a[^>]+href=[\"']([^\"']+)[\"'][^>]*>(.*?)</a>", area, re.I | re.S)
-    if link_match:
-        return link_match.group(1), strip_html(link_match.group(2))
-    img_match = re.search(r"<img[^>]+alt=[\"']([^\"']+)[\"']", block, re.I | re.S)
-    href_match = re.search(r"<a[^>]+href=[\"']([^\"']+)[\"']", block, re.I | re.S)
-    return (href_match.group(1) if href_match else ""), clean_text(img_match.group(1) if img_match else "")
+    return shared_first_anchor_from_block(block, clean_text=clean_text)
 
 
 def parse_danawa_top_product_regex(
@@ -577,23 +502,10 @@ def parse_danawa_top_product_regex(
     part_type: str = "",
 ) -> Optional[Dict[str, object]]:
     candidates: List[Dict[str, object]] = []
-    for block in danawa_candidate_blocks(html):
-        if not re.search(r"prod_item|prod_main_info|price_sect|prod_pricelist|min_price_", block, re.I):
+    for row in danawa_regex_products(html, search_url, clean_text=clean_text):
+        if not danawa_candidate_valid(part_type, query, row["name"], row["category"], row["url"], row["price"]):
             continue
-        category = category_from_danawa_block(block)
-        price = price_from_danawa_block(block)
-        if not price:
-            continue
-        href, product_name = first_anchor_from_block(block)
-        url = urljoin(search_url, href) if href else search_url
-        if not danawa_candidate_valid(part_type, query, product_name, category, url, price):
-            continue
-        candidates.append({
-            "name": product_name,
-            "price": price,
-            "url": url,
-            "category": category,
-        })
+        candidates.append({key: row[key] for key in ("name", "price", "url", "category")})
 
     if candidates:
         candidates.sort(key=lambda item: (int(item.get("price") or 0), len(clean_text(str(item.get("name") or "")))))
@@ -616,38 +528,18 @@ def parse_danawa_top_product(
         return parse_danawa_top_product_regex(html, search_url, query, part_type)
 
     soup = BeautifulSoup(html, "html.parser")
-    product_nodes = soup.select("li.prod_item, .main_prodlist li, .prod_main_info")
-    if not product_nodes:
-        product_nodes = soup.select(".prod_list .prod_item, .prod_list li")
-
     candidates: List[Dict[str, object]] = []
-    for node in product_nodes:
-        category_el = node.select_one("input[id^='productItem_categoryInfo_']")
-        category = category_el.get("value") if category_el else ""
-        hidden_price_el = node.select_one("input[id^='min_price_']")
-        price = parse_price_value(hidden_price_el.get("value")) if hidden_price_el else None
-        price_el = node.select_one(
-            ".price_sect strong, .prod_pricelist strong, .prod_price strong, "
-            ".price_sect a strong, a .num"
-        )
-        if not price:
-            price = parse_price_value(price_el.get_text(" ")) if price_el else None
-        if not price:
-            continue
-        link_el = node.select_one(".prod_name a, a[name='productName'], a")
-        href = link_el.get("href") if link_el else ""
-        product_name = clean_text(link_el.get_text(" ")) if link_el else ""
-        if not product_name:
-            img_el = node.select_one("img[alt]")
-            product_name = clean_text(img_el.get("alt")) if img_el else ""
-        url = urljoin(search_url, href) if href else search_url
-        if not danawa_candidate_valid(part_type, query, product_name, category, url, price):
+    for row in danawa_soup_products(
+        soup, search_url, clean_text=clean_text,
+        link_selector=".prod_name a, a[name='productName'], a",
+    ):
+        if not danawa_candidate_valid(part_type, query, row["name"], row["category"], row["url"], row["price"]):
             continue
         candidates.append({
-            "name": product_name,
-            "price": price,
-            "url": url,
-            "category": clean_text(category),
+            "name": row["name"],
+            "price": row["price"],
+            "url": row["url"],
+            "category": clean_text(row["category"]),
         })
 
     if candidates:

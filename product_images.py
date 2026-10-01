@@ -11,6 +11,7 @@ from threading import RLock
 from time import monotonic
 from urllib.parse import parse_qs, urljoin, urlparse, urlunparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener
+from pcbuilder.cache import SingleFlight
 
 
 MAX_BYTES = 5 * 1024 * 1024
@@ -18,6 +19,7 @@ CACHE_BYTES = 24 * 1024 * 1024
 CACHE_SECONDS = 6 * 60 * 60
 _cache = OrderedDict()
 _lock = RLock()
+_flight = SingleFlight(max_pending=64)
 IMAGE_DOMAINS = (
     'danuri.io', 'danawa.com', 'compuzone.co.kr',
     'amd.com', 'nvidia.com', 'asus.com', 'msi.com', 'gigabyte.com', 'asrock.com',
@@ -132,6 +134,28 @@ def disk_product_image(url):
     except OSError:
         return None
 
+
+def _disk_stamp(url):
+    path = DISK_CACHE_DIR / (hashlib.sha256(url.encode()).hexdigest() + '.img')
+    try:
+        stat = path.stat()
+        return (str(path), stat.st_mtime_ns, stat.st_size, stat.st_ino)
+    except OSError:
+        return (str(path), None)
+
+
+def _remember_image(url, data, content_type):
+    stamp = _disk_stamp(url)
+    seconds = CACHE_SECONDS
+    if stamp[1] is not None:
+        seconds = min(seconds, stamp[1] / 1_000_000_000 + CACHE_SECONDS - time.time())
+    with _lock:
+        _cache[url] = (monotonic() + max(0, seconds), data, content_type, stamp)
+        _cache.move_to_end(url)
+        # Count once per insertion; repeat validations only stat metadata.
+        while len(_cache) > 256 or sum(len(item[1]) for item in _cache.values()) > CACHE_BYTES:
+            _cache.popitem(last=False)
+
 def persist_product_image(url, data):
     try:
         DISK_CACHE_DIR.mkdir(parents=True, exist_ok=True)
@@ -147,14 +171,23 @@ def fetch_product_image(value):
     url = retailer_image_url(value)
     if not url:
         return None
+    try:
+        return _flight.run(url, lambda: _fetch_product_image(url), timeout=6)
+    except TimeoutError:
+        return None
+
+
+def _fetch_product_image(url):
+    stamp = _disk_stamp(url)
     with _lock:
         cached = _cache.get(url)
-        if cached and monotonic() - cached[0] < CACHE_SECONDS:
+        if cached and monotonic() < cached[0] and cached[3] == stamp:
             _cache.move_to_end(url)
             return cached[1], cached[2]
         _cache.pop(url, None)
     stored = disk_product_image(url)
     if stored:
+        _remember_image(url, *stored)
         return stored
     host = urlparse(url).hostname or ''
     priority = image_source_priority(url)
@@ -176,8 +209,5 @@ def fetch_product_image(value):
         # A transient failure never replaces an image with a cached placeholder.
         return None
     persist_product_image(url, data)
-    with _lock:
-        _cache[url] = (monotonic(), data, content_type)
-        while len(_cache) > 256 or sum(len(item[1]) for item in _cache.values()) > CACHE_BYTES:
-            _cache.popitem(last=False)
+    _remember_image(url, data, content_type)
     return data, content_type

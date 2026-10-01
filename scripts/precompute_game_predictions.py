@@ -13,7 +13,7 @@ def main():
         for gpu in GPU_CATALOG:
             for resolution in ("1080","1440","2160"):
                 fps=estimate_fps_bundle(gpu,cpu,{"gb":32},game["id"],resolution,144,"mid",[game["genre"]])
-                attach_graphics_modes(fps,gpu,cpu,game["id"],resolution)
+                attach_graphics_modes(fps,gpu,cpu,game["id"],resolution,persist=True)
                 count+=1
-    print(f"Stored {count} configurations (32GB / 9800X3D). Other configurations save on request.")
+    print(f"Stored {count} configurations (32GB / 9800X3D). HTTP requests never write predictions.")
 if __name__=="__main__":main()

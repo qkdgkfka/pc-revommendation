@@ -1,3 +1,4 @@
+from backend_patch import patch_backend
 """Regression coverage for ordered, compatible recommendations without network IO."""
 import random
 import unittest
@@ -82,7 +83,7 @@ class CatalogRecommendationTests(unittest.TestCase):
     def setUp(self):
         # Never crawl, refresh prices, or alter the user's SQLite database.
         for target in ("db_lookup_price", "db_lookup_price_info", "db_lookup_benchmarks"):
-            patcher = patch.object(server, target, return_value=None)
+            patcher = patch_backend(server, target, return_value=None)
             patcher.start()
             self.addCleanup(patcher.stop)
 
@@ -99,7 +100,7 @@ class CatalogRecommendationTests(unittest.TestCase):
         )
 
     def test_unavailable_gpu_vendor_never_falls_back_to_another_vendor(self):
-        with patch.object(server, "GPU_CATALOG", [p for p in server.GPU_CATALOG if p["vendor"] == "AMD"]):
+        with patch_backend(server, "GPU_CATALOG", [p for p in server.GPU_CATALOG if p["vendor"] == "AMD"]):
             pools = server.tier_component_pools("mid", "1440", 144, "NVIDIA")
             self.assertEqual([], pools[1])
 

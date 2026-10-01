@@ -63,10 +63,10 @@ def collect(game):
     with Image.open(io.BytesIO(raw)) as im:
         if im.width<16 or im.height<16:raise ValueError("Image too small")
         im=im.convert("RGBA");background=Image.new("RGBA",im.size,"white");background.alpha_composite(im);im=background.convert("RGB");im.thumbnail((144,96))
-        im.save(ROOT/"assets/game-icons"/(game+".jpg"),quality=88)
+        im.save(ROOT/"public/assets/game-icons"/(game+".jpg"),quality=88)
     return game,{"name":name,"source_url":page,"image_url":url,"sha256":hashlib.sha256(raw).hexdigest(),"checked_at":datetime.now(timezone.utc).isoformat()}
 def main():
-    folder=ROOT/"assets/game-icons";folder.mkdir(parents=True,exist_ok=True)
+    folder=ROOT/"public/assets/game-icons";folder.mkdir(parents=True,exist_ok=True)
     manifest_path=ROOT/"data/game_icons.json"
     manifest=json.loads(manifest_path.read_text(encoding="utf8")) if manifest_path.exists() else {}
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as ex:

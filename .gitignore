@@ -11,3 +11,7 @@ data/market_cache.json
 data/*.tmp
 
 data/product_images/
+dist/
+.vite/
+test-results/
+playwright-report/

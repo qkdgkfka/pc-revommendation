@@ -1,3 +1,4 @@
+from rendering_fixture import install_rendering_fixture
 import unittest
 from unittest.mock import patch
 import math
@@ -5,6 +6,9 @@ from rendering_calibration import fg_prediction,calibration_data
 import game_benchmarks as bench
 
 class CalibrationTests(unittest.TestCase):
+    def setUp(self):
+        install_rendering_fixture(self)
+
     def test_each_fg_pair_reconstructs_its_observation(self):
         data=calibration_data()
         for row in data["fg_calibration"]:

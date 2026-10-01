@@ -7,7 +7,7 @@ from functools import lru_cache
 import json
 import re
 from pathlib import Path
-from rendering_calibration import calibration_data, upscale_prediction, fg_prediction
+from rendering_calibration import calibration_data, upscale_prediction, fg_prediction, calibration_context
 
 NVIDIA_SOURCE = "https://www.nvidia.com/en-us/geforce/news/dlss-4-multi-frame-generation-out-now/"
 AMD_SOURCE = "https://www.amd.com/en/products/graphics/technologies/fidelityfx/supported-games.html"
@@ -58,7 +58,7 @@ def graphics_scenarios(gpu, cpu, game, resolution, fps, reference_estimator):
     gpu_id=gpu.get("performance_ref_id") or gpu.get("id")
     cpu_id=cpu.get("performance_ref_id") or cpu.get("id")
     def closeness(row):
-        return (row.get("resolution")==resolution,row.get("gpu_id")==gpu_id,
+        return (str(row.get("resolution"))==str(resolution),row.get("gpu_id")==gpu_id,
                 row.get("cpu_id")==cpu_id,row.get("preset")=="high")
     seen=set()
     for row in sorted(graphics_measurements(),key=closeness,reverse=True):
@@ -67,7 +67,6 @@ def graphics_scenarios(gpu, cpu, game, resolution, fps, reference_estimator):
         if row["generated"] or row["mode"] != "upscale":
             continue
         if row["mode"] in seen:continue
-        seen.add(row["mode"])
         source_native = reference_estimator(row)
         target_native = float(fps["fps_by_option"].get(row["preset"],native))
         scale = target_native / source_native if source_native > 0 else 1.0
@@ -77,6 +76,7 @@ def graphics_scenarios(gpu, cpu, game, resolution, fps, reference_estimator):
                  and str(resolution) == row["resolution"] and row["preset"] == "high"
                  and abs(target_native-source_native)<=.1)
         if not exact:continue
+        seen.add(row["mode"])
         rows.append({"technology": technology, "id": row["mode"], "label": row["label"], "supported": True,
                      "avg_fps": row["avg_fps"] if exact else value,
                      "range": {"min": round(value * (.9 if exact else .65), 1), "max": round(value * (1.1 if exact else 1.35), 1)},
@@ -88,7 +88,8 @@ def graphics_scenarios(gpu, cpu, game, resolution, fps, reference_estimator):
     upscaler = "DLSS Quality" if nvidia and dlss else (fsr_support.get("version","FSR")+" Quality") if amd and fsr_support.get("fsr") else None
     if upscaler:
         calibrated=next((row for row in rows if row["id"]=="upscale"),None)
-        estimate=upscale_prediction(native,gpu,game,resolution,technology,fps.get("bottleneck") or {})
+        estimate=upscale_prediction(native,gpu,game,resolution,technology,fps.get("bottleneck") or {},
+                                    version=fsr_support.get("version") if amd else None)
         if calibrated:
             render=calibrated["avg_fps"]
         elif estimate:
@@ -99,15 +100,25 @@ def graphics_scenarios(gpu, cpu, game, resolution, fps, reference_estimator):
                          "method":"mode_calibrated_estimate",
                          "range":{"min":round(min(native,render)*.8,1),"max":round(render*1.25,1)},
                          "source_url":samples[0]["source_url"],
-                         "calibration_sources":sorted({r["source_url"] for r in samples}),
+                         **calibration_context(samples,gpu,game,resolution),
                          "note":"Quality 전후 실측 비율과 CPU 제한을 반영한 추정"})
         else:
             render=None
+            rows.append({"id":"upscale_unavailable", "label":upscaler, "supported":False,
+                         "avg_fps":None, "method":"unavailable", "unavailable_reason":"missing_evidence",
+                         "note":"기능은 지원되지만 검증된 Quality 전후 측정 자료가 없습니다."})
         fg = (nvidia and fg_capable and game_fg) or (amd and fsr_support.get("fg") and bool(re.search(r"rx[\s_-]*[5679]\d{3}",identity)))
         if fg and render:
             for factor,key in [(2,"fg2")]+([(4,"mfg4")] if mfg_capable and game_mfg else []):
-                prediction=fg_prediction(render,gpu,game,resolution,technology,factor)
-                if prediction is None:continue
+                prediction=fg_prediction(render,gpu,game,resolution,technology,factor,
+                                         cohort_generation=bool(nvidia and mfg_capable and game_mfg),
+                                         version=fsr_support.get("version") if amd else None)
+                if prediction is None:
+                    rows.append({"id":key+"_unavailable", "label":"MFG 4×" if factor==4 else "FG 2×",
+                                 "supported":False, "avg_fps":None, "method":"unavailable",
+                                 "unavailable_reason":"missing_evidence",
+                                 "note":"이 배율의 검증된 프레임 생성 전후 측정 자료가 없습니다."})
+                    continue
                 rows.append(dict(prediction,id=key,technology=technology,
                     label=upscaler+(" + MFG 4×" if factor==4 else " + FG 2×"),
                     supported=True,generated=True,method="workload_estimate",
@@ -117,6 +128,8 @@ def graphics_scenarios(gpu, cpu, game, resolution, fps, reference_estimator):
     if not any(row["id"] == "rt" or row["id"].startswith("rt_") for row in rows):
         rows.append({"id": "rt_unavailable", "label": "RT", "supported": False, "avg_fps": None, "method": "unavailable", "note": "이 게임·GPU의 검증된 RT 측정 자료 없음"})
     if not upscaler:
-        rows.append({"id": "upscale_unavailable", "label": "DLSS / FSR · FG", "supported": False, "avg_fps": None, "method": "unavailable", "note": "게임·GPU 조합의 해당 기능 지원이 확인되지 않음"})
+        rows.append({"id": "upscale_unavailable", "label": "DLSS / FSR · FG", "supported": False,
+                     "avg_fps": None, "method": "unavailable", "unavailable_reason":"support_unconfirmed",
+                     "note": "게임·GPU 조합의 해당 기능 지원이 확인되지 않음"})
     for row in rows:row.setdefault("technology",technology)
     return rows

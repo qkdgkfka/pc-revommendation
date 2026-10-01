@@ -1,0 +1,172 @@
+{
+  "date": "2026-10-01",
+  "initial_assets": {
+    "before_raw_bytes": 387488,
+    "before_gzip_bytes": 113896,
+    "after_raw_bytes": 260886,
+    "after_gzip_bytes": 83119
+  },
+  "catalog": {
+    "before_cold_ms": 839.342,
+    "after_cold_ms": 845.729,
+    "before_warm_median_ms": 194.685,
+    "after_warm_median_ms": 4.013,
+    "payload_sha256": "5522e509842ba46bef8371754e4cef32f5667a6ecff177216e3f0b6c35b0bbf5",
+    "samples": 10
+  },
+  "requests": {
+    "before": {
+      "fixture_provider_latency_ms": 20,
+      "search_first_ms": 33.75,
+      "search_warm_median_ms": 0.065,
+      "search_items": 2,
+      "search_seller_calls_for_11_requests": 2,
+      "recommend_first_ms": 109.212,
+      "recommend_warm_median_ms": 1.01,
+      "recommend_inventory_calls_for_11_requests": 1,
+      "tier_totals": {
+        "low": 1050000,
+        "mid": 1605000,
+        "high": 2560000
+      },
+      "tier_high_fps": {
+        "low": 69.8,
+        "mid": 104.5,
+        "high": 173.3
+      },
+      "tier_parts": {
+        "low": {
+          "cpu": "cpu_r5_7600",
+          "gpu": "gpu_rtx5060",
+          "ram": "ram_32_ddr5",
+          "mb": "mb_a620m",
+          "psu": "psu_650",
+          "storage": "ssd_1tb_gen3"
+        },
+        "mid": {
+          "cpu": "cpu_r5_7600",
+          "gpu": "gpu_rtx5070",
+          "ram": "ram_32_ddr5",
+          "mb": "mb_b650",
+          "psu": "psu_750_atx3",
+          "storage": "ssd_1tb_gen3"
+        },
+        "high": {
+          "cpu": "cpu_r5_7600",
+          "gpu": "gpu_rtx5080",
+          "ram": "ram_32_ddr5",
+          "mb": "mb_b650m",
+          "psu": "psu_850_atx3",
+          "storage": "ssd_1tb_gen3"
+        }
+      },
+      "cold_process_samples": 3
+    },
+    "after": {
+      "fixture_provider_latency_ms": 20,
+      "search_first_ms": 31.259,
+      "search_warm_median_ms": 0.072,
+      "search_items": 2,
+      "search_seller_calls_for_11_requests": 2,
+      "recommend_first_ms": 114.895,
+      "recommend_warm_median_ms": 2.529,
+      "recommend_inventory_calls_for_11_requests": 1,
+      "tier_totals": {
+        "low": 1050000,
+        "mid": 1605000,
+        "high": 2560000
+      },
+      "tier_high_fps": {
+        "low": 69.8,
+        "mid": 104.5,
+        "high": 173.3
+      },
+      "tier_parts": {
+        "low": {
+          "cpu": "cpu_r5_7600",
+          "gpu": "gpu_rtx5060",
+          "ram": "ram_32_ddr5",
+          "mb": "mb_a620m",
+          "psu": "psu_650",
+          "storage": "ssd_1tb_gen3"
+        },
+        "mid": {
+          "cpu": "cpu_r5_7600",
+          "gpu": "gpu_rtx5070",
+          "ram": "ram_32_ddr5",
+          "mb": "mb_b650",
+          "psu": "psu_750_atx3",
+          "storage": "ssd_1tb_gen3"
+        },
+        "high": {
+          "cpu": "cpu_r5_7600",
+          "gpu": "gpu_rtx5080",
+          "ram": "ram_32_ddr5",
+          "mb": "mb_b650m",
+          "psu": "psu_850_atx3",
+          "storage": "ssd_1tb_gen3"
+        }
+      },
+      "cold_process_samples": 3
+    }
+  },
+  "production_http": {
+    "initial_assets": [
+      {
+        "asset": "/assets/index-PLKT4pYF.js",
+        "gzip_bytes": 75143,
+        "raw_bytes": 225483
+      },
+      {
+        "asset": "/assets/index-CmnF57Da.css",
+        "gzip_bytes": 7976,
+        "raw_bytes": 35403
+      }
+    ],
+    "initial_raw_bytes": 260886,
+    "initial_gzip_bytes": 83119,
+    "catalog_gzip_bytes": 20164,
+    "catalog_first_http_ms": 849.751,
+    "catalog_warm_http_median_ms": 0.958,
+    "fps_first_http_ms": 22.179,
+    "fps_warm_http_median_ms": 1.167,
+    "font_bytes": 2057688,
+    "games": 41,
+    "fps_source": "benchmark_calibrated"
+  },
+  "read_only_live_seller_smoke": [
+    {
+      "provider": "danawa",
+      "status": "live",
+      "items": 3,
+      "elapsed_ms": 2846.8,
+      "source_status": {
+        "danawa": "live"
+      },
+      "error": "",
+      "error_kind": ""
+    },
+    {
+      "provider": "compuzone",
+      "status": "empty",
+      "items": 0,
+      "elapsed_ms": 461.6,
+      "source_status": {
+        "compuzone": "empty"
+      },
+      "error": "",
+      "error_kind": ""
+    }
+  ],
+  "protected_data_sha256": {
+    "data/pc.db": "e7ade6218743038d2376de228c33c371fbbe0a08ef78e715afe4ccc48efd7865",
+    "data/game_benchmarks.json": "5872673b7189401613b2f1c4a691d1f8754444b78cfa8c42bb80a5fb50b6e2cf"
+  },
+  "validation": {
+    "python": 199,
+    "node": 45,
+    "browser_viewports": ["1440x1000", "390x844"],
+    "browser_page_console_errors": 0,
+    "build": "passed"
+  }
+}
