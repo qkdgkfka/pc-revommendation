@@ -167,6 +167,7 @@ const facets = {
 };
 const fps = {
   game: "cyberpunk2077",
+  target_fps: 144,
   fps_by_option: { low: 160, medium: 120, high: 80 },
   graphics_modes: [
     {
@@ -214,6 +215,7 @@ const recommendation = {
       {
         parts,
         total_price: 600000 + i * 100000,
+        budget_overrun: tier === "high" ? 125000 : 0,
         fps,
         work_scores: { video_4k: { score: 72, label: "적합", level: "good" } },
       },
@@ -316,6 +318,63 @@ try {
     "true",
   );
   await expect(page.locator("#placeholder")).toBeVisible();
+  await page
+    .getByRole("button", { name: "금액 설정 안함", exact: true })
+    .click();
+  await page.locator("#resChoices button").filter({ hasText: "4K" }).click();
+  await page
+    .locator("#refreshChoices button")
+    .filter({ hasText: "144Hz" })
+    .click();
+  const unlimitedRequest = page.waitForRequest("**/api/recommend");
+  await page.locator("#submitBtn").click();
+  const unlimitedPayload = (await unlimitedRequest).postDataJSON();
+  expect(unlimitedPayload).toMatchObject({
+    budget_mode: "unlimited",
+    budget: null,
+    budget_max: null,
+    budget_min: 0,
+    resolution: "2160",
+    refresh: 144,
+  });
+  await expect(page.getByText("금액 설정 안함 · 사양 우선 추천")).toHaveCount(
+    3,
+  );
+  await expect(page.getByText(/목표 예산보다/)).toHaveCount(0);
+  await expect(
+    page.getByText(/목표 144fps · 풀옵 추정 기준 목표 미달/),
+  ).toHaveCount(3);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({
+    path: "/tmp/site2-unlimited-desktop.png",
+    fullPage: false,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect(
+    page.getByRole("button", { name: "금액 설정 안함", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  if (
+    await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)
+  )
+    throw new Error("Unlimited recommendation mobile overflow");
+  await page.screenshot({
+    path: "/tmp/site2-unlimited-mobile.png",
+    fullPage: false,
+  });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page
+    .locator("#budgetChoices button")
+    .filter({ hasText: "200~300만원" })
+    .click();
+  await page.locator("#submitBtn").click();
+  await expect(page.locator(".card.high")).toContainText(
+    "목표 예산보다 ₩125,000 초과",
+  );
+  await page.locator("#resetBtn").click();
+  await expect(
+    page.locator("#budgetChoices button").filter({ hasText: "100~200만원" }),
+  ).toHaveAttribute("aria-pressed", "true");
   await page.locator("#viewCustomBtn").click();
   await expect(page.locator(".pc-page-title")).toContainText("나만의 PC");
   await expect(page.locator(".pc-product-row")).toHaveCount(1);
@@ -583,6 +642,7 @@ try {
         errors,
         checks: [
           "AI initial and manual navigation",
+          "unlimited budget payload, 4K 144Hz controls, soft budget overrun, reset, mobile layout",
           "all nine categories",
           "latest product result",
           "socket warning",
@@ -603,6 +663,8 @@ try {
         screenshots: [
           "/tmp/site2-after-desktop.png",
           "/tmp/site2-after-mobile.png",
+          "/tmp/site2-unlimited-desktop.png",
+          "/tmp/site2-unlimited-mobile.png",
         ],
       },
       null,

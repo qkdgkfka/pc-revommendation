@@ -24,6 +24,7 @@ import {
   errorMessage,
 } from "./requests.js";
 const recommendationDefaults = {
+  budgetMode: "soft",
   budget: 2000000,
   budgetMin: 1000000,
   budgetMax: 2000000,
@@ -492,9 +493,10 @@ export function createAppStore(options = {}) {
   }
   function recommend() {
     const payload = {
-      budget: state.budget,
-      budget_min: state.budgetMin,
-      budget_max: state.budgetMax,
+      budget_mode: state.budgetMode,
+      budget: state.budgetMode === "unlimited" ? null : state.budget,
+      budget_min: state.budgetMode === "unlimited" ? 0 : state.budgetMin,
+      budget_max: state.budgetMode === "unlimited" ? null : state.budgetMax,
       resolution: state.resolution,
       refresh: state.refresh,
       gpu_pref: state.gpu_pref,

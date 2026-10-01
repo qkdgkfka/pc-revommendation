@@ -23,8 +23,8 @@ export default function RecommendationCard({ tier, result, input }) {
       >
         <h4 className="tier-name">{presentation.title}</h4>
         <p className="chart-note" style={{ marginTop: 8 }}>
-          판매가와 제품 사진이 확인된 부품으로 예산·호환 조건을 맞추지
-          못했습니다. 예산이나 선호 조건을 조정해주세요.
+          {result?.note ||
+            "판매가와 제품 사진이 확인된 부품으로 조건에 맞는 구성을 찾지 못했습니다. 예산이나 선호 조건을 조정해주세요."}
         </p>
       </article>
     );
@@ -62,6 +62,13 @@ export default function RecommendationCard({ tier, result, input }) {
         <span className="ai-price-caption">
           부품 합계{missing ? " · 미확인 가격 제외" : ""}
         </span>
+        {input.budget_mode === "unlimited" ? (
+          <p className="ai-hint">금액 설정 안함 · 사양 우선 추천</p>
+        ) : result.budget_overrun > 0 ? (
+          <p className="ai-hint">
+            목표 예산보다 {money(result.budget_overrun)} 초과
+          </p>
+        ) : null}
       </header>
       <div className="ai-parts">
         {BUILDER_PARTS.filter((meta) => parts[meta.key]).map((meta) => (
@@ -107,6 +114,14 @@ export default function RecommendationCard({ tier, result, input }) {
               resolution={input.resolution}
               compact
             />
+            {fps.target_fps > 0 && fps.fps_by_option?.high != null ? (
+              <p className="chart-note">
+                목표 {fps.target_fps}fps · 풀옵 추정 기준{" "}
+                {fps.fps_by_option.high >= fps.target_fps
+                  ? "목표 충족"
+                  : "목표 미달 · 옵션 조정이 필요할 수 있어요"}
+              </p>
+            ) : null}
             <div className="frame-value" aria-live="polite">
               <span className="frame-value-label">1프레임당 가격</span>
               <strong>

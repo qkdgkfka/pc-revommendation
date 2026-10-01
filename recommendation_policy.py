@@ -1,6 +1,53 @@
 """Explicit recommendation preferences. These never alter measured FPS."""
 import re
 
+# A selected amount is a target; unlimited mode has no synthetic budget.
+BUDGET_HEADROOM = 0.20
+
+
+def budget_fit_score(total, target):
+    if not target:
+        return 1.0
+    # Never reward spending more just to reach a minimum amount.
+    return max(-1.0, 1.0 - max(0, total - target) / (target * 0.35))
+
+
+def performance_fit(value, target):
+    """Prefer meeting a tier's specification, with diminishing excess capacity."""
+    ratio = max(0.0, value) / max(1.0, target)
+    return min(1.0, ratio) - min(0.8, max(0.0, ratio - 1.0) * 0.6)
+
+
+def gaming_gpu_target(resolution, refresh, tier):
+    # Catalog performance indices, not FPS promises. 4K high-refresh anchors:
+    # RTX 5070 Ti / RTX 5080 / RTX 5090 or comparable available hardware.
+    if resolution == "2160" and refresh >= 120:
+        return {"low": 52.0, "mid": 65.0, "high": 90.0}[tier]
+    targets = {
+        "1080": {"low": 46.0, "mid": 62.0, "high": 80.0},
+        "1440": {"low": 38.0, "mid": 55.0, "high": 74.0},
+        "2160": {"low": 32.0, "mid": 48.0, "high": 65.0},
+    }
+    return targets.get(resolution, targets["1080"])[tier] * (1.18 if refresh >= 144 else 1.08 if refresh >= 120 else 1.0)
+
+
+def gaming_power_weights(resolution):
+    return {"1080": (0.64, 0.24), "1440": (0.70, 0.18), "2160": (0.76, 0.12)}.get(resolution, (0.64, 0.24))
+
+
+def gaming_objective(*, gpu_perf, gpu_target, fps_ratio, low1_ratio,
+                     budget_fit, unlimited, ram_gb, cpu_loss, parts):
+    # Hardware suitability differentiates tiers even for capped games. Actual
+    # FPS/1% Low and CPU bottlenecks remain independent evidence, never edited.
+    score = (4.0 * performance_fit(gpu_perf, gpu_target)
+             + 2.0 * min(1.0, fps_ratio)
+             + 0.7 * min(1.0, low1_ratio)
+             + 0.3 * min(1.0, ram_gb / 32.0)
+             - min(0.6, max(0.0, cpu_loss - 0.10) * 1.5))
+    if not unlimited:
+        score += 1.4 * budget_fit
+    return score + 0.3 * build_preference(parts, "game")
+
 def identity(part):
     return " ".join(str(part.get(k) or "") for k in ("product_name","name")).lower()
 

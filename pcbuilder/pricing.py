@@ -14,6 +14,7 @@ from product_metadata import (
 )
 from typing import Any, Dict, List, Optional, Tuple
 from server_catalogs import GPU_CATALOG
+from recommendation_policy import budget_fit_score
 from . import runtime as state
 from . import database
 from . import fps as fps_service
@@ -235,11 +236,11 @@ def game_profile(game: str) -> Tuple[str, float]:
 
 def budget_allocations(total_budget: int, resolution: str, refresh: int, genre_class: str, tier: str) -> Dict[str, int]:
     if resolution == "2160":
-        shares = {"gpu": 0.52, "cpu": 0.15, "ram": 0.10, "mb": 0.08, "psu": 0.08, "storage": 0.07}
+        shares = {"gpu": 0.58, "cpu": 0.13, "ram": 0.08, "mb": 0.07, "psu": 0.08, "storage": 0.06}
     elif resolution == "1440":
-        shares = {"gpu": 0.43, "cpu": 0.19, "ram": 0.11, "mb": 0.08, "psu": 0.08, "storage": 0.11}
+        shares = {"gpu": 0.49, "cpu": 0.17, "ram": 0.09, "mb": 0.08, "psu": 0.08, "storage": 0.09}
     else:
-        shares = {"gpu": 0.34, "cpu": 0.25, "ram": 0.12, "mb": 0.08, "psu": 0.08, "storage": 0.13}
+        shares = {"gpu": 0.40, "cpu": 0.23, "ram": 0.10, "mb": 0.08, "psu": 0.08, "storage": 0.11}
 
     if refresh >= 144 and resolution == "1080":
         shares["cpu"] += 0.04
@@ -434,17 +435,17 @@ def recompute_plan_total(plan: Dict[str, Any]) -> None:
     plan["totalPrice"] = total
     plan["total_price"] = total
     plan.setdefault("debug", {})["total_price"] = total
-    tier_budget = safe_int(plan.get("tierBudget"), 0)
-    max_budget = safe_int(plan.get("budget_max"), 0) or tier_budget
+    unlimited = plan.get("budget_mode") == "unlimited"
+    tier_budget = 0 if unlimited else safe_int(plan.get("tierBudget"), 0)
+    max_budget = 0 if unlimited else (safe_int(plan.get("budget_max"), 0) or tier_budget)
     min_budget = safe_int(plan.get("budget_min"), 0)
     overrun = max(0, total - tier_budget) if tier_budget else 0
     plan["debug"]["overrun"] = overrun
-    if tier_budget:
-        budget_fit = max(-0.55, 1.0 - overrun / max(1.0, tier_budget * 0.16)) if overrun else 1.0 - min(0.22, (tier_budget - total) / tier_budget * 0.18)
-        plan["debug"]["budget_fit"] = round(budget_fit, 4)
-        plan.setdefault("predictions", {})["budget_fit"] = round(budget_fit, 4)
+    budget_fit = budget_fit_score(total, tier_budget)
+    plan["debug"]["budget_fit"] = round(budget_fit, 4)
+    plan.setdefault("predictions", {})["budget_fit"] = round(budget_fit, 4)
     plan["budget_overrun"] = max(0, total - max_budget) if max_budget else 0
-    plan["budget_status"] = "over_budget" if max_budget and total > max_budget else "under_budget" if total < min_budget else "within_budget"
+    plan["budget_status"] = "unlimited" if unlimited else "over_budget" if max_budget and total > max_budget else "under_budget" if total < min_budget else "within_budget"
     selected_parts = [part for part in parts.values() if isinstance(part, dict)]
     verified_count = sum(1 for part in selected_parts if database.verified_price_info(part))
     plan["verified_part_count"] = verified_count

@@ -8,6 +8,7 @@ const BUDGETS = [
   { value: 2000000, min: 1000000, label: "100~200만원" },
   { value: 3000000, min: 2000000, label: "200~300만원" },
   { value: 4500000, min: 3000000, label: "300만원 이상" },
+  { value: "unlimited", min: 0, label: "금액 설정 안함" },
 ];
 const RESOLUTIONS = [
   { value: "1080", label: "FHD", hint: "1080p" },
@@ -105,16 +106,28 @@ export default function RecommendationForm() {
         <Choices
           id="budgetChoices"
           items={BUDGETS}
-          value={state.budgetMax}
+          value={
+            state.budgetMode === "unlimited" ? "unlimited" : state.budgetMax
+          }
           budget
           onChange={(item) =>
-            store.update({
-              budget: item.value,
-              budgetMax: item.value,
-              budgetMin: item.min,
-            })
+            store.update(
+              item.value === "unlimited"
+                ? { budgetMode: "unlimited" }
+                : {
+                    budgetMode: "soft",
+                    budget: item.value,
+                    budgetMax: item.value,
+                    budgetMin: item.min,
+                  },
+            )
           }
         />
+        <p className="ai-hint">
+          {state.budgetMode === "unlimited"
+            ? "가격 제한 없이 선택한 사양에 맞춰 추천해요."
+            : "선택 금액은 목표 예산이에요. 성능을 위해 최대 20% 초과할 수 있어요."}
+        </p>
       </Field>
       <Field title="사용 목적">
         <div className="ai-purpose">
@@ -186,7 +199,8 @@ export default function RecommendationForm() {
           }
         />
         <p className="ai-hint">
-          선택하지 않으면 예산 안에서 보급형~중급형 제품군을 우선 추천해요.
+          선택하지 않으면 목표 성능에 맞는 GPU 중 합리적인 제조사 제품군을
+          우선해요.
         </p>
       </Field>
       <div className="ai-actions">

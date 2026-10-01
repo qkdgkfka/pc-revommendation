@@ -659,7 +659,8 @@
     padding: 20px 16px;
   }
   .ai-budget-choices {
-    flex-direction: row;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .ai-budget-choices .ai-choice {
     font-size: 12px;

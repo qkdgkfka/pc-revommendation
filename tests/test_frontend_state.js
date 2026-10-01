@@ -7,6 +7,26 @@ const deferred = () => {
   return { promise, resolve };
 };
 const response = (data) => ({ ok: true, json: async () => data });
+test("unlimited recommendation sends no stale budget and reset restores a budget", async () => {
+  let payload;
+  const store = createAppStore({
+    fetch: async (_, options) => {
+      payload = JSON.parse(options.body);
+      return response({ results: {} });
+    },
+  });
+  store.update({ budgetMode: "unlimited", resolution: "2160", refresh: 144 });
+  await store.recommend();
+  assert.equal(payload.budget_mode, "unlimited");
+  assert.equal(payload.budget_max, null);
+  assert.equal(payload.budget, null);
+  assert.equal(payload.resolution, "2160");
+  store.resetRecommendation();
+  assert.equal(store.getState().budgetMode, "soft");
+  await store.recommend();
+  assert.equal(payload.budget_mode, "soft");
+  assert.equal(payload.budget_max, 2000000);
+});
 test("initial screen is AI and saved products wait for a provider result", () => {
   const store = createAppStore({
     fetch: async () => response({ items: [] }),
