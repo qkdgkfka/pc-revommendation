@@ -386,18 +386,20 @@ def estimate_fps_from_db(gpu: Dict[str, Any], game: str, resolution: str, settin
 
 
 def estimate_fps_bundle(gpu: Dict[str, Any], cpu: Dict[str, Any], ram: Dict[str, Any],
-                        game: str, resolution: str, refresh: int, tier: str, genres: List[str]) -> Dict[str, Any]:
-    key = (_fps_revision(), fingerprint((gpu, cpu, ram, game, resolution, refresh, tier, genres)),
+                        game: str, resolution: str, refresh: int, tier: str, genres: List[str],
+                        *, high_only: bool = False) -> Dict[str, Any]:
+    key = (_fps_revision(), fingerprint((gpu, cpu, ram, game, resolution, refresh, tier, genres, high_only)),
            id(estimate_from_measurements), id(estimate_fps_from_catalog),
            id(load_measurements), id(pricing.game_profile),
            fingerprint(GAME_FPS_PROFILES.get(normalized_game_key(game), GAME_FPS_PROFILES['default'])))
     cached = _fps_cache.get_or_compute(key, lambda: _estimate_fps_bundle_uncached(
-        gpu, cpu, ram, game, resolution, refresh, tier, genres), ttl=300)
+        gpu, cpu, ram, game, resolution, refresh, tier, genres, high_only=high_only), ttl=300)
     return copy.deepcopy(cached)
 
 
 def _estimate_fps_bundle_uncached(gpu: Dict[str, Any], cpu: Dict[str, Any], ram: Dict[str, Any],
-                                game: str, resolution: str, refresh: int, tier: str, genres: List[str]) -> Dict[str, Any]:
+                                game: str, resolution: str, refresh: int, tier: str, genres: List[str],
+                                *, high_only: bool = False) -> Dict[str, Any]:
     fps_by_option: Dict[str, float] = {}
     low1_by_option: Dict[str, float] = {}
     option_evidence: Dict[str, Dict[str, Any]] = {}
@@ -407,7 +409,8 @@ def _estimate_fps_bundle_uncached(gpu: Dict[str, Any], cpu: Dict[str, Any], ram:
     profile = GAME_FPS_PROFILES.get(game, GAME_FPS_PROFILES["default"])
     cap = game_frame_cap(game)
 
-    for opt in ["low", "medium", "high", "ultra"]:
+    # Candidate ranking uses only high; complete all presets for retained plans.
+    for opt in (["high"] if high_only else ["low", "medium", "high", "ultra"]):
         measured = estimate_from_measurements(gpu, cpu, ram, game, resolution, opt, profile, CATALOGS)
         if measured:
             avg, low, evidence = measured

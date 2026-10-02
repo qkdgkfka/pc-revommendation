@@ -1,4 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
+import copy
+import random
 from pathlib import Path
 import tempfile
 from threading import Event
@@ -7,6 +9,31 @@ import unittest
 from unittest.mock import patch
 
 from pcbuilder import recommendation, runtime
+from pcbuilder import database
+from server_catalogs import CATALOGS
+
+
+class CandidateSearchPerformanceTests(unittest.TestCase):
+    def test_equivalent_accessories_are_scored_once_with_same_cheapest_tie_break(self):
+        ids = {'cpu': 'cpu_r5_7600', 'gpu': 'gpu_rtx5070', 'ram': 'ram_32_ddr5',
+               'mb': 'mb_b650', 'psu': 'psu_850', 'storage': 'ssd_1tb_gen3'}
+        inventory = {kind: [copy.deepcopy(next(p for p in CATALOGS[kind] if p['id'] == identifier))]
+                     for kind, identifier in ids.items()}
+        for kind in ('mb', 'psu'):
+            row = inventory[kind][0]
+            inventory[kind] = [dict(row, id=kind + '-z', price=100000),
+                               dict(row, id=kind + '-a', price=100000)]
+        with patch.object(database, 'db_lookup_price', return_value=None), \
+             patch.object(database, 'db_lookup_price_info', return_value=None), \
+             patch.object(recommendation, 'gaming_objective', wraps=recommendation.gaming_objective) as score:
+            plans = recommendation.build_tier_candidates(
+                {'budget_mode': 'unlimited'}, 'low', random.Random(1), inventory=inventory)
+        self.assertEqual(1, len(plans))
+        self.assertEqual('mb-a', plans[0]['parts']['mb']['id'])
+        self.assertEqual('psu-a', plans[0]['parts']['psu']['id'])
+        self.assertTrue(plans[0]['compatibility']['compatible'])
+        self.assertEqual({'low', 'medium', 'high', 'ultra'}, set(plans[0]['fps']['fps_by_option']))
+        self.assertEqual(1, score.call_count, 'Equivalent accessories must not multiply the search')
 
 
 class RecommendationPerformanceTests(unittest.TestCase):

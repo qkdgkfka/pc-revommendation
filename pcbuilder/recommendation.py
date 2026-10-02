@@ -248,17 +248,29 @@ def verified_recommendation_inventory() -> Dict[str, List[Dict[str, Any]]]:
             selected = [selected[round(i * (len(selected) - 1) / (limit - 1))] for i in range(limit)]
         return selected
 
-    with ThreadPoolExecutor(max_workers=6) as executor:
-        batches = dict(zip(kinds, executor.map(candidates, kinds)))
     def photograph(kind, part):
         photo = fetch_product_image(part["image_url"])
         if not photo or photo[1] not in {"image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"}:
             return None
         return kind, part
 
+    early_photos = ThreadPoolExecutor(max_workers=4)
     executor = ThreadPoolExecutor(max_workers=16)
-    pending = [executor.submit(photograph, kind, part) for kind in kinds for part in batches[kind]]
+    pending = []
     try:
+        # Overlap a bounded amount of photo work with seller lookup. At handover,
+        # retain running work but move queued photos to the original category
+        # order, so a fast GPU batch cannot starve a later CPU/board category.
+        photos_by_kind = {}
+        with ThreadPoolExecutor(max_workers=6) as sellers:
+            batches = {sellers.submit(candidates, kind): kind for kind in kinds}
+            for batch in as_completed(batches):
+                kind = batches[batch]
+                photos_by_kind[kind] = [(part, early_photos.submit(photograph, kind, part))
+                                        for part in batch.result()]
+        for kind in kinds:
+            for part, future in photos_by_kind[kind]:
+                pending.append(executor.submit(photograph, kind, part) if future.cancel() else future)
         for future in as_completed(pending, timeout=12):
             result = future.result()
             if result:
@@ -267,6 +279,7 @@ def verified_recommendation_inventory() -> Dict[str, List[Dict[str, Any]]]:
     except TimeoutError:
         pass  # Incomplete photo verification never creates a recommendation candidate.
     finally:
+        early_photos.shutdown(wait=False, cancel_futures=True)
         executor.shutdown(wait=False, cancel_futures=True)
     for rows in inventory.values():
         rows.sort(key=lambda row: (row["price"], row["id"]))
@@ -762,13 +775,17 @@ class CandidateEvaluationCache:
         self.work_scores: Dict[Tuple[str, str, str, str], int] = {}
         self.shared_fps = shared_fps if shared_fps is not None else {}
 
-    def fps_for(self, gpu: Dict[str, Any], cpu: Dict[str, Any], ram: Dict[str, Any]) -> Dict[str, Any]:
+    def fps_for(self, gpu: Dict[str, Any], cpu: Dict[str, Any], ram: Dict[str, Any],
+                *, complete: bool = True) -> Dict[str, Any]:
         key = (part_cache_key(gpu), part_cache_key(cpu), part_cache_key(ram))
-        if key not in self.fps_by_parts:
-            if key not in self.shared_fps:
+        def sufficient(bundle):
+            return bundle is not None and (not complete or 'low' in bundle['fps_by_option'])
+        if not sufficient(self.fps_by_parts.get(key)):
+            if not sufficient(self.shared_fps.get(key)):
                 self.shared_fps[key] = fps_service.estimate_fps_bundle(
                     gpu, cpu, ram, self.request.game, self.request.resolution,
                     self.request.refresh, "mid", list(self.request.genres),
+                    high_only=not complete,
                 )
             bundle = dict(self.shared_fps[key])
             target = fps_service.target_fps_for_game(self.tier, self.request.refresh, self.request.game)
@@ -879,18 +896,30 @@ def build_tier_candidates(user: Any, tier: str, rng: random.Random, limit: int =
     storage_ranked = storage_candidates_for(storage_pool, tier, tier_budget, price_cache)
     evaluations = CandidateEvaluationCache(request, tier, tier_budget, price_cache, mb_pool, psu_pool, shared_fps)
 
-    scored: List[Tuple[float, Dict[str, Any], int, float, int, float]] = []
+    best_by_pair = {}
+    def candidate_rank(item):
+        return (-item[0], item[2], tuple(part_cache_key(item[1][k]) for k in ("gpu", "cpu", "ram", "storage", "mb", "psu")))
     target_fps = fps_service.target_fps_for_game(tier, refresh, game)
     target_low1 = target_fps * pricing.low1_ratio_for_genres(genres or [game_class])
     max_total = request.search_ceiling
 
     for gpu in gpu_ranked:
+        gpu_model = performance_model_key(gpu, "gpu")
         for cpu in cpu_ranked:
+            pair = (gpu_model, performance_model_key(cpu, "cpu"))
             for ram in ram_ranked:
                 mb_options = evaluations.motherboards_for(cpu, ram)
                 if not mb_options:
                     continue
                 psu_options = evaluations.power_supplies_for(cpu, gpu)
+                if not psu_options:
+                    continue
+                # Board/PSU performance is absent from the objective after
+                # compatibility checks. Lower total never scores worse, and
+                # equal scores already prefer total then IDs. Other accessories
+                # cannot survive the existing CPU/GPU-pair reduction below.
+                mb_options = [min(mb_options, key=lambda p: (cached_part_price(p, "mb", price_cache), part_cache_key(p)))]
+                psu_options = [min(psu_options, key=lambda p: (cached_part_price(p, "psu", price_cache), part_cache_key(p)))]
                 for mb in mb_options:
                     for psu in psu_options:
                         for storage in storage_ranked:
@@ -902,7 +931,7 @@ def build_tier_candidates(user: Any, tier: str, rng: random.Random, limit: int =
                             if total > max_total:
                                 continue
 
-                            fps = evaluations.fps_for(gpu, cpu, ram)
+                            fps = evaluations.fps_for(gpu, cpu, ram, complete=False)
                             high_avg = safe_float(fps.get("fps_by_option", {}).get("high"), 0.0)
                             low1_avg = safe_float(fps.get("low1_by_option", {}).get("high"), 0.0)
                             fps_ratio = high_avg / max(1.0, target_fps)
@@ -927,23 +956,21 @@ def build_tier_candidates(user: Any, tier: str, rng: random.Random, limit: int =
                                     parts=raw_parts,
                                 )
                                 score += 0.15 * min(1.0, safe_float(storage.get("capacity"), 0) / (2000 if tier == "high" else 1000))
-                            scored.append((score, raw_parts, total, budget_fit, overrun, power))
+                            item = (score, raw_parts, total, budget_fit, overrun, power)
+                            rank = candidate_rank(item)
+                            if pair not in best_by_pair or rank < best_by_pair[pair][0]:
+                                best_by_pair[pair] = (rank, item)
 
-    if not scored:
+    if not best_by_pair:
         return []
 
-    scored.sort(key=lambda item: (-item[0], item[2], tuple(part_cache_key(item[1][k]) for k in ["gpu", "cpu", "ram", "storage", "mb", "psu"])))
+    scored = [item for _, item in sorted(best_by_pair.values(), key=lambda entry: entry[0])]
     # Round-robin silicon families before another CPU or board-partner SKU.
     # Each family retains alternative CPUs so global ordering can avoid a
     # locally optimal CPU that would block a faster GPU in the next tier.
     groups = {}
-    seen_pairs = set()
     for item in scored:
         gpu_key = performance_model_key(item[1]["gpu"], "gpu")
-        pair = (gpu_key, performance_model_key(item[1]["cpu"], "cpu"))
-        if pair in seen_pairs:
-            continue
-        seen_pairs.add(pair)
         groups.setdefault(gpu_key, []).append(item)
     scored = [group[index] for index in range(max(map(len, groups.values())))
               for group in groups.values() if index < len(group)]

@@ -234,6 +234,18 @@ page.on("console", (message) => {
   if (message.type() === "error") errors.push(message.text());
 });
 page.on("request", (request) => requests.push(request.url()));
+let recommendationGate = null;
+let recommendationFailure = false;
+function holdRecommendation() {
+  let release;
+  recommendationGate = new Promise((resolve) => {
+    release = resolve;
+  });
+  return () => {
+    recommendationGate = null;
+    release();
+  };
+}
 await page.route("**/api/**", async (route) => {
   const url = new URL(route.request().url());
   if (url.pathname === "/api/part-image") {
@@ -298,8 +310,10 @@ await page.route("**/api/**", async (route) => {
   } else if (url.pathname === "/api/estimate-fps") data = { fps: fpsResult };
   else if (url.pathname === "/api/price-lookup") data = { results: [] };
   else if (url.pathname === "/api/recommend") {
-    await new Promise((r) => setTimeout(r, 150));
-    data = { ...recommendation, input: route.request().postDataJSON() };
+    data = recommendationFailure
+      ? { ok: false, error: "판매처 연결을 다시 확인해주세요." }
+      : { ...recommendation, input: route.request().postDataJSON() };
+    await (recommendationGate || new Promise((r) => setTimeout(r, 150)));
   } else data = { ok: true };
   try {
     await route.fulfill({
@@ -327,6 +341,7 @@ try {
     .filter({ hasText: "144Hz" })
     .click();
   const unlimitedRequest = page.waitForRequest("**/api/recommend");
+  const finishFirstAnalysis = holdRecommendation();
   await page.locator("#submitBtn").click();
   const unlimitedPayload = (await unlimitedRequest).postDataJSON();
   expect(unlimitedPayload).toMatchObject({
@@ -337,6 +352,14 @@ try {
     resolution: "2160",
     refresh: 144,
   });
+  await expect(page.locator(".ai-progress")).toContainText("조건에 맞는 견적");
+  await expect(page.locator("#resultsContainer")).toHaveAttribute(
+    "aria-busy",
+    "true",
+  );
+  await expect(page.locator("#submitBtn")).toBeDisabled();
+  await expect(page.locator(".ai-skeleton-title")).toHaveCount(3);
+  finishFirstAnalysis();
   await expect(page.getByText("금액 설정 안함 · 사양 우선 추천")).toHaveCount(
     3,
   );
@@ -362,6 +385,63 @@ try {
     path: "/tmp/site2-unlimited-mobile.png",
     fullPage: false,
   });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  const finishReanalysis = holdRecommendation();
+  const reanalysisRequest = page.waitForRequest("**/api/recommend");
+  await page.locator("#submitBtn").click();
+  await reanalysisRequest;
+  await expect(page.locator(".ai-progress")).toContainText("이전 분석 결과");
+  await expect(page.locator(".tier-badge")).toHaveCount(3);
+  await expect(page.locator(".tier-import-btn").first()).toBeDisabled();
+  await expect(page.locator(".ai-progress")).toContainText(
+    "판매처 응답에 따라",
+    { timeout: 10000 },
+  );
+  await page.locator("#viewCustomBtn").click();
+  await page.locator("#viewAiBtn").click();
+  await expect(page.locator(".ai-progress")).toContainText(
+    "판매처 응답에 따라",
+  );
+  expect(
+    parseInt(await page.locator(".ai-progress-time").innerText(), 10),
+  ).toBeGreaterThanOrEqual(8);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({
+    path: "/tmp/site2-recommendation-loading-desktop.png",
+    fullPage: false,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator(".ai-progress").scrollIntoViewIfNeeded();
+  if (
+    await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)
+  )
+    throw new Error("Loading recommendation mobile overflow");
+  await page.screenshot({
+    path: "/tmp/site2-recommendation-loading-mobile.png",
+    fullPage: false,
+  });
+  await page.getByRole("button", { name: "분석 취소", exact: true }).click();
+  await expect(page.locator(".ai-progress")).toHaveCount(0);
+  await expect(page.locator("#statusBox")).toContainText("분석을 취소");
+  await expect(page.locator(".tier-import-btn").first()).toBeEnabled();
+  await expect(page.locator("#resultsContainer")).toHaveAttribute(
+    "aria-busy",
+    "false",
+  );
+  await expect(
+    page.getByRole("button", { name: "금액 설정 안함", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  finishReanalysis();
+  recommendationFailure = true;
+  await page.locator("#submitBtn").click();
+  await expect(page.locator("#statusBox")).toContainText(
+    "판매처 연결을 다시 확인",
+  );
+  await expect(page.locator("#statusBox")).toContainText(
+    "이전에 완료한 분석 결과",
+  );
+  await expect(page.locator(".tier-badge")).toHaveCount(3);
+  recommendationFailure = false;
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page
     .locator("#budgetChoices button")
@@ -642,6 +722,7 @@ try {
         errors,
         checks: [
           "AI initial and manual navigation",
+          "first analysis skeleton, slow-response guidance, retained results, cancel, failure and retry",
           "unlimited budget payload, 4K 144Hz controls, soft budget overrun, reset, mobile layout",
           "all nine categories",
           "latest product result",
@@ -661,6 +742,8 @@ try {
           "all remaining storage, power, case and software categories",
         ],
         screenshots: [
+          "/tmp/site2-recommendation-loading-desktop.png",
+          "/tmp/site2-recommendation-loading-mobile.png",
           "/tmp/site2-after-desktop.png",
           "/tmp/site2-after-mobile.png",
           "/tmp/site2-unlimited-desktop.png",

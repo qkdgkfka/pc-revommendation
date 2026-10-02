@@ -7,6 +7,56 @@ const deferred = () => {
   return { promise, resolve };
 };
 const response = (data) => ({ ok: true, json: async () => data });
+test("reanalysis retains the last result through failure and replaces it only on success", async () => {
+  let pending;
+  const store = createAppStore({ fetch: () => pending.promise });
+  const run = async (data) => {
+    pending = deferred();
+    const task = store.recommend();
+    pending.resolve(response(data));
+    await task;
+  };
+  await run({ results: { low: { totalPrice: 1000000 } } });
+  const previous = store.getState().lastRecommendation;
+  store.update({ resolution: "1440" });
+  pending = deferred();
+  const retry = store.recommend();
+  assert.equal(store.getState().recommendation.loading, true);
+  assert.equal(store.getState().lastRecommendation, previous);
+  pending.resolve(response({ ok: false, error: "일시적인 연결 오류" }));
+  await retry;
+  assert.equal(store.getState().lastRecommendation, previous);
+  assert.equal(store.getState().recommendation.loading, false);
+  assert.match(store.getState().recommendation.error, /연결 오류/);
+  await run({ results: { low: { totalPrice: 1200000 } } });
+  assert.equal(
+    store.getState().lastRecommendation.results.low.totalPrice,
+    1200000,
+  );
+  assert.equal(store.getState().lastRecommendation.input.resolution, "1440");
+  store.resetRecommendation();
+  assert.equal(store.getState().lastRecommendation, null);
+});
+test("cancelling recommendation preserves conditions and ignores a late response", async () => {
+  const pending = deferred();
+  let signal;
+  const store = createAppStore({
+    fetch: (_, options) => {
+      signal = options.signal;
+      return pending.promise;
+    },
+  });
+  store.update({ resolution: "2160", budgetMode: "unlimited" });
+  const task = store.recommend();
+  store.cancelRecommendation();
+  assert.equal(signal.aborted, true);
+  assert.equal(store.getState().recommendation.loading, false);
+  assert.equal(store.getState().resolution, "2160");
+  assert.equal(store.getState().budgetMode, "unlimited");
+  pending.resolve(response({ results: { low: { totalPrice: 999 } } }));
+  await task;
+  assert.equal(store.getState().lastRecommendation, null);
+});
 test("unlimited recommendation sends no stale budget and reset restores a budget", async () => {
   let payload;
   const store = createAppStore({

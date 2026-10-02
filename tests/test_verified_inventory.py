@@ -2,9 +2,69 @@ from backend_patch import patch_backend
 import unittest
 from datetime import datetime, timezone
 from unittest.mock import patch
+from concurrent.futures import ThreadPoolExecutor
+from threading import Event
 import server_fixed as s
 
 class VerifiedInventoryTests(unittest.TestCase):
+    def test_early_gpu_photos_cannot_block_a_later_required_cpu_photo(self):
+        gpu_started, cpu_started = Event(), Event()
+        cpu = self.row()
+        gpu = next(p for p in s.GPU_CATALOG if p['id'] == 'gpu_rtx5070')
+        gpus = [dict(cpu, **{k: v for k, v in gpu.items() if k not in {'id'}},
+                     id=f'gpu-{i}', performance_ref_id=f'gpu-model-{i}', product_name='ASUS DUAL RTX 5070 12GB',
+                     url=f'https://prod.danawa.com/info/?pcode={1000+i}&cate=112753',
+                     image_url=f'https://img.danuri.io/gpu-{i}.jpg') for i in range(32)]
+        blocked = []
+
+        def seller(kind, **kwargs):
+            if kind == 'cpu':
+                self.assertTrue(gpu_started.wait(1))
+                return {'items': [cpu]}
+            return {'items': gpus if kind == 'gpu' else []}
+
+        def photo(url):
+            if 'gpu-' in url:
+                gpu_started.set()
+                if not cpu_started.wait(1):
+                    blocked.append(url)
+            else:
+                cpu_started.set()
+            return b'photo', 'image/jpeg'
+
+        with patch_backend(s, 'market_products_response', side_effect=seller), \
+             patch_backend(s, 'saved_products', return_value=[]), \
+             patch_backend(s, 'fetch_product_image', side_effect=photo):
+            result = s.verified_recommendation_inventory()
+        self.assertFalse(blocked, 'A GPU batch starved the CPU photo')
+        self.assertEqual(1, len(result['cpu']))
+        self.assertEqual(32, len(result['gpu']))
+
+    def test_ready_category_photos_do_not_wait_for_slow_retail_category(self):
+        photo_started, release_seller = Event(), Event()
+        row = self.row()
+
+        def seller(kind, **kwargs):
+            if kind == 'gpu':
+                release_seller.wait(2)
+            return {'items': [row] if kind == 'cpu' else []}
+
+        def photo(url):
+            photo_started.set()
+            return b'photo', 'image/jpeg'
+
+        with patch_backend(s, 'market_products_response', side_effect=seller), \
+             patch_backend(s, 'saved_products', return_value=[]), \
+             patch_backend(s, 'fetch_product_image', side_effect=photo), \
+             ThreadPoolExecutor(max_workers=1) as pool:
+            pending = pool.submit(s.verified_recommendation_inventory)
+            try:
+                self.assertTrue(photo_started.wait(1), 'A ready photo was blocked by another category')
+            finally:
+                release_seller.set()
+            result = pending.result(timeout=2)
+        self.assertEqual([row['id']], [part['id'] for part in result['cpu']])
+
     def row(self, **changes):
         row = dict(s.CPU_CATALOG[0])
         row.update(id="danawa_cpu_123", product_name=row["name"], price=300000,

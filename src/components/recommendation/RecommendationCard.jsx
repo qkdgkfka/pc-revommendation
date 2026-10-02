@@ -140,6 +140,7 @@ export default function RecommendationCard({ tier, result, input }) {
         type="button"
         className="tier-import-btn"
         data-import-tier={tier}
+        disabled={state.recommendation.loading}
         onClick={() => store.importRecommendation(tier)}
       >
         직접 사양 선택

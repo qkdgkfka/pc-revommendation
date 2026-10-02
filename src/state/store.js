@@ -513,8 +513,12 @@ export function createAppStore(options = {}) {
     );
     if (entry.task) return entry.task;
     publish({
-      recommendation: { loading: true, error: "", kind: "" },
-      lastRecommendation: null,
+      recommendation: {
+        loading: true,
+        error: "",
+        kind: "",
+        startedAt: Date.now(),
+      },
     });
     entry.task = entry.promise
       .then((data) => {
@@ -538,6 +542,16 @@ export function createAppStore(options = {}) {
       });
     return entry.task;
   }
+  function cancelRecommendation() {
+    requests.cancel("recommendation");
+    publish({
+      recommendation: {
+        loading: false,
+        error: "분석을 취소했습니다. 조건을 유지했으니 다시 분석할 수 있어요.",
+        kind: "cancelled",
+      },
+    });
+  }
   function resetRecommendation() {
     requests.cancel("recommendation");
     requests.cancel("fps");
@@ -550,6 +564,7 @@ export function createAppStore(options = {}) {
     });
   }
   function importRecommendation(tier) {
+    if (state.recommendation.loading) return false;
     const recommendation = state.lastRecommendation?.results?.[tier],
       parts = recommendation?.parts;
     if (
@@ -692,6 +707,7 @@ export function createAppStore(options = {}) {
     estimateFps,
     cancelFps,
     recommend,
+    cancelRecommendation,
     resetRecommendation,
     importRecommendation,
     loadCatalog,

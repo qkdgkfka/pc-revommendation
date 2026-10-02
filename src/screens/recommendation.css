@@ -537,6 +537,60 @@
   background: #fcf2f2;
   color: #a45b5b;
 }
+.ai-progress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 16px;
+  margin-bottom: 18px;
+  border: 1px solid #dce5f1;
+  border-radius: 12px;
+  background: #f3f7fc;
+  color: #456084;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.ai-progress-message {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+.ai-progress strong {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ai-progress p {
+  margin-top: 5px;
+  color: var(--ai-muted);
+}
+.ai-progress .spinner {
+  border-color: #d6e1ef;
+  border-top-color: #456084;
+}
+.ai-progress-time {
+  font-size: 12px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+.ai-cancel {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border: 1px solid #cbd7e6;
+  border-radius: 8px;
+  background: #fff;
+  color: #456084;
+  cursor: pointer;
+}
+.ai-cancel:hover {
+  background: #eaf0f8;
+}
+.ai-workspace .tier-import-btn:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
 .ai-empty {
   min-height: 560px;
   display: flex;
