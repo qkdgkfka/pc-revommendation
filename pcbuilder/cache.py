@@ -50,6 +50,7 @@ class MemoryCache:
         self.max_bytes = max_bytes
         self._entries = OrderedDict()
         self._bytes = 0
+        self._generation = 0
         self._lock = RLock()
         self._flight = SingleFlight()
 
@@ -57,6 +58,7 @@ class MemoryCache:
         with self._lock:
             self._entries.clear()
             self._bytes = 0
+            self._generation += 1
 
     def get(self, key):
         with self._lock:
@@ -69,7 +71,9 @@ class MemoryCache:
             return None
 
     def get_or_compute(self, key, compute, ttl=300, size=None):
-        value = self.get(key)
+        with self._lock:
+            generation = self._generation
+            value = self.get(key)
         if value is not None:
             return value
 
@@ -83,6 +87,9 @@ class MemoryCache:
             if seconds <= 0 or (self.max_bytes is not None and weight > self.max_bytes):
                 return value
             with self._lock:
+                # clear() also invalidates work that started before it.
+                if generation != self._generation:
+                    return value
                 previous = self._entries.pop(key, None)
                 if previous:
                     self._bytes -= previous[2]
@@ -92,4 +99,4 @@ class MemoryCache:
                     self._bytes -= self._entries.popitem(last=False)[1][2]
             return value
 
-        return self._flight.run(key, populate)
+        return self._flight.run((generation, key), populate)

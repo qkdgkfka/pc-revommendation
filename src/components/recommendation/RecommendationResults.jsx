@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { lazy, Suspense, useEffect, useState } from "react";
 import { useApp } from "../../state/context.jsx";
-import { Icon } from "../../screens/ManualScreen.jsx";
-import RecommendationCard from "./RecommendationCard.jsx";
+import { Icon } from "../Controls.jsx";
+const RecommendationCard = lazy(() => import("./RecommendationCard.jsx"));
 
 const TIERS = ["low", "mid", "high"];
 function Placeholder() {
@@ -80,7 +80,7 @@ function RecommendationProgress({ hasPrevious, startedAt, onCancel }) {
   );
 }
 export default function RecommendationResults() {
-  const { state, store } = useApp();
+  const { state, store } = useApp(["recommendation", "lastRecommendation"]);
   const { loading, error, kind } = state.recommendation;
   const recommendation = state.lastRecommendation;
   return (
@@ -121,16 +121,18 @@ export default function RecommendationResults() {
       </div>
       <div id="resultsContainer" aria-busy={loading}>
         {recommendation ? (
-          <div className="cards ai-cards">
-            {TIERS.map((tier) => (
-              <RecommendationCard
-                key={tier}
-                tier={tier}
-                result={recommendation.results?.[tier]}
-                input={recommendation.input}
-              />
-            ))}
-          </div>
+          <Suspense fallback={<LoadingResults />}>
+            <div className="cards ai-cards">
+              {TIERS.map((tier) => (
+                <RecommendationCard
+                  key={tier}
+                  tier={tier}
+                  result={recommendation.results?.[tier]}
+                  input={recommendation.input}
+                />
+              ))}
+            </div>
+          </Suspense>
         ) : loading ? (
           <LoadingResults />
         ) : (

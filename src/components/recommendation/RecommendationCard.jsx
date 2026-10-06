@@ -2,7 +2,7 @@ import React from "react";
 import { useApp } from "../../state/context.jsx";
 import { BUILDER_PARTS, money, effectivePrice } from "../../domain/products.js";
 import { pricePerFrame } from "../../domain/performance.js";
-import { Compatibility } from "../../screens/ManualScreen.jsx";
+import { Compatibility } from "../Compatibility.jsx";
 import { FpsChart, WorkChart } from "../Charts.jsx";
 import RecommendationPart from "./RecommendationPart.jsx";
 
@@ -13,7 +13,12 @@ const TIERS = {
 };
 
 export default function RecommendationCard({ tier, result, input }) {
-  const { state, store } = useApp();
+  const { state, store } = useApp([
+    "games",
+    "panelWork",
+    "workProfiles",
+    "recommendation",
+  ]);
   const presentation = TIERS[tier];
   if (!result?.parts || !Object.keys(result.parts).length)
     return (

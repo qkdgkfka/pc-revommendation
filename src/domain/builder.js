@@ -1,53 +1,28 @@
 import {
   builderSpecs,
-  socketCompatibility,
   BUILDER_SPEED_RANGES,
   BUILDER_WATT_RANGES,
   builderRange,
 } from "./specs.js";
-import { numeric, storageTbValue } from "./performance.js";
-import * as productDomain from "./products.js";
-const {
-  money,
-  escapeHtml,
-  shopSearchUrl,
-  queryString,
-  partUrl,
+import { storageTbValue } from "./performance.js";
+import {
   gpuBrand,
-  withPartType,
-  fullProductName,
   productManufacturer,
   displayName,
   partMeta,
-  catalogKey,
-  catalogMatchScore,
-  mergeCatalogPrices,
-  seedCatalogItems,
   effectivePrice,
-  marketName,
-  priceProvenance,
-  priceProvenanceHtml,
-  catalogPriceLabel,
   uniqueProducts,
-  bestProductImageUrl,
   normSpecValue,
   cpuVendor,
   cpuCores,
   cpuThreads,
   gpuModelToken,
   gpuSeriesToken,
-  gpuSeriesGroups,
-  preferredGpuProductForModel,
-  psuRating,
   valueSet,
   rangeLabel,
   normalizeSearchText,
-  productBadges,
-  workFillClass,
-  compatibilityHtml,
   BUILDER_PARTS,
-  BUILDER_META,
-} = productDomain;
+} from "./products.js";
 export function createBuilderDomain(state) {
   const baseCatalogFor = (type) => state.catalogs[type] || [];
   const browseStateFor = (type) =>

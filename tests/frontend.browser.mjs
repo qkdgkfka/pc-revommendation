@@ -332,6 +332,14 @@ try {
     "true",
   );
   await expect(page.locator("#placeholder")).toBeVisible();
+  if (
+    requests.some((url) =>
+      /\/api\/products\?|\/ManualScreen-[^/]+\.(?:js|css)/.test(url),
+    )
+  )
+    throw new Error(
+      "Manual screen resources or retailer search loaded before manual navigation",
+    );
   await page
     .getByRole("button", { name: "금액 설정 안함", exact: true })
     .click();

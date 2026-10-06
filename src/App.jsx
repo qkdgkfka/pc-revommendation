@@ -1,14 +1,12 @@
 import React, { lazy, Suspense, useEffect } from "react";
 import { useApp } from "./state/context.jsx";
-import ManualScreen, { Icon, Button } from "./screens/ManualScreen.jsx";
-const RecommendationScreen = lazy(
-  () => import("./screens/RecommendationScreen.jsx"),
-);
+import { Icon, Button } from "./components/Controls.jsx";
+import RecommendationScreen from "./screens/RecommendationScreen.jsx";
+const ManualScreen = lazy(() => import("./screens/ManualScreen.jsx"));
 export default function App() {
-  const { state, store } = useApp();
+  const { state, store } = useApp(["activeView"]);
   useEffect(() => {
     void store.loadCatalog();
-    void store.loadProducts();
     return () => store.destroy();
   }, [store]);
   return (
@@ -38,21 +36,21 @@ export default function App() {
           ))}
         </nav>
       </section>
-      {state.activeView === "custom" ? (
-        <div className="app-view" id="customSection">
-          <ManualScreen />
-        </div>
-      ) : (
-        <Suspense
-          fallback={
-            <div className="screen-loading" role="status">
-              <span className="spinner" /> AI 추천 화면을 불러오는 중…
-            </div>
-          }
-        >
+      <Suspense
+        fallback={
+          <div className="screen-loading" role="status">
+            <span className="spinner" /> 화면을 불러오는 중…
+          </div>
+        }
+      >
+        {state.activeView === "custom" ? (
+          <div className="app-view" id="customSection">
+            <ManualScreen />
+          </div>
+        ) : (
           <RecommendationScreen />
-        </Suspense>
-      )}
+        )}
+      </Suspense>
     </div>
   );
 }

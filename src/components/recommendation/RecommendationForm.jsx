@@ -1,8 +1,8 @@
 import React from "react";
 import { useApp } from "../../state/context.jsx";
-import { Icon } from "../../screens/ManualScreen.jsx";
+import { Icon } from "../Controls.jsx";
 import GamePicker from "../GamePicker.jsx";
-import { WorkSelect } from "../Performance.jsx";
+import { WorkSelect } from "../WorkSelect.jsx";
 
 const BUDGETS = [
   { value: 2000000, min: 1000000, label: "100~200만원" },
@@ -87,7 +87,16 @@ function Choices({
   );
 }
 export default function RecommendationForm() {
-  const { state, store } = useApp();
+  const { state, store } = useApp([
+    "budgetMax",
+    "budgetMode",
+    "gpu_brands",
+    "gpu_pref",
+    "panelMode",
+    "recommendation",
+    "refresh",
+    "resolution",
+  ]);
   const loading = state.recommendation.loading;
   return (
     <form

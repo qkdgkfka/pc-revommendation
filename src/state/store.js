@@ -1,15 +1,15 @@
-import { createBuilderDomain } from "../domain/builder.js";
-import { referenceCatalogs } from "../domain/referenceCatalog.js";
+import { catalogPatch } from "./catalog.js";
 import {
-  GAME_OPTIONS,
-  WORK_PROFILES,
-  GAME_CATEGORIES,
-} from "../domain/options.js";
+  initialState,
+  recommendationDefaults,
+  gameCategoryFor,
+} from "./initialState.js";
+export { initialState, gameCategoryFor } from "./initialState.js";
+import { createBuilderDomain } from "../domain/builder.js";
 import {
   BUILDER_META,
   BUILDER_PARTS,
   withPartType,
-  seedCatalogItems,
   uniqueProducts,
   priceProvenance,
   effectivePrice,
@@ -23,69 +23,7 @@ import {
   RequestError,
   errorMessage,
 } from "./requests.js";
-const recommendationDefaults = {
-  budgetMode: "soft",
-  budget: 2000000,
-  budgetMin: 1000000,
-  budgetMax: 2000000,
-  resolution: "1080",
-  refresh: 60,
-  gpu_pref: "nopref",
-  gpu_brands: [],
-  game: "cyberpunk2077",
-  gameCategory: "aaa",
-  panelMode: "game",
-  panelWork: "video_4k",
-};
-export function initialState(catalogs = referenceCatalogs) {
-  return {
-    activeView: "ai",
-    ...recommendationDefaults,
-    csMode: "game",
-    csRes: "1080",
-    csGame: "cyberpunk2077",
-    csGameCategory: "aaa",
-    csWork: "video_4k",
-    csGpuMakers: [],
-    builderPart: "cpu",
-    builderFilters: {},
-    productQuery: "",
-    productDraft: "",
-    productQueries: {},
-    productDrafts: {},
-    productSource: "all",
-    productSort: "popular",
-    selected: {},
-    pinned: {},
-    browse: {},
-    productFacets: {},
-    catalogs: Object.fromEntries(
-      Object.entries(catalogs).map(([type, items]) => [
-        type,
-        seedCatalogItems(withPartType(structuredClone(items), type)),
-      ]),
-    ),
-    games: structuredClone(GAME_OPTIONS),
-    workProfiles: structuredClone(WORK_PROFILES),
-    lastRecommendation: null,
-    recommendation: { loading: false, error: "", kind: "" },
-    fps: { key: "", loading: false, data: null, error: "", kind: "" },
-    catalogError: "",
-  };
-}
-export function gameCategoryFor(gameId, games = GAME_OPTIONS) {
-  const item = games.find((game) => game.id === gameId);
-  if (item?.category && GAME_CATEGORIES.some((c) => c.id === item.category))
-    return item.category;
-  const group = String(item?.group || "").toLowerCase();
-  return /fps|경쟁/.test(group)
-    ? "fps"
-    : /오픈월드|서브컬쳐/.test(group)
-      ? "openworld"
-      : /aaa|goty/.test(group)
-        ? "aaa"
-        : "game";
-}
+const FPS_CACHE_LIMIT = 64;
 export function createAppStore(options = {}) {
   let state = initialState(options.catalogs),
     listeners = new Set();
@@ -93,14 +31,38 @@ export function createAppStore(options = {}) {
     fpsCache = new Map();
   const fetcher = options.fetch || ((...args) => globalThis.fetch(...args));
   const base = options.baseUrl || "";
-  const getState = () => state,
-    domain = () => createBuilderDomain(state);
+  const getState = () => state;
+  const domainKeys = [
+    "browse",
+    "builderFilters",
+    "builderPart",
+    "catalogs",
+    "pinned",
+    "productFacets",
+    "productQuery",
+    "productSort",
+    "productSource",
+  ];
+  let domainState, builderDomain;
+  const domain = () => {
+    if (
+      !domainState ||
+      domainKeys.some((key) => domainState[key] !== state[key])
+    ) {
+      domainState = state;
+      builderDomain = createBuilderDomain(state);
+    }
+    return builderDomain;
+  };
   const publish = (patch) => {
+    if (!Object.keys(patch).some((key) => !Object.is(state[key], patch[key])))
+      return;
     state = { ...state, ...patch };
     listeners.forEach((listener) => listener());
   };
-  const patchBrowse = (type, patch) =>
+  const patchBrowse = (type, patch, extra = {}) =>
     publish({
+      ...extra,
       browse: {
         ...state.browse,
         [type]: { ...(state.browse[type] || {}), ...patch },
@@ -108,9 +70,14 @@ export function createAppStore(options = {}) {
     });
   const cancelFps = () => {
     requests.cancel("fps");
-    publish({ fps: { ...state.fps, loading: false } });
+    if (state.fps.loading) publish({ fps: { ...state.fps, loading: false } });
   };
   function update(patch) {
+    patch = Object.fromEntries(
+      Object.entries(patch).filter(
+        ([key, value]) => !Object.is(state[key], value),
+      ),
+    );
     if (
       ["productQuery", "productSource", "productSort", "builderFilters"].some(
         (k) => k in patch,
@@ -125,8 +92,10 @@ export function createAppStore(options = {}) {
           };
         }
     }
-    if (["csGame", "csRes", "csMode", "refresh"].some((k) => k in patch))
-      cancelFps();
+    if (["csGame", "csRes", "csMode", "refresh"].some((k) => k in patch)) {
+      requests.cancel("fps");
+      if (state.fps.loading) patch.fps = { ...state.fps, loading: false };
+    }
     if (
       Object.keys(recommendationDefaults).some((k) => k in patch) &&
       state.recommendation.loading
@@ -215,41 +184,48 @@ export function createAppStore(options = {}) {
         if (!entry.current()) return;
         const items = withPartType(data.items || [], type),
           unavailable = data.status === "unavailable";
-        if (data.facets && type !== "gpu")
-          publish({
-            productFacets: { ...state.productFacets, [type]: data.facets },
-          });
-        patchBrowse(type, {
-          items:
-            append && !data.reset
-              ? uniqueProducts([...(state.browse[type]?.items || []), ...items])
-              : uniqueProducts(items),
-          page: data.reset ? 1 : page,
-          cursor: data.cursor || "",
-          requestKey,
-          query,
-          requestedSource: source,
-          hasMore: Boolean(data.has_more),
-          partial: Boolean(data.partial),
-          total: data.total == null ? null : Number(data.total),
-          status: data.status || (items.length ? "live" : "empty"),
-          sourceStatus: data.source_status || {},
-          source,
-          sortLabel: data.sort_label || "검색처 기본순",
-          loaded: true,
-          loadedAt: Date.now(),
-          error: unavailable
-            ? data.error_kind === "timeout"
-              ? errorMessage(new RequestError("timeout", ""))
-              : `${marketName(source)} 검색에 연결하지 못했습니다.`
-            : "",
-          errorKind: unavailable
-            ? data.error_kind === "timeout"
-              ? "timeout"
-              : "upstream"
-            : "",
-          loading: false,
-        });
+        patchBrowse(
+          type,
+          {
+            items:
+              append && !data.reset
+                ? uniqueProducts([
+                    ...(state.browse[type]?.items || []),
+                    ...items,
+                  ])
+                : uniqueProducts(items),
+            page: data.reset ? 1 : page,
+            cursor: data.cursor || "",
+            requestKey,
+            query,
+            requestedSource: source,
+            hasMore: Boolean(data.has_more),
+            partial: Boolean(data.partial),
+            total: data.total == null ? null : Number(data.total),
+            status: data.status || (items.length ? "live" : "empty"),
+            sourceStatus: data.source_status || {},
+            source,
+            sortLabel: data.sort_label || "검색처 기본순",
+            loaded: true,
+            loadedAt: Date.now(),
+            error: unavailable
+              ? data.error_kind === "timeout"
+                ? errorMessage(new RequestError("timeout", ""))
+                : `${marketName(source)} 검색에 연결하지 못했습니다.`
+              : "",
+            errorKind: unavailable
+              ? data.error_kind === "timeout"
+                ? "timeout"
+                : "upstream"
+              : "",
+            loading: false,
+          },
+          data.facets && type !== "gpu"
+            ? {
+                productFacets: { ...state.productFacets, [type]: data.facets },
+              }
+            : {},
+        );
       })
       .catch((error) => {
         if (entry.current())
@@ -439,10 +415,13 @@ export function createAppStore(options = {}) {
       state.refresh,
     );
     if (!force && fpsCache.has(key)) {
+      const cached = fpsCache.get(key);
+      fpsCache.delete(key);
+      fpsCache.set(key, cached);
       publish({
         fps: {
           key,
-          data: fpsCache.get(key),
+          data: cached,
           loading: false,
           error: "",
           kind: "",
@@ -472,7 +451,10 @@ export function createAppStore(options = {}) {
         if (!entry.current()) return;
         if (!data.fps)
           throw new RequestError("empty", "해당 구성의 FPS 자료가 없습니다.");
+        fpsCache.delete(key);
         fpsCache.set(key, data.fps);
+        if (fpsCache.size > FPS_CACHE_LIMIT)
+          fpsCache.delete(fpsCache.keys().next().value);
         publish({
           fps: { key, data: data.fps, loading: false, error: "", kind: "" },
         });
@@ -626,47 +608,7 @@ export function createAppStore(options = {}) {
     entry.task = entry.promise
       .then((data) => {
         if (!entry.current()) return;
-        const mappings = {
-          gpu: "gpus",
-          cpu: "cpus",
-          ram: "rams",
-          mb: "mbs",
-          storage: "storages",
-          hdd: "hdds",
-          psu: "psus",
-          case: "cases",
-          software: "software",
-        };
-        const catalogs = { ...state.catalogs };
-        for (const [type, key] of Object.entries(mappings))
-          if (data[key])
-            catalogs[type] = seedCatalogItems(withPartType(data[key], type));
-        const games = data.games?.length
-          ? data.games.map((g) => ({
-              id: g.id,
-              label: g.label || g.name || g.id,
-              group: g.group || "기타",
-              category: g.category || gameCategoryFor(g.id, state.games),
-            }))
-          : state.games;
-        const workProfiles = structuredClone(state.workProfiles);
-        for (const profile of data.work_profiles || [])
-          if (workProfiles[profile.id])
-            workProfiles[profile.id] = {
-              ...workProfiles[profile.id],
-              name: profile.label || workProfiles[profile.id].name,
-              group: profile.group || workProfiles[profile.id].group,
-            };
-        publish({
-          catalogs,
-          games,
-          workProfiles,
-          productFacets: {
-            ...state.productFacets,
-            ...(data.filter_facets || {}),
-          },
-          catalogError: "",
-        });
+        publish(catalogPatch(data, state));
       })
       .catch((error) => {
         if (entry.current()) publish({ catalogError: errorMessage(error) });

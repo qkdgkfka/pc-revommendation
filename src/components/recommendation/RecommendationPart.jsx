@@ -7,7 +7,8 @@ import {
   fullProductName,
   partUrl,
 } from "../../domain/products.js";
-import { Icon, ProductImage } from "../../screens/ManualScreen.jsx";
+import { Icon } from "../Controls.jsx";
+import { ProductImage } from "../ProductImage.jsx";
 import PartPreview from "../PartPreview.jsx";
 
 export default function RecommendationPart({ part, type, label }) {

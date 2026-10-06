@@ -1,4 +1,5 @@
 import gzip
+import hashlib
 import io
 import json
 from pathlib import Path
@@ -6,10 +7,23 @@ import tempfile
 import unittest
 from unittest.mock import Mock, patch
 
-from pcbuilder import http, runtime
+from pcbuilder import http, runtime, transport
 
 
 class HttpPerformanceTests(unittest.TestCase):
+    def test_warm_static_responses_reuse_validator_and_refresh_on_file_change(self):
+        with patch.object(transport.hashlib, 'sha256', wraps=hashlib.sha256) as digest:
+            first = self.request('/assets/app-B1234567.js')
+            second = self.request('/assets/app-B1234567.js', {'If-None-Match': first[1]['ETag']})
+            self.assertEqual(304, second[0])
+            self.assertEqual(b'', second[2])
+            self.assertEqual(1, digest.call_count)
+            self.asset.write_bytes(b'const changed=true;')
+            third = self.request('/assets/app-B1234567.js', {'If-None-Match': first[1]['ETag']})
+            self.assertEqual(200, third[0])
+            self.assertNotEqual(first[1]['ETag'], third[1]['ETag'])
+            self.assertEqual(b'const changed=true;', third[2])
+
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)

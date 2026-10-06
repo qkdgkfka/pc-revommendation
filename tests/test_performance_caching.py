@@ -14,6 +14,45 @@ from pcbuilder.revisions import freshness_ttl
 
 
 class CachePerformanceTests(unittest.TestCase):
+    def test_clear_during_compute_does_not_restore_invalidated_value(self):
+        cache = MemoryCache()
+        started, release = Event(), Event()
+
+        def slow():
+            started.set()
+            self.assertTrue(release.wait(2))
+            return 'old'
+
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            pending = pool.submit(cache.get_or_compute, 'key', slow)
+            self.assertTrue(started.wait(1))
+            cache.clear()
+            release.set()
+            self.assertEqual('old', pending.result(timeout=1))
+        self.assertIsNone(cache.get('key'))
+        self.assertEqual('new', cache.get_or_compute('key', lambda: 'new'))
+
+    def test_request_after_clear_does_not_join_invalidated_work(self):
+        cache = MemoryCache()
+        started, release = Event(), Event()
+
+        def slow():
+            started.set()
+            self.assertTrue(release.wait(2))
+            return 'old'
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            pending = pool.submit(cache.get_or_compute, 'key', slow)
+            self.assertTrue(started.wait(1))
+            cache.clear()
+            try:
+                fresh = pool.submit(cache.get_or_compute, 'key', lambda: 'new')
+                self.assertEqual('new', fresh.result(timeout=.5))
+            finally:
+                release.set()
+            self.assertEqual('old', pending.result(timeout=1))
+        self.assertEqual('new', cache.get('key'))
+
     def test_same_key_computes_once_while_other_key_progresses(self):
         flight = SingleFlight()
         started, release = Event(), Event()

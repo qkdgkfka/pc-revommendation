@@ -66,6 +66,7 @@ async function details() {
 }
 try {
   await page.goto(origin);
+  await page.locator("#viewCustomBtn").click();
   await selectPart("CPU");
   await selectPart("GPU");
   await selectPart("RAM");

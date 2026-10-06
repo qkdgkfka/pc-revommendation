@@ -1,7 +1,7 @@
 import React, { useEffect, useId, useRef, useState } from "react";
 import { useApp } from "../state/context.jsx";
 import { GAME_CATEGORIES } from "../domain/options.js";
-import { gameCategoryFor } from "../state/store.js";
+import { gameCategoryFor } from "../state/initialState.js";
 const fallback =
   "data:image/svg+xml," +
   encodeURIComponent(
@@ -22,7 +22,13 @@ function GameIcon({ id, lazy = false }) {
   );
 }
 export default function GamePicker({ manual = false }) {
-  const { state, store } = useApp(),
+  const { state, store } = useApp([
+      "games",
+      "csGameCategory",
+      "gameCategory",
+      "csGame",
+      "game",
+    ]),
     [open, setOpen] = useState(false),
     [position, setPosition] = useState({}),
     wrapper = useRef(null),

@@ -356,12 +356,14 @@ def db_lookup_price_info(part: Dict[str, Any], part_type: str) -> Optional[Dict[
     # 2) Fallback to best name match.
     rows = state.DB_CACHE.get("prices_by_name", {}) or {}
     key = canonical_name(part_name)
-    type_filtered = [
-        k for k, row in rows.items()
-        if (not row.get("type") or normalize_text(row.get("type")) == part_type_key)
-        and retail.retail_quote_valid(part_type_key, part_name, row)
-    ]
-    match = _best_match_key(key, type_filtered)
+    def eligible(row):
+        return ((not row.get("type") or normalize_text(row.get("type")) == part_type_key)
+                and retail.retail_quote_valid(part_type_key, part_name, row))
+
+    # Exact catalog models are common; only scan the inventory for fuzzy matches.
+    exact = rows.get(key)
+    match = key if exact and eligible(exact) else _best_match_key(
+        key, (name for name, row in rows.items() if eligible(row)))
     if not match:
         return None
     row = rows.get(match) or {}
