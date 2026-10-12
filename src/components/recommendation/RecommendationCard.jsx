@@ -63,6 +63,9 @@ export default function RecommendationCard({ tier, result, input }) {
       <header className="card-hdr">
         <h4 className="tier-name">{presentation.title}</h4>
         <p className="ai-tier-description">{presentation.description}</p>
+        {result.tier_upgrade?.summary ? (
+          <p className="chart-note">{result.tier_upgrade.summary}</p>
+        ) : null}
         <strong className="tier-badge">{money(total)}</strong>
         <span className="ai-price-caption">
           부품 합계{missing ? " · 미확인 가격 제외" : ""}

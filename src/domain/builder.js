@@ -20,7 +20,7 @@ import {
   gpuSeriesToken,
   valueSet,
   rangeLabel,
-  normalizeSearchText,
+  productMatchesQuery,
   BUILDER_PARTS,
 } from "./products.js";
 export function createBuilderDomain(state) {
@@ -615,28 +615,21 @@ export function createBuilderDomain(state) {
       if (!includes("brand", productManufacturer(part).label)) return false;
       if (!includes("license", part.license)) return false;
     }
-    const q = normalizeSearchText(state.productQuery);
-    const browse = browseStateFor(type);
-    // Once the server has returned a live result page for this exact query,
-    // Danawa has already performed the text search.  Re-filtering it locally
-    // would incorrectly hide Korean/English model-name variants.
-    const queryAlreadyApplied =
-      q &&
-      browse.loaded &&
-      browse.status !== "unavailable" &&
-      browse.requestKey === builderSearchKey(type) &&
-      normalizeSearchText(browse.query) === q;
-    if (q && !queryAlreadyApplied) {
-      const haystack = normalizeSearchText(
-        [
-          part.name,
-          displayName(part),
-          partMeta(part, type),
-          gpuModelToken(part),
-        ].join(" "),
+    const generation =
+      type === "gpu" &&
+      String(state.productQuery || "").match(
+        /^\s*(RTX|GTX|RX)\s*[- ]?\s*(\d{2}|\d000)(?:\s+series)?\s*$/i,
       );
-      if (!q.split(" ").every((term) => haystack.includes(term))) return false;
-    }
+    if (
+      generation &&
+      (generation[1].toUpperCase() === "RX") === (generation[2].length === 4)
+    ) {
+      if (
+        gpuSeriesToken(part) !==
+        `${generation[1].toUpperCase()} ${generation[2]}`
+      )
+        return false;
+    } else if (!productMatchesQuery(state.productQuery, part)) return false;
     return true;
   }
   function filteredProducts(type = state.builderPart) {

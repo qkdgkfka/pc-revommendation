@@ -1,5 +1,6 @@
 """Explicit recommendation preferences. These never alter measured FPS."""
 import re
+from component_quality import recognized_brand
 
 # A selected amount is a target; unlimited mode has no synthetic budget.
 BUDGET_HEADROOM = 0.20
@@ -36,20 +37,45 @@ def gaming_power_weights(resolution):
 
 
 def gaming_objective(*, gpu_perf, gpu_target, fps_ratio, low1_ratio,
-                     budget_fit, unlimited, ram_gb, cpu_loss, parts):
-    # Hardware suitability differentiates tiers even for capped games. Actual
-    # FPS/1% Low and CPU bottlenecks remain independent evidence, never edited.
-    score = (4.0 * performance_fit(gpu_perf, gpu_target)
-             + 2.0 * min(1.0, fps_ratio)
-             + 0.7 * min(1.0, low1_ratio)
+                     budget_fit, unlimited, ram_gb, cpu_loss, parts,
+                     resolution="1080", cpu_price=None, gpu_price=None):
+    # Selected-game average/1% Low attainment drives the recommendation.
+    # Catalog targets are a secondary preference, including for capped games;
+    # these utility weights never change the FPS prediction or source data.
+    average_fit = min(1.0, max(0.0, fps_ratio))
+    # Missing low evidence transfers this objective's weight to average
+    # attainment. It is neither zero performance nor an invented low FPS.
+    low_fit = average_fit if low1_ratio is None else min(1.0, max(0.0, low1_ratio))
+    shortfall = 1.0 - min(average_fit, low_fit)
+    cpu_price = max(0.0, float(parts['cpu'].get('price') or 0) if cpu_price is None else cpu_price)
+    gpu_price = max(0.0, float(parts['gpu'].get('price') or 0) if gpu_price is None else gpu_price)
+    cpu_share = cpu_price / max(1.0, cpu_price + gpu_price)
+    # A soft preference, not a CPU cutoff: meaningful measured FPS/1% Low
+    # gains can still justify a faster CPU in CPU-limited games.
+    cpu_allowance = {"1080": .35, "1440": .28, "2160": .22}.get(resolution, .35)
+    cpu_spending_penalty = min(1.2, max(0.0, cpu_share - cpu_allowance) * 3.0) if gpu_price else 0.0
+    score = (4.0 * average_fit
+             + 2.0 * low_fit
+             + 1.6 * min(1.25, max(0.0, gpu_perf) / max(1.0, gpu_target))
              + 0.3 * min(1.0, ram_gb / 32.0)
-             - min(0.6, max(0.0, cpu_loss - 0.10) * 1.5))
+             - shortfall * min(0.6, max(0.0, cpu_loss - 0.10) * 1.5)
+             - cpu_spending_penalty)
     if not unlimited:
         score += 1.4 * budget_fit
     return score + 0.3 * build_preference(parts, "game")
 
 def identity(part):
     return " ".join(str(part.get(k) or "") for k in ("product_name","name")).lower()
+
+
+def preferred_ram_brand(part):
+    """Recognized module maker, never the supplier of an incidental memory IC."""
+    return recognized_brand(part, 'ram')
+
+
+def preferred_ram_candidates(parts):
+    """Keep cheap compatible fallbacks; quality is scored on the whole build."""
+    return list(parts)
 
 def cpu_vendor(part):
     name=identity(part)

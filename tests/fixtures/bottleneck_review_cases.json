@@ -1,0 +1,59 @@
+{
+  "source_url": "https://clockupcore.com/zenlesszonezero/",
+  "verified_at": "2026-10-12",
+  "conditions": "Bringer boss battle; High; render scale 1.0; native; no frame cap. RAM and game version not reported.",
+  "interpretation": "Difference from best tested alternatives present in the existing app snapshot; not GPU Busy, CPU utilization or an infinite-hardware ceiling.",
+  "game": "zenless_zone_zero",
+  "gpu": "gpu_rtx5070",
+  "preset": "high",
+  "cases": [
+    {
+      "cpu": "cpu_i5_14400f",
+      "resolution": "1080",
+      "average": 74,
+      "cpu_reference": 157,
+      "gpu_reference": 76,
+      "limiter": "cpu"
+    },
+    {
+      "cpu": "cpu_r7_9800x3d",
+      "resolution": "1080",
+      "average": 157,
+      "cpu_reference": 157,
+      "gpu_reference": 163,
+      "limiter": "balanced"
+    },
+    {
+      "cpu": "cpu_i5_14400f",
+      "resolution": "1440",
+      "average": 75,
+      "cpu_reference": 133,
+      "gpu_reference": 76,
+      "limiter": "cpu"
+    },
+    {
+      "cpu": "cpu_r7_9800x3d",
+      "resolution": "1440",
+      "average": 133,
+      "cpu_reference": 133,
+      "gpu_reference": 151,
+      "limiter": "gpu"
+    },
+    {
+      "cpu": "cpu_i5_14400f",
+      "resolution": "2160",
+      "average": 56,
+      "cpu_reference": 68,
+      "gpu_reference": 63,
+      "limiter": "cpu"
+    },
+    {
+      "cpu": "cpu_r7_9800x3d",
+      "resolution": "2160",
+      "average": 68,
+      "cpu_reference": 68,
+      "gpu_reference": 89,
+      "limiter": "gpu"
+    }
+  ]
+}

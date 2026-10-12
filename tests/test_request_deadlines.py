@@ -1,13 +1,26 @@
 from concurrent.futures import ThreadPoolExecutor
+import socket
 import time
 import unittest
 from unittest.mock import patch
+from urllib.error import URLError
 
 from market_search import ProductPager
 from pcbuilder import retail, runtime
 
 
 class RequestDeadlineTests(unittest.TestCase):
+    def test_python_socket_read_timeouts_are_reported_as_timeouts(self):
+        runtime.MARKET_BROWSE_CACHE.clear()
+        self.addCleanup(runtime.MARKET_BROWSE_CACHE.clear)
+        for error in [socket.timeout('The read operation timed out'), URLError(socket.timeout('The read operation timed out'))]:
+            with self.subTest(error=type(error).__name__), \
+                 patch.object(retail, '_market_fetch_html', side_effect=error), \
+                 patch.object(retail, 'saved_market_page', return_value={'items': []}):
+                result = retail._market_source_page('ram', 'socket-deadline-test', 1, 40, 'danawa', persist=False)
+                self.assertEqual('timeout', result['error_kind'])
+                self.assertEqual('unavailable', result['status'])
+
     def test_provider_timeout_is_distinguished_from_connection_failure(self):
         runtime.MARKET_BROWSE_CACHE.clear()
         self.addCleanup(runtime.MARKET_BROWSE_CACHE.clear)

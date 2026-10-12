@@ -4,6 +4,7 @@ import hashlib
 import io
 import json
 import sys
+import argparse
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.request import Request, urlopen
@@ -12,6 +13,7 @@ from bs4 import BeautifulSoup
 from PIL import Image
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
+from game_catalog_additions import ADDITIONAL_GAMES
 STEAM={
     "dota2":570,
     "f1_24":2488620,
@@ -33,10 +35,13 @@ STEAM={
 PAGES={"valorant":"https://playvalorant.com/en-us/","csgo":"https://blog.counter-strike.net/",
        "wow":"https://worldofwarcraft.blizzard.com/en-us/","fortnite":"https://store.epicgames.com/en-US/p/fortnite",
        "alan_wake2":"https://www.alanwake.com/"}
+STEAM.update({game['id']: game['steam_app_id'] for game in ADDITIONAL_GAMES if game.get('steam_app_id')})
+PAGES['league_of_legends'] = 'https://www.leagueoflegends.com/en-us/'
 APPLE={"genshin_impact":1517783697,"zenless_zone_zero":1606356401}
 def fetch(url):
     with urlopen(Request(url,headers={"User-Agent":"Mozilla/5.0"}),timeout=25) as r:return r.read(8_000_001)
 DIRECT={
+"league_of_legends":("https://www.leagueoflegends.com/en-us/","https://cmsassets.rgpub.io/sanity/images/dsfx7636/news/565197caf987af4e4da307df6e2b235a28714736-837x469.jpg?accountingTag=LoL?w=1200&h=630&fm=webp&fit=crop&crop=center","League of Legends"),
 "fortnite":("https://www.fortnite.com/","https://cdn2.unrealengine.com/links-admin-FNECO_42-10_Tailgate_Keyart_DiscoverTile_480x270-4bceb7c5.jpg","Fortnite Battle Royale"),
 "cod_black_ops6":("https://www.callofduty.com/en/store/games/blackops6","https://www.callofduty.com/content/dam/atvi/callofduty/cod-touchui/store/games/bo6/BO6_Banner.webp?imwidth=828","Call of Duty Black Ops 6"),
 }
@@ -65,12 +70,12 @@ def collect(game):
         im=im.convert("RGBA");background=Image.new("RGBA",im.size,"white");background.alpha_composite(im);im=background.convert("RGB");im.thumbnail((144,96))
         im.save(ROOT/"public/assets/game-icons"/(game+".jpg"),quality=88)
     return game,{"name":name,"source_url":page,"image_url":url,"sha256":hashlib.sha256(raw).hexdigest(),"checked_at":datetime.now(timezone.utc).isoformat()}
-def main():
+def main(games=None):
     folder=ROOT/"public/assets/game-icons";folder.mkdir(parents=True,exist_ok=True)
     manifest_path=ROOT/"data/game_icons.json"
     manifest=json.loads(manifest_path.read_text(encoding="utf8")) if manifest_path.exists() else {}
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as ex:
-        pending={ex.submit(collect,game):game for game in [*STEAM,*PAGES,*APPLE]}
+        pending={ex.submit(collect,game):game for game in (games if games is not None else [*STEAM,*PAGES,*APPLE])}
         for future in concurrent.futures.as_completed(pending):
             game=pending[future]
             try:
@@ -79,4 +84,7 @@ def main():
     manifest_path.write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+"\n",encoding="utf8")
 if __name__=="__main__":
     if hasattr(sys.stdout,"reconfigure"):sys.stdout.reconfigure(encoding="utf8")
-    main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--games', nargs='+', choices=[*STEAM, *PAGES, *APPLE])
+    args = parser.parse_args()
+    main(args.games)

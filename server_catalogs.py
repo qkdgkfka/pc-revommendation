@@ -98,15 +98,15 @@ MB_CATALOG = [
 ]
 
 PSU_CATALOG = [
-    {"id":"psu_600","name":"FSP HV PRO 600W 80+","brand":"FSP","price":52000,"tier":"low","watt":600,"tags":["entry"]},
-    {"id":"psu_650","name":"Micronics 650W 80+ Bronze","brand":"Micronics","price":65000,"tier":"low","watt":650,"tags":["entry"]},
-    {"id":"psu_750","name":"FSP 750W 80+ Gold","brand":"FSP","price":105000,"tier":"mid","watt":750,"tags":["gaming"]},
-    {"id":"psu_850","name":"SuperFlower 850W 80+ Gold","brand":"SuperFlower","price":145000,"tier":"mid","watt":850,"tags":["balanced"]},
-    {"id":"psu_1000","name":"Seasonic 1000W 80+ Gold","brand":"Seasonic","price":185000,"tier":"high","watt":1000,"tags":["4k"]},
-    {"id":"psu_1200","name":"Corsair 1200W 80+ Platinum","brand":"Corsair","price":265000,"tier":"high","watt":1200,"tags":["high_end"]},
-    {"id":"psu_750_atx3","name":"MSI MAG A750GL PCIE5 750W Gold","brand":"MSI","price":125000,"tier":"mid","watt":750,"tags":["atx3","pcie5"]},
-    {"id":"psu_850_atx3","name":"Corsair RM850e ATX 3.1 Gold","brand":"Corsair","price":175000,"tier":"high","watt":850,"tags":["atx3","pcie5"]},
-    {"id":"psu_1000_atx3","name":"Seasonic Vertex GX-1000 ATX 3.0 Gold","brand":"Seasonic","price":245000,"tier":"high","watt":1000,"tags":["atx3","pcie5"]},
+    {"id":"psu_600","rating":"Standard","name":"FSP HV PRO 600W 80+","brand":"FSP","price":52000,"tier":"low","watt":600,"tags":["entry"]},
+    {"id":"psu_650","rating":"Bronze","name":"Micronics 650W 80+ Bronze","brand":"Micronics","price":65000,"tier":"low","watt":650,"tags":["entry"]},
+    {"id":"psu_750","rating":"Gold","name":"FSP 750W 80+ Gold","brand":"FSP","price":105000,"tier":"mid","watt":750,"tags":["gaming"]},
+    {"id":"psu_850","rating":"Gold","name":"SuperFlower 850W 80+ Gold","brand":"SuperFlower","price":145000,"tier":"mid","watt":850,"tags":["balanced"]},
+    {"id":"psu_1000","rating":"Gold","name":"Seasonic 1000W 80+ Gold","brand":"Seasonic","price":185000,"tier":"high","watt":1000,"tags":["4k"]},
+    {"id":"psu_1200","rating":"Platinum","name":"Corsair 1200W 80+ Platinum","brand":"Corsair","price":265000,"tier":"high","watt":1200,"tags":["high_end"]},
+    {"id":"psu_750_atx3","rating":"Gold","name":"MSI MAG A750GL PCIE5 750W Gold","brand":"MSI","price":125000,"tier":"mid","watt":750,"tags":["atx3","pcie5"]},
+    {"id":"psu_850_atx3","rating":"Gold","name":"Corsair RM850e ATX 3.1 Gold","brand":"Corsair","price":175000,"tier":"high","watt":850,"tags":["atx3","pcie5"]},
+    {"id":"psu_1000_atx3","rating":"Gold","name":"Seasonic Vertex GX-1000 ATX 3.0 Gold","brand":"Seasonic","price":245000,"tier":"high","watt":1000,"tags":["atx3","pcie5"]},
 ]
 
 STORAGE_CATALOG = [
@@ -211,6 +211,11 @@ GAME_OPTIONS = [
     {"id": "alan_wake2", "label": "앨런 웨이크 2", "group": "AAA / GOTY", "category": "aaa", "genre": "aaa"},
 ]
 
+from game_catalog_additions import ADDITIONAL_GAMES, ADDITIONAL_FPS_PROFILES
+GAME_OPTIONS.extend(ADDITIONAL_GAMES)
+from game_catalog_extended import EXTENDED_GAMES, EXTENDED_FPS_PROFILES
+GAME_OPTIONS.extend(EXTENDED_GAMES)
+
 BENCHMARK_FPS_BY_GPU = {
     "gpu_rtx4090": {"m1080":195.6, "h1080":150.1, "h1440":126.6, "h2160":85.0},
     "gpu_rtx4080super": {"m1080":177.2, "h1080":131.1, "h1440":105.8, "h2160":64.8},
@@ -283,6 +288,17 @@ GAME_FPS_PROFILES = {
     "farming_sim": {"scale":{"1080":0.92,"1440":0.86,"2160":0.76}, "cpu_weight":0.28, "cpu_cap":{"1080":240,"1440":205,"2160":170}, "low1":0.76},
     "default": {"scale":{"1080":1.00,"1440":0.96,"2160":0.90}, "cpu_weight":0.24, "cpu_cap":{"1080":260,"1440":230,"2160":190}, "low1":0.78},
 }
+
+GAME_FPS_PROFILES.update(ADDITIONAL_FPS_PROFILES)
+GAME_FPS_PROFILES.update(EXTENDED_FPS_PROFILES)
+
+# The server and offline holdout evaluator must share the same game settings.
+for _game, _weight, _low1 in [
+    ("fortnite", .48, .76), ("marvel_rivals", .40, .74),
+    ("cod_black_ops6", .32, .76), ("dragons_dogma2", .55, .68),
+    ("dying_light2", .22, .76), ("resident_evil4", .20, .78), ("alan_wake2", .16, .72),
+]:
+    GAME_FPS_PROFILES[_game] = {**GAME_FPS_PROFILES["default"], "cpu_weight": _weight, "low1": _low1, "ram_hungry": True}
 
 WORK_PROFILES = {
     "video_1080p": {

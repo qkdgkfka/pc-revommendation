@@ -8,13 +8,14 @@ from datetime import datetime
 from html import unescape
 import logging
 from http.client import HTTPException
+from socket import timeout as SocketTimeout
 from threading import RLock
 import re
 from retailer_parsing import (
     DANAWA_RUNTIME_GPU_REJECT_TOKENS, append_danawa_query_suffix,
     category_from_danawa_block, danawa_candidate_blocks, danawa_category_label_matches,
     danawa_gpu_name_rejected, danawa_regex_products, danawa_soup_products,
-    danawa_url_category_id, first_anchor_from_block, price_from_danawa_block,
+    danawa_url_category_id, danawa_modern_products, first_anchor_from_block, price_from_danawa_block,
 )
 import secrets
 import time
@@ -27,6 +28,7 @@ from product_filters import (
 )
 from market_catalog import remember_products, saved_products
 from market_search import ProductPager, RetailQueryStream
+from product_search import product_matches_query
 from product_metadata import (
     DANAWA_BROWSE_DEFAULT_QUERIES,
     canonical_name,
@@ -44,7 +46,6 @@ from product_metadata import (
     infer_hdd_rpm,
     infer_mb_metadata,
     infer_psu_watt,
-    model_tokens,
     normalize_browse_part_type,
     normalize_gpu_maker_prefs,
     normalize_text,
@@ -576,6 +577,17 @@ def parse_danawa_browse_products(
     ctype = normalize_browse_part_type(part_type)
     items: List[Dict[str, Any]] = []
     seen = set()
+    for row in danawa_modern_products(html):
+        target = urljoin(search_url, row['url'])
+        if row['code'] in seen or not danawa_browse_candidate_valid(ctype, row['name'], row['category'], target, row['price']):
+            continue
+        seen.add(row['code'])
+        item = enrich_danawa_browse_product(ctype, row['code'], row['name'], row['price'], target,
+                                           absolute_image_url(row['image_url'], search_url), row['category'], row['rank'], row['spec_text'])
+        item.update(scraped_at=item['price_checked_at'], spec_text=row['spec_text'][:2000])
+        items.append(item)
+        if len(items) >= limit:
+            return items
     for block in danawa_candidate_blocks(html):
         category = category_from_danawa_block(block)
         base_url, base_name = first_anchor_from_block(block)
@@ -701,7 +713,7 @@ def retail_quote_valid(part_type: str, query: str, item: Dict[str, Any]) -> bool
         return not category or category == state.COMPUZONE_CATEGORY_IDS.get(part_type)
     return danawa_url_category_matches(part_type, url) and not danawa_url_rejected(part_type, url)
 
-def saved_market_page(part_type: str, query: str, page: int, limit: int, provider: str, verified_only: bool = False) -> Dict[str, Any]:
+def saved_market_page(part_type: str, query: str, page: int, limit: int, provider: str, verified_only: bool = False, exact_query: bool = False) -> Dict[str, Any]:
     """A retailer outage may reuse observed prices, keeping their original age."""
     rows = []
     for item in saved_products(part_type):
@@ -714,10 +726,7 @@ def saved_market_page(part_type: str, query: str, page: int, limit: int, provide
             if part_type == 'gpu' and gpu_series_key(query):
                 if gpu_search_metadata(item).get('series') != gpu_series_key(query):
                     continue
-            elif model_tokens(query) or re.search(r"\d\s*(?:GB|TB)\b", query, re.I):
-                if not compatible_price_name(query, item["name"]):
-                    continue
-            elif not all(token in canonical_name(item["name"]) for token in canonical_name(query).split()):
+            elif not (compatible_price_name(query, item['name']) if exact_query else product_matches_query(query, item)):
                 continue
         rows.append(item)
     start = (page - 1) * limit
@@ -749,14 +758,14 @@ def _market_fetch_html(url: str, provider: str, timeout: float = 8.0) -> str:
         charset = response.headers.get_content_charset() or ("cp949" if provider == "compuzone" else "utf-8")
     return raw.decode(charset, errors="replace")
 
-def _market_source_page(part_type: str, query: str, page: int, limit: int, provider: str, refresh: bool = False, timeout: float = 8.0, persist: bool = True) -> Dict[str, Any]:
-    key = (part_type, normalize_text(query), page, limit, provider, bool(refresh), bool(persist))
+def _market_source_page(part_type: str, query: str, page: int, limit: int, provider: str, refresh: bool = False, timeout: float = 8.0, persist: bool = True, exact_query: bool = False) -> Dict[str, Any]:
+    key = (part_type, normalize_text(query), page, limit, provider, bool(refresh), bool(persist), bool(exact_query))
     return _retail_flight.run(key, lambda: _market_source_page_uncached(
-        part_type, query, page, limit, provider, refresh, timeout, persist), timeout=max(.001, timeout))
+        part_type, query, page, limit, provider, refresh, timeout, persist, exact_query), timeout=max(.001, timeout))
 
 
-def _market_source_page_uncached(part_type: str, query: str, page: int, limit: int, provider: str, refresh: bool = False, timeout: float = 8.0, persist: bool = True) -> Dict[str, Any]:
-    key = (part_type, normalize_text(query), page, limit, provider)
+def _market_source_page_uncached(part_type: str, query: str, page: int, limit: int, provider: str, refresh: bool = False, timeout: float = 8.0, persist: bool = True, exact_query: bool = False) -> Dict[str, Any]:
+    key = (part_type, normalize_text(query), page, limit, provider, bool(exact_query))
     now = datetime.utcnow()
     with _retail_cache_lock:
         cached = state.MARKET_BROWSE_CACHE.get(key)
@@ -774,14 +783,28 @@ def _market_source_page_uncached(part_type: str, query: str, page: int, limit: i
     provider_query = query_used if query else ''
     url = danawa_browse_url(query_used, page, limit) if provider == "danawa" else compuzone_browse_url(part_type, provider_query, page, limit)
     base = {"provider": provider, "page": page, "source_url": url, "items": [], "total": None, "has_more": False, "cached": False}
+    started = time.monotonic()
     try:
         html = _market_fetch_html(url, provider, timeout)
         if provider == "danawa":
             all_items = parse_danawa_browse_products(html, url, part_type, 600)
-            raw_count = len(re.findall(r'<li\b[^>]*id=["\']productItem\d+', html, re.I))
+            raw_count = len(re.findall(r'<li\b[^>]*(?:id=["\']productItem\d+|data-product-seq=["\']\d+)', html, re.I))
             later_pages = [int(n) for n in re.findall(r'onclick=["\']paging\((\d+)\)', html, re.I)]
-            has_more = any(n > page for n in later_pages) or raw_count >= limit
-            recognized = bool(raw_count or 'productListArea' in html or '검색결과가 없습니다' in html)
+            later_pages += [int(n) for n in re.findall(r'aria-label=["\']페이지\s+(\d+)["\']', html)]
+            next_group = any(
+                re.search(r'\baria-label=["\']다음 페이지 그룹["\']', button)
+                and not re.search(r'\bdisabled(?:\s|=|/?>)', button, re.I)
+                for button in re.findall(r'<button\b[^>]*>', html, re.I)
+            )
+            has_more = next_group or any(n > page for n in later_pages) or raw_count >= limit
+            # Modern search also includes merchant-only rows without catalog
+            # pcodes. They are valid search pages, but cannot supply our SKU
+            # prices; keep pagination without inventing product identities.
+            merchant_page = bool(
+                re.search(r'<[^>]+\bid=["\']searchProductArea["\']', html, re.I)
+                and re.search(r'<a\b[^>]*\bhref=["\']https://prod\.danawa\.com/bridge/go_link_goods\.php\?', html, re.I)
+            )
+            recognized = bool(raw_count or merchant_page or 'productListArea' in html or '검색결과가 없습니다' in html)
         else:
             all_items = parse_compuzone_browse_products(html, url, part_type, 100)
             raw_count = len(re.findall(r'id=["\']li-pno-\d+', html, re.I))
@@ -790,14 +813,16 @@ def _market_source_page_uncached(part_type: str, query: str, page: int, limit: i
         if not recognized:
             raise ValueError("upstream returned an unrecognized page")
         items = [item for item in all_items if market_component_name_valid(part_type, item["name"])]
-        # Broad category search remains broad; explicit model/capacity constraints
-        # must not silently return a different variant from a grouped result.
+        # Free text accepts partial names/suffixes. Strict SKU identity remains
+        # in price quoting, and structured filters still select exact specs.
         if part_type == 'gpu':
             items = [{**item, **gpu_search_metadata(item)} for item in items]
         if series:
             items = [item for item in items if item.get('series') == series]
-        elif query and (model_tokens(query) or re.search(r'\d\s*(?:GB|TB)\b', query, re.I)):
-            items = [item for item in items if compatible_price_name(query, item["name"])]
+        elif query:
+            items = [item for item in items if (
+                compatible_price_name(query, item['name']) if exact_query else product_matches_query(query, item)
+            )]
         payload = {**base, "status": "live" if items else "empty", "items": items, "has_more": has_more,
                    "checked_at": now.isoformat(timespec="seconds") + "Z", "raw_count": raw_count}
         with _retail_cache_lock:
@@ -809,16 +834,20 @@ def _market_source_page_uncached(part_type: str, query: str, page: int, limit: i
             remember_products(part_type, items)
         return payload
     except (OSError, ValueError, HTTPException) as error:
-        logging.getLogger(__name__).warning("Retailer %s request failed (%s): %s", provider, type(error).__name__, error)
+        logging.getLogger(__name__).warning(
+            "Retailer %s request failed (%s; type=%s query=%r page=%d elapsed=%.2fs): %s",
+            provider, type(error).__name__, part_type, query_used, page, time.monotonic() - started, error,
+        )
         if cached and cached["payload"].get("items"):
             old = cached["payload"]
             items = [{**item, "price_status": "stale", "price_stale": True, "price_verified": False,
                       "price_source": provider + "_stale"} for item in old["items"]]
             return {**old, "status": "stale", "items": items, "cached": True, "error": "판매처 응답 지연으로 이전 확인 가격을 표시합니다."}
-        saved = saved_market_page(part_type, query, page, limit, provider)
+        saved = saved_market_page(part_type, query, page, limit, provider, exact_query=exact_query)
         if saved["items"]:
             return {**base, **saved, "error": "판매처 연결 지연으로 저장된 확인 가격을 표시합니다."}
-        timed_out = isinstance(error, TimeoutError) or isinstance(getattr(error, 'reason', None), TimeoutError)
+        timed_out = isinstance(error, (TimeoutError, SocketTimeout)) or isinstance(
+            getattr(error, 'reason', None), (TimeoutError, SocketTimeout))
         return {**base, "status": "unavailable", "query_failed": isinstance(error, ValueError),
                 "error_kind": "timeout" if timed_out else "upstream",
                 "error": "판매처 조회 제한 시간을 초과했습니다." if timed_out else
@@ -863,9 +892,7 @@ def market_products_response(part_type: Any, query: Any = "", page: Any = 1, lim
             if vrams and safe_int(item.get('vram')) not in vrams:
                 return False
         if query and not gpu_series_key(query):
-            if model_tokens(query) or re.search(r'\d\s*(?:GB|TB)\b', query, re.I):
-                return compatible_price_name(query, name)
-            return item.get('_query_applied') or all(token in canonical_name(name) for token in canonical_name(query).split())
+            return product_matches_query(query, item)
         return True
 
     def saved():
@@ -881,8 +908,10 @@ def market_products_response(part_type: Any, query: Any = "", page: Any = 1, lim
 
     def source_fetch(p, q, n, request_deadline=None):
         remaining = max(.001, (request_deadline or deadline) - time.monotonic())
-        result = _market_source_page(ctype, q, n, 20 if p == 'compuzone' else 40, p, force, min(4.0, remaining), persist)
-        return {**result, 'items':[{**row, '_query_applied':not query or normalize_text(query) in normalize_text(q)} for row in result['items']]}
+        # Modern rendered search pages are larger and may include a redirect.
+        # Allow their transfer to finish while keeping the whole search under
+        # its existing twelve-second deadline, including subsequent pages.
+        return _market_source_page(ctype, q, n, 20 if p == 'compuzone' else 40, p, force, min(8.0, remaining), persist)
 
     queries = [source_query]
     if ctype == 'gpu' and series and not model_key:
@@ -916,7 +945,7 @@ def market_products_response(part_type: Any, query: Any = "", page: Any = 1, lim
                 for old_key in [k for k,p in state.MARKET_SEARCH_CACHE.items() if p is oldest]:
                     state.MARKET_SEARCH_CACHE.pop(old_key, None)
     result = pager.page(page, limit, deadline=deadline)
-    items = [enrich_product({k:v for k,v in row.items() if k != '_query_applied'}, ctype)
+    items = [enrich_product(row, ctype)
              for row in _current_market_rows(result['items'], cached=result.get('reused', False))]
     sources = {provider: {**response, 'cached': True,
                          'status': 'cached' if response['status'] == 'live' else response['status']}
@@ -962,7 +991,7 @@ def fetch_market_top_product(query: Any, part_type: Any = "", timeout: float = 2
         search_query = re.sub(r'\b[3579]\s+(?=\d{4,5})', '', search_query)
         search_query = clean_visible_text(search_query)
     with ThreadPoolExecutor(max_workers=len(providers)) as executor:
-        results = list(executor.map(lambda p: _market_source_page(ctype, search_query, 1, 20, p, False, timeout), providers))
+        results = list(executor.map(lambda p: _market_source_page(ctype, search_query, 1, 20, p, False, timeout, exact_query=True), providers))
     matches = []
     for response in results:
         if response.get("status") not in {"live", "cached"}:

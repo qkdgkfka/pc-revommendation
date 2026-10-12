@@ -16,6 +16,7 @@ import math
 from pathlib import Path
 import re
 from urllib.parse import urlsplit
+from benchmark_interpolation import paired_transfer, interpolate_low
 
 SNAPSHOT_PATH = Path(__file__).resolve().parent / "data" / "game_benchmarks.json"
 _RESOLUTIONS = {"1080", "1440", "2160"}
@@ -33,6 +34,19 @@ def _positive_number(value):
     except (TypeError, ValueError, OverflowError):
         return None
     return result if math.isfinite(result) and result > 0 else None
+
+
+def _reference_ram_capacity(row):
+    capacity = _positive_number(row.get("reference_ram_gb"))
+    if capacity is not None:
+        return capacity
+    # Parse capacity only: DDR5-6000/CL30 describe speed/timings, not GB.
+    label = str(row.get("reference_ram") or "")
+    kit = re.search(r"(?<![\w.])(\d+(?:\.\d+)?)\s*(?:GB|GiB)\s*[x×]\s*(\d+)\b", label, re.I)
+    if kit:
+        return float(kit[1]) * float(kit[2])
+    match = re.search(r"(?<![\w.])(?:(\d+)\s*[x×]\s*)?(\d+(?:\.\d+)?)\s*(?:GB|GiB)\b", label, re.I)
+    return (float(match[1] or 1) * float(match[2])) if match else None
 
 
 @lru_cache(maxsize=1)
@@ -96,13 +110,16 @@ class _IdentityKey:
 
 
 def _test_group(row):
-    # Never pool different reviews, CPUs, game versions, or quality presets.
+    # Never pool different reviews, CPUs, memory, game versions, or presets.
     return (row["game"], row["cpu_id"], row["source_url"], row["published_at"],
-            row.get("game_version", ""), row["preset"], row.get("preset_label", ""), row.get("workload_note", ""))
+            row.get("game_version", ""), row["preset"], row.get("preset_label", ""),
+            row.get("workload_note", ""), row.get("reference_ram", ""), row.get("reference_ram_gb"))
 
 
-@lru_cache(maxsize=1)
+@lru_cache(maxsize=2)
 def _measurement_index(key):
+    # Average and 1% Low estimates alternate between the full snapshot and its
+    # low-only subset. Retain both so each estimate can reuse their indexes.
     by_game, fastest = defaultdict(list), {}
     for row in key.value:
         by_game[row["game"]].append(row)
@@ -125,16 +142,22 @@ def _reference_row(game, gpu_id, cpu_id, resolution, preset, rows_key, gpu_key, 
                   if row["gpu_id"] in gpu_index and row["cpu_id"] in cpu_index]
     if not candidates:
         return None
+    target_gpu = gpu_index.get(gpu_id, {})
+    def distance(row):
+        source = _performance(gpu_index[row['gpu_id']], resolution)
+        target = _performance(target_gpu, resolution)
+        return abs(math.log(target / source)) if source and target else float('inf')
     # Exact conditions win, including CPU when two reviews test the same GPU.
-    # Otherwise retain the GPU's own evidence before interpolating another GPU.
+    # Prefer measured requested settings to a generic preset conversion. Within
+    # that preset, retain the GPU's evidence for paired resolution transfers.
     return max(candidates, key=lambda row: (
         (row["gpu_id"], row["cpu_id"], row["resolution"], row["preset"])
         == (gpu_id, cpu_id, resolution, preset),
-        row["gpu_id"] == gpu_id, row["resolution"] == resolution,
-        row["preset"] == preset,
         -abs(_PRESET_ORDER[row["preset"]] - _PRESET_ORDER[preset]),
+        row["gpu_id"] == gpu_id, row["resolution"] == resolution,
         row["cpu_id"] == cpu_id,
         -abs(int(row["resolution"]) - int(resolution)),
+        -distance(row),
     ))
 
 
@@ -144,6 +167,7 @@ def clear_caches():
     _measurement_index.cache_clear()
     _catalog_index.cache_clear()
     _reference_row.cache_clear()
+    _low_measurements.cache_clear()
 
 
 def quality_factor(preset, cpu_weight):
@@ -172,6 +196,9 @@ def _smooth_limit(gpu_fps, cpu_fps):
 
 def interpolated_gpu_observation(anchor, target_perf, rows, gpu_index):
     """Interpolate only inside a measured, same-review/game/preset curve."""
+    target_perf = _positive_number(target_perf)
+    if target_perf is None:
+        return None
     peers=[r for r in rows if _test_group(r)==_test_group(anchor)
            and r["resolution"]==anchor["resolution"] and r["gpu_id"] in gpu_index
            and _performance(gpu_index[r["gpu_id"]],r["resolution"])]
@@ -183,6 +210,90 @@ def interpolated_gpu_observation(anchor, target_perf, rows, gpu_index):
     fraction=math.log(target_perf/perf(a))/math.log(perf(b)/perf(a))
     value=math.exp(math.log(a["avg_fps"])*(1-fraction)+math.log(b["avg_fps"])*fraction)
     return value,[a,b]
+
+
+@lru_cache(maxsize=1)
+def _low_measurements(rows_key):
+    # Average-only reviews must not hide another review's measured lows.
+    return _IdentityKey(tuple(row for row in rows_key.value if row.get('low1_fps')))
+
+
+def estimate_low_from_measurements(gpu, cpu, ram, game, resolution, preset,
+                                   average, rows_key, gpu_key, cpu_key):
+    """Predict the tail independently; never manufacture it from a fixed ratio.
+
+    Matched observations and within-review interpolation take precedence. For
+    unsupported changes, carry the measured excess tail frame time forward.
+    This assumes the excess is CPU/workload-sensitive and is explicitly a low
+    confidence extrapolation, not a measured result or a statistical interval.
+    """
+    lows_key = _low_measurements(rows_key)
+    row = _reference_row(game, gpu['id'], cpu['id'], resolution, preset,
+                         lows_key, gpu_key, cpu_key)
+    if row is None:
+        return None, dict(low1_method='unavailable', low1_estimated=True,
+                          low1_confidence='unavailable', low1_range=None,
+                          low1_unavailable_reason='해당 게임의 검증된 1% Low 실측 자료가 없습니다')
+    gpu_index, cpu_index = _catalog_index(gpu_key), _catalog_index(cpu_key)
+    game_rows = _measurement_index(lows_key)[0][game]
+    same_gpu = row['gpu_id'] == gpu['id']
+    same_cpu = row['cpu_id'] == cpu['id']
+    same_resolution = row['resolution'] == resolution
+    same_preset = row['preset'] == preset
+    reference_avg, reference_low = row['avg_fps'], row['low1_fps']
+    curve = None if same_gpu else interpolated_gpu_observation(
+        row, _performance(gpu, row['resolution']), game_rows, gpu_index)
+    if curve:
+        reference_avg = curve[0]
+        reference_low = interpolate_low(curve, _performance(gpu, row['resolution']),
+                                         gpu_index, row['resolution'])
+    transfers = []
+    unresolved = []
+    if not same_gpu and not curve:
+        unresolved.append('GPU 실측 범위 밖')
+    for axis, target, same in (('resolution', resolution, same_resolution),
+                               ('cpu_id', cpu['id'], same_cpu)):
+        anchor = dict(row, resolution=resolution) if axis == 'cpu_id' else row
+        transfer = None if same else paired_transfer(anchor, axis, target, game_rows, gpu_index, gpu)
+        if transfer and transfer.get('low_ratio'):
+            reference_avg *= transfer['ratio']
+            reference_low *= transfer['low_ratio']
+            transfers.append(transfer)
+        elif not same:
+            unresolved.append('해상도 실측 보간 자료 없음' if axis == 'resolution' else 'CPU별 1% Low 실측 자료 없음')
+    reference_ram = _reference_ram_capacity(row)
+    capacity = _positive_number(ram.get('gb')) or 16
+    if not same_preset:
+        unresolved.append('옵션별 1% Low 실측 자료 없음')
+    measured = same_gpu and same_cpu and same_resolution and same_preset and not unresolved
+    low = reference_low
+    if unresolved:
+        # Preserve observed tail overhead in milliseconds instead of boosting
+        # the low by the average-FPS multiplier when lowering graphic settings.
+        excess_ms = max(0.0, 1000 / reference_low - 1000 / reference_avg)
+        cpu_scale = (_positive_number(cpu_index[row['cpu_id']].get('perf')) or 1) / (_positive_number(cpu.get('perf')) or 1)
+        if not same_cpu and not any(item['axis'] == 'cpu_id' for item in transfers):
+            excess_ms *= cpu_scale
+        low = 1000 / (1000 / average + excess_ms)
+    if low > average:
+        unresolved.append('평균 FPS와 1% Low 출처의 테스트 장면 차이로 평균 이하 상한 적용')
+        measured = False
+    confidence = 'high' if measured and reference_ram == capacity else 'low' if unresolved else 'medium'
+    allowance = .10 if confidence == 'high' else .25 if confidence == 'medium' else .50
+    return round(min(average, low), 1), {
+        'low1_method': 'measured' if measured else 'interpolated',
+        'low1_estimated': not measured, 'low1_confidence': confidence,
+        'low1_range': {'min': round(min(average, low) * (1-allowance), 1),
+                       'max': round(min(average, low * (1+allowance)), 1)},
+        'low1_range_method': 'heuristic_allowance_not_statistical_interval',
+        'low1_source_url': row['source_url'], 'low1_source_title': row['source_title'],
+        'low1_reference_preset': row['preset_label'], 'low1_reference_resolution': row['resolution'],
+        'low1_reference_fps': row['low1_fps'], 'low1_reference_avg_fps': row['avg_fps'],
+        'low1_metric': row.get('low_metric', 'reported_1_percent_low'),
+        'low1_calculation': 'measured' if measured else 'measured_excess_frame_time' if unresolved else 'independent_measured_low_interpolation',
+        'low1_assumptions': unresolved, 'low1_paired_transfers': transfers,
+        'low1_unavailable_reason': '',
+    }
 
 
 def estimate_from_measurements(gpu, cpu, ram, game, resolution, preset, profile, catalogs):
@@ -220,29 +331,52 @@ def estimate_from_measurements(gpu, cpu, ram, game, resolution, preset, profile,
     cpu_anchor_fraction = .65 + .30 * weight
     reference_cpu_ceiling = float(cpu_anchor["avg_fps"]) * anchor_resolution_scale / cpu_anchor_fraction
     reference_average = float(row["avg_fps"])
-    curve=None
+    by_game, _ = _measurement_index(rows_key)
+    game_rows = by_game.get(game, ())
+    curve = None
     if not same_gpu:
-        by_game,_=_measurement_index(rows_key)
-        target_at_reference=_performance(gpu,row["resolution"])
+        target_at_reference = _performance(gpu, row["resolution"])
         if target_at_reference:
-            curve=interpolated_gpu_observation(row,target_at_reference,by_game.get(game,()),gpu_index)
-            if curve:reference_average=curve[0]
+            curve = interpolated_gpu_observation(row, target_at_reference, game_rows, gpu_index)
+            if curve:
+                reference_average = curve[0]
+    resolution_transfer = paired_transfer(row, 'resolution', resolution, game_rows, gpu_index, gpu)
+    if resolution_transfer:
+        reference_average *= resolution_transfer['ratio']
+        reference_cpu_ceiling = max(reference_cpu_ceiling, reference_average / cpu_anchor_fraction)
+    reference_resolution = resolution if resolution_transfer else row['resolution']
+    reference_gpu_perf = _performance(gpu if curve else source_gpu, reference_resolution)
+    if reference_gpu_perf is None:
+        return None
     reference_gpu_ceiling = reference_average / (
         1.0 - (reference_average / reference_cpu_ceiling) ** _FRAME_POWER
     ) ** (1.0 / _FRAME_POWER)
-    gpu_scale = target_gpu_perf / (_performance(gpu,row["resolution"]) if curve else source_gpu_perf)
+    gpu_scale = target_gpu_perf / reference_gpu_perf
     gpu_scale *= quality_factor(preset, weight) / quality_factor(row["preset"], weight)
     gpu_ceiling = reference_gpu_ceiling * gpu_scale
     cpu_ceiling = reference_cpu_ceiling * cpu_ratio * _CPU_QUALITY[preset] / _CPU_QUALITY[row["preset"]]
     limited_average = _smooth_limit(gpu_ceiling, cpu_ceiling)
+    cpu_transfer = paired_transfer(dict(row, resolution=resolution), 'cpu_id', cpu_id, game_rows, gpu_index, gpu)
+    if cpu_transfer:
+        reference_limit = reference_cpu_ceiling * _CPU_QUALITY[preset] / _CPU_QUALITY[row['preset']]
+        limited_average = min(gpu_ceiling, _smooth_limit(gpu_ceiling, reference_limit) * cpu_transfer['ratio'])
+        # Infer a ceiling consistent with the paired estimate; it remains a model.
+        fraction = min(1 - 1e-9, limited_average / gpu_ceiling)
+        cpu_ceiling = limited_average / (1 - fraction ** _FRAME_POWER) ** (1 / _FRAME_POWER)
     gb = _positive_number(ram.get("gb")) or 16.0
-    ram_scale = .85 if gb <= 8 else .94 if gb < 16 else .98 if gb < 32 and profile.get("ram_hungry") else 1.0
+    reference_ram_gb = _reference_ram_capacity(row)
+    ram_capacity_match = reference_ram_gb == gb if reference_ram_gb is not None else None
+    def capacity_factor(capacity):
+        return (.85 if capacity <= 8 else .94 if capacity < 16
+                else .98 if capacity < 32 and profile.get("ram_hungry") else 1.0)
+    # A measurement already includes its test system's memory constraint.
+    # Apply only the relative capacity difference, never the penalty twice.
+    ram_scale = capacity_factor(gb) / capacity_factor(reference_ram_gb or 32)
     measured = same_gpu and same_cpu and same_resolution and same_preset and ram_scale == 1.0
     average = reference_average if measured else limited_average * ram_scale
-    scale = average / float(row["avg_fps"])
-    low_is_estimated = row.get("low1_fps") is None or not measured
-    low_ratio = min(1.0, _positive_number(profile.get("low1")) or .78)
-    low = float(row.get("low1_fps") or reference_average * low_ratio) * scale
+    low, low_evidence = estimate_low_from_measurements(
+        gpu, cpu, ram, game, resolution, preset, average, rows_key, gpu_key, cpu_key)
+    low_is_estimated = low_evidence['low1_estimated']
     missing = []
     if row.get("workload_note"):
         missing.append(row["workload_note"])
@@ -251,21 +385,31 @@ def estimate_from_measurements(gpu, cpu, ram, game, resolution, preset, profile,
     if not same_gpu:
         missing.append("같은 게임·설정의 인접 GPU 실측 사이에서 보간" if curve else "GPU 성능 지수로 보정")
     if not same_cpu:
-        missing.append("테스트 CPU 대비 처리 성능과 게임별 부하로 보정")
+        missing.append("같은 리뷰·게임·설정의 CPU별 실측 비율로 보정" if cpu_transfer else "테스트 CPU 대비 처리 성능과 게임별 부하로 보정")
     if not same_resolution:
-        missing.append("다른 해상도의 측정치를 성능 지수로 보정")
+        if resolution_transfer and resolution_transfer.get('method') == 'resolution_frame_time_interpolation':
+            missing.append("동일 GPU·CPU·리뷰·설정의 두 해상도 실측 사이에서 픽셀 수에 따른 프레임 처리 시간을 보간")
+        else:
+            missing.append("같은 리뷰·게임·설정의 해상도별 실측 비율로 보정" if resolution_transfer else "다른 해상도의 측정치를 성능 지수로 보정")
     if not same_preset:
         missing.append(f"원본 {row['preset_label']} 프리셋에서 옵션 배율로 추정")
     if ram_scale != 1:
-        missing.append("메모리 용량 부족 보정")
+        missing.append("테스트 메모리 대비 용량 차이를 모델로 보정")
+    if ram_capacity_match is None:
+        missing.append("원문 RAM 용량이 확인되지 않아 선택한 메모리와 동일한 테스트 조건인지 확인할 수 없습니다")
+    elif not ram_capacity_match:
+        missing.append(f"원문 RAM {reference_ram_gb:g}GB와 선택한 {gb:g}GB가 다릅니다. 동일 CPU·GPU의 실측 참고값이며 메모리 차이의 영향은 검증되지 않았습니다")
     if low_is_estimated:
-        missing.append("1% Low는 추정치")
+        missing.append(low_evidence.get('low1_unavailable_reason') or '1% Low는 실측 자료를 별도로 보간·보정한 추정치')
+    if low_evidence.get('low1_calculation') == 'measured_excess_frame_time':
+        missing.append('1% Low는 원문에서 관측된 추가 프레임 지연을 유지하는 모델 추정이며 옵션·CPU 변경 효과는 실측 검증되지 않았습니다')
     if anchor_resolution_scale > 1.0:
         missing.append("고해상도 측정의 GPU 부하를 보정해 CPU 여유를 추정")
     missing.append("병목률은 게임 실측 기준의 모델 추정이며 별도 CPU 벤치마크 실측값이 아닙니다")
     missing.append("패치·테스트 장면·메모리·드라이버 차이에 따라 실제 FPS가 달라집니다")
-    uncertainty = .10 if measured else min(.50, .18 + (.12 if not same_gpu else 0) + (.10 if not same_resolution else 0) + (.08 if cpu_ratio < .6 else 0))
-    confidence = "high" if measured else "medium" if same_gpu and same_resolution and cpu_ratio >= .6 else "low"
+    matched_memory = ram_capacity_match is True
+    uncertainty = .10 if measured and matched_memory else min(.50, .18 + (.12 if not same_gpu else 0) + (.10 if not same_resolution else 0) + (.08 if cpu_ratio < .6 else 0))
+    confidence = "high" if measured and matched_memory else "medium" if same_gpu and same_resolution and same_preset and cpu_ratio >= .6 else "low"
     limiter = "cpu" if cpu_ceiling < gpu_ceiling * .9 else "gpu" if gpu_ceiling < cpu_ceiling * .9 else "balanced"
     bottleneck = {
         "estimated": True, "method": "benchmark_calibrated_frame_time_limit",
@@ -282,6 +426,7 @@ def estimate_from_measurements(gpu, cpu, ram, game, resolution, preset, profile,
         "note": "선택한 게임·해상도·옵션의 추정입니다. CPU 제한율은 추정 GPU 상한 대비 감소량이며 범용 병목 퍼센트가 아닙니다.",
     }
     evidence = {
+        "paired_transfers": [item for item in (resolution_transfer, cpu_transfer) if item],
         "gpu_interpolation": ([{"gpu_id":r["gpu_id"],"avg_fps":r["avg_fps"],"source_url":r["source_url"]} for r in curve[1]] if curve else []),
         "method": "measured_benchmark" if measured else "benchmark_calibrated",
         "confidence": confidence, "range": {"min": round(average * (1 - uncertainty), 1), "max": round(average * (1 + uncertainty), 1)},
@@ -290,9 +435,12 @@ def estimate_from_measurements(gpu, cpu, ram, game, resolution, preset, profile,
         "reference_cpu": row["reference_cpu"], "reference_preset": row["preset_label"],
         "reference_resolution": row["resolution"], "reference_avg_fps": row["avg_fps"],
         "reference_low1_fps": row.get("low1_fps"), "reference_ram": row.get("reference_ram", "not reported"),
+        "reference_ram_gb": reference_ram_gb, "ram_capacity_match": ram_capacity_match,
+        "workload_note": row.get("workload_note", ""), "game_version": row.get("game_version", ""),
         "published_at": row["published_at"], "collected_at": row["collected_at"],
         "low1_estimated": low_is_estimated, "bottleneck": bottleneck,
         "notes": missing, "conditions": f"{row['resolution']}p · {row['preset_label']} · Native · RT/프레임 생성 OFF",
         "range_method": "heuristic_allowance_not_statistical_interval",
+        **low_evidence,
     }
-    return round(average, 1), round(min(average, low), 1), evidence
+    return round(average, 1), low, evidence

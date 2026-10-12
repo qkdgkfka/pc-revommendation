@@ -23,6 +23,8 @@ from product_metadata import (
 )
 from product_images import fetch_product_image, retailer_image_url, product_page_key
 from component_compatibility import platform_compatibility
+from component_quality import component_quality, recognized_brand, quality_value_scores, is_nvme
+from power_requirements import gold_or_better, recommended_psu_watt
 from typing import Any, Dict, List, Optional, Tuple
 from recommendation_policy import (
     cpu_allowed,
@@ -37,6 +39,8 @@ from recommendation_policy import (
     gaming_power_weights,
     gaming_objective,
     build_preference,
+    preferred_ram_brand,
+    preferred_ram_candidates,
 )
 from server_catalogs import (
     CPU_CATALOG,
@@ -97,18 +101,17 @@ def score_gpu(part: Dict[str, Any], budget: int, resolution: str, tier: str, gam
 def score_cpu(part: Dict[str, Any], budget: int, resolution: str, refresh: int, tier: str, game: str, rng: random.Random) -> float:
     price = max(1, fps_service.part_price(part, "cpu"))
     perf = safe_float(part.get("perf"), 0.0)
-    if not budget:
-        target = {"low": 70, "mid": 84, "high": 98}[tier]
-        return performance_fit(perf, target) + 0.05 * cpu_preference(part, "game")
-    target_price = budget * (0.23 if resolution == "1080" else 0.17 if resolution == "1440" else 0.13)
-    if refresh >= 144 and resolution == "1080":
-        target_price *= 1.10
-    price_fit = 1.0 - min(1.0, abs(price - target_price) / max(1.0, target_price))
-    perf_score = perf / 100.0
-    tier_bonus = 0.08 if part.get("tier") == tier else 0.03 if (tier == "low" and part.get("tier") == "mid") or (tier == "mid" and part.get("tier") == "high") else 0.0
     game_class, _ = pricing.game_profile(game)
-    genre_bonus = 0.07 if game_class in {"fps", "mmo"} and refresh >= 120 else 0.04 if game_class == "sim" else 0.0
-    return (0.48 * price_fit + 0.32 * perf_score + tier_bonus + genre_bonus + cpu_preference(part, "work"))
+    target = {"low": 58, "mid": 68, "high": 76}[tier]
+    if resolution == "1080" and refresh >= 144 and game_class in {"fps", "mmo", "sim"}:
+        target += 8
+    perf_fit = performance_fit(perf, target)
+    if not budget:
+        return perf_fit + 0.05 * cpu_preference(part, "game")
+    target_price = budget * {"1080": .18, "1440": .13, "2160": .10}.get(resolution, .18)
+    # No bonus for spending up to an allocation once a sufficient CPU is found.
+    price_fit = 1.0 - min(1.0, max(0.0, price - target_price) / max(1.0, target_price))
+    return 0.48 * price_fit + 0.52 * perf_fit + 0.05 * cpu_preference(part, "game")
 
 def score_ram(part: Dict[str, Any], budget: int, resolution: str, tier: str, game: str, rng: random.Random) -> float:
     price = max(1, fps_service.part_price(part, "ram"))
@@ -170,10 +173,6 @@ def tier_budget_for_user(budget: int, tier: str, budget_min: int = 0) -> int:
         return lower + int(span * {"low": 0.30, "mid": 0.65, "high": 1.00}.get(tier, 1.00))
     return max(300000, int(budget_max * {"low": 0.55, "mid": 0.80, "high": 1.00}[tier]))
 
-def recommended_psu_watt(cpu: Dict[str, Any], gpu: Dict[str, Any]) -> int:
-    need = safe_float(cpu.get("tdp"), 65.0) + safe_float(gpu.get("tdp"), 150.0) + 180.0
-    return int(math.ceil(need / 50.0) * 50)
-
 def build_power_score(parts: Dict[str, Dict[str, Any]], resolution: str) -> float:
     gpu = parts.get("gpu") or {}
     cpu = parts.get("cpu") or {}
@@ -220,8 +219,10 @@ def verified_recommendation_inventory() -> Dict[str, List[Dict[str, Any]]]:
         response = retail.market_products_response(kind, source="all", limit=40)
         rows = {product_page_key(row.get("url")): dict(row) for row in saved_products(kind)}
         rows.update({product_page_key(row.get("url")): dict(row) for row in response["items"]})
-        selected, groups = [], {}
-        for row in sorted(rows.values(), key=lambda r: (-gpu_preference(r) if kind=="gpu" else 0, safe_int(r.get("price"), 0))):
+        groups = {}
+        for row in sorted(rows.values(), key=lambda r: (
+                -gpu_preference(r) if kind == "gpu" else -component_quality(r, kind) if kind in {"ram", "storage"} else 0,
+                safe_int(r.get("price"), 0))):
             name = row.get("product_name") or row.get("name") or ""
             if not (database.verified_price_info(row) and retail.retail_quote_valid(kind, name, row)
                     and all(row.get(field) for field in required[kind])
@@ -231,20 +232,31 @@ def verified_recommendation_inventory() -> Dict[str, List[Dict[str, Any]]]:
                 continue
             if kind == "gpu" and not pricing.is_recommendable_gpu(row):
                 continue
+            if kind == "psu" and not gold_or_better(row):
+                continue
             # Keep platform/capacity diversity without downloading every retailer SKU.
             group = ((row.get("performance_ref_id") or name), gpu_maker_normalize(name) if kind == "gpu" else "") if kind in {"cpu", "gpu"} else tuple(row.get(field) for field in required[kind])
             if kind == "gpu":group = (*group, gpu_product_band(row))
+            if kind == "ram":group = (*group, preferred_ram_brand(row))
+            if kind == "storage":
+                group = (*group, recognized_brand(row, kind), is_nvme(row), round(component_quality(row, kind), 2))
             if kind == "mb":
                 chipset = re.search(r"(?<![A-Z0-9])([ABHXZ]\d{3}E?)(?=[^A-Z0-9]|M|I|$)", name.upper())
                 group = (row.get("socket"), row.get("ram_type"), chipset.group(1) if chipset else name)
-            if groups.get(group, 0) >= 2:
-                continue
-            groups[group] = groups.get(group, 0) + 1
             row["scraped_at"] = row.get("price_checked_at") or row.get("scraped_at")
-            selected.append(row)
+            bucket = groups.setdefault(group, [])
+            if len(bucket) < 2:
+                bucket.append(row)
+            elif kind == "ram" and safe_int(row.get("price"), 0) < safe_int(bucket[1].get("price"), 0):
+                # Quality-first sorting must not eliminate affordable modules
+                # before the premium penalty and budget can be evaluated.
+                # First is the best specification; second retains the cheapest.
+                bucket[1] = row
+        selected = [row for bucket in groups.values() for row in bucket]
         # Sample across the price range instead of discarding all later/high-end models.
         limit = 128 if kind in {"cpu", "gpu"} else 48
         if len(selected) > limit:
+            selected.sort(key=lambda p: safe_int(p.get("price"), 0))
             selected = [selected[round(i * (len(selected) - 1) / (limit - 1))] for i in range(limit)]
         return selected
 
@@ -414,7 +426,8 @@ def mb_candidates_for(cpu: Dict[str, Any], ram: Dict[str, Any], mb_pool: List[Di
 def psu_candidates_for(cpu: Dict[str, Any], gpu: Dict[str, Any], psu_pool: List[Dict[str, Any]],
                        tier: str, tier_budget: int, price_cache: Dict[Tuple[str, str], int]) -> List[Dict[str, Any]]:
     need = recommended_psu_watt(cpu, gpu)
-    compatible = [psu for psu in psu_pool if safe_int(psu.get("watt"), 0) >= need]
+    compatible = [psu for psu in psu_pool
+                  if gold_or_better(psu) and safe_int(psu.get("watt"), 0) >= need]
     if not compatible:
         return []
     if not tier_budget:
@@ -450,8 +463,18 @@ def storage_candidates_for(storage_pool: List[Dict[str, Any]], tier: str, tier_b
     # Preserve a cheap fallback and an NVMe option if available.
     ranked=sorted(storage_pool, key=lambda p: (-storage_score(p), cached_part_price(p, "storage", price_cache)))[:3]
     anchors=[min(storage_pool,key=lambda p:cached_part_price(p,"storage",price_cache))] if storage_pool else []
-    nvme=[p for p in storage_pool if storage_preference(p)>=.07]
+    nvme=[p for p in storage_pool if is_nvme(p)]
     if nvme:anchors.append(min(nvme,key=lambda p:cached_part_price(p,"storage",price_cache)))
+    # Capacity-only grouping used to discard reputable/faster SSDs before the
+    # complete build could compare them. Keep the best value at each capacity.
+    values = quality_value_scores(storage_pool, "storage", lambda p: cached_part_price(p, "storage", price_cache))
+    by_capacity = {}
+    for part, value in zip(storage_pool, values):
+        capacity = safe_float(part.get("capacity"), 0)
+        rank = (value, -cached_part_price(part, "storage", price_cache))
+        if capacity not in by_capacity or rank > by_capacity[capacity][0]:
+            by_capacity[capacity] = (rank, part)
+    anchors.extend(part for _, part in by_capacity.values())
     return list({part_cache_key(p):p for p in ranked+anchors}.values())
 
 def normalize_work_profile(value: Any) -> str:
@@ -654,13 +677,15 @@ def make_plan_from_raw_parts(
     storage = raw_parts["storage"]
     fps = dict(fps_bundle) if fps_bundle is not None else fps_service.estimate_fps_bundle(gpu, cpu, ram, game, resolution, refresh, tier, genres)
     high_avg = safe_float(fps.get("fps_by_option", {}).get("high"), 0.0)
-    high_low1 = safe_float(fps.get("low1_by_option", {}).get("high"), 0.0)
+    high_low1 = fps.get("low1_by_option", {}).get("high")
 
     why = [
         f"{'4K' if resolution == '2160' else 'QHD' if resolution == '1440' else 'FHD'} 기준으로 조합 전체 가격과 호환성 계산",
         f"{refresh}Hz 목표에 맞춘 GPU/CPU/RAM 병목 보정",
     ]
-    if game_class == "fps":
+    if high_low1 is None:
+        why.append("1% Low 실측 자료가 없어 평균 FPS와 부품 성능을 기준으로 추천")
+    elif game_class == "fps":
         why.append("FPS 장르라 CPU 응답성과 1% Low 안정성을 더 반영")
     elif game_class == "rpg":
         why.append("AAA/RPG 장르라 GPU 평균 FPS와 VRAM 여유를 더 반영")
@@ -672,6 +697,7 @@ def make_plan_from_raw_parts(
         why.append("GPU 제조사 가격 후보 우선: " + ", ".join(gpu_maker_label(x) for x in gpu_maker_prefs))
     if fps.get("fps_source") in {"measured_benchmark", "benchmark_calibrated"}:
         why.append("공개 게임별 실측 벤치마크를 기준 구성·해상도·프리셋별로 반영")
+    why.append("RAM·SSD는 같은 용량의 제품끼리 제조사 인지도·명시된 사양·추가 비용을 함께 비교")
     if state.DB_CACHE.get("loaded"):
         why.append("SQLite 벤치마크/가격 데이터 우선 사용")
 
@@ -826,6 +852,41 @@ class CandidateEvaluationCache:
             )
         return self.work_scores[key]
 
+def retain_game_candidates(ranked, pool, kind, evaluate, target_fps, target_low1,
+                           price_cache, max_price):
+    """Keep game-performance and value leaders missed by generic pre-ranking.
+
+    Evaluate each affordable silicon model once, against fixed reference parts.
+    At most two models are added; full-build compatibility/budget checks still
+    run below. FPS comes from the same estimator used in the final response.
+    """
+    models = {}
+    for part in sorted(pool, key=lambda p: (cached_part_price(p, kind, price_cache), part_cache_key(p))):
+        if 0 < cached_part_price(part, kind, price_cache) <= max_price:
+            models.setdefault(performance_model_key(part, kind), part)
+    retained = {performance_model_key(part, kind) for part in ranked}
+    if not models.keys() - retained:
+        return ranked
+    scores = []
+    for model, part in models.items():
+        bundle = evaluate(part)
+        average = safe_float(bundle.get('high_setting_avg_fps'), 0)
+        low = safe_float(bundle.get('high_setting_low1_fps'), 0)
+        low_fit = (min(1.0, average / max(1, target_fps)) if bundle.get('high_setting_low1_fps') is None
+                   else min(1.0, low / max(1, target_low1)))
+        attainment = 4 * min(1.0, average / max(1, target_fps)) + 2 * low_fit
+        price = cached_part_price(part, kind, price_cache)
+        scores.append((attainment, average, low, -price, model, part))
+    fastest = max(scores, key=lambda item: item[:-1])
+    value = max(scores, key=lambda item: (item[0] / -item[3], *item[:-1]))
+    result = list(ranked)
+    for item in (fastest, value):
+        if item[4] not in retained:
+            result.append(item[5])
+            retained.add(item[4])
+    return result
+
+
 def build_tier_candidates(user: Any, tier: str, rng: random.Random, limit: int = 36,
                           shared_fps: Optional[Dict[Tuple[str, str, str], Dict[str, Any]]] = None,
                           inventory: Optional[Dict[str, List[Dict[str, Any]]]] = None) -> List[Dict[str, Any]]:
@@ -870,6 +931,7 @@ def build_tier_candidates(user: Any, tier: str, rng: random.Random, limit: int =
                         and (gpu_pref == "ANY" or normalize_text(p.get("vendor")) == normalize_text(gpu_pref))]
     mb_pool = filter_compatible_mb(cpu_pool, mb_pool)
     ram_pool = filter_compatible_ram(mb_pool, ram_pool)
+    ram_pool = preferred_ram_candidates(ram_pool)
     if mode == "work" and request.unlimited:
         requirements = WORK_PROFILES[request.work_profile]["requirements"]
         cpu_pool = [p for p in cpu_pool if safe_float(p.get("perf"), 0) >= requirements.get("cpu", 0)]
@@ -894,6 +956,11 @@ def build_tier_candidates(user: Any, tier: str, rng: random.Random, limit: int =
     gpu_ranked = rank_parts_for_tier(gpu_pool, "gpu", tier_budget, resolution, refresh, tier, game, genres, price_cache, rng, 10, mode, request.work_profile)
     ram_ranked = rank_parts_for_tier(ram_pool, "ram", tier_budget, resolution, refresh, tier, game, genres, price_cache, rng, len(ram_pool))
     storage_ranked = storage_candidates_for(storage_pool, tier, tier_budget, price_cache)
+    accessory_values = {
+        kind: dict(zip((part_cache_key(p) for p in pool), quality_value_scores(
+            pool, kind, lambda p: cached_part_price(p, kind, price_cache))))
+        for kind, pool in (("ram", ram_pool), ("storage", storage_pool))
+    }
     evaluations = CandidateEvaluationCache(request, tier, tier_budget, price_cache, mb_pool, psu_pool, shared_fps)
 
     best_by_pair = {}
@@ -902,6 +969,22 @@ def build_tier_candidates(user: Any, tier: str, rng: random.Random, limit: int =
     target_fps = fps_service.target_fps_for_game(tier, refresh, game)
     target_low1 = target_fps * pricing.low1_ratio_for_genres(genres or [game_class])
     max_total = request.search_ceiling
+
+    if mode == 'game':
+        reference_cpu = max(cpu_pool, key=lambda p: safe_float(p.get('perf'), 0))
+        reference_gpu = max(gpu_pool, key=lambda p: fps_service.gpu_base_perf(p, resolution))
+        reference_ram = min(ram_ranked, key=lambda p: abs(safe_float(p.get('gb'), 16) - 32))
+        def component_ceiling(kind):
+            minimum = min(cached_part_price(p, kind, price_cache) for p in pools[kind])
+            return max_total - (lower_bound - minimum)
+        gpu_ranked = retain_game_candidates(
+            gpu_ranked, gpu_pool, 'gpu',
+            lambda gpu: evaluations.fps_for(gpu, reference_cpu, reference_ram, complete=False),
+            target_fps, target_low1, price_cache, component_ceiling('gpu'))
+        cpu_ranked = retain_game_candidates(
+            cpu_ranked, cpu_pool, 'cpu',
+            lambda cpu: evaluations.fps_for(reference_gpu, cpu, reference_ram, complete=False),
+            target_fps, target_low1, price_cache, component_ceiling('cpu'))
 
     for gpu in gpu_ranked:
         gpu_model = performance_model_key(gpu, "gpu")
@@ -949,13 +1032,19 @@ def build_tier_candidates(user: Any, tier: str, rng: random.Random, limit: int =
                                     gpu_perf=fps_service.gpu_base_perf(gpu, resolution),
                                     gpu_target=gaming_gpu_target(resolution, refresh, tier),
                                     fps_ratio=fps_ratio,
-                                    low1_ratio=low1_avg / max(1.0, target_low1),
+                                    low1_ratio=(low1_avg / max(1.0, target_low1)
+                                                if fps.get('low1_by_option', {}).get('high') is not None else None),
                                     budget_fit=budget_fit, unlimited=request.unlimited,
                                     ram_gb=safe_float(ram.get("gb"), 16),
                                     cpu_loss=safe_float((fps.get("bottleneck") or {}).get("cpu_penalty_pct"), 0) / 100,
                                     parts=raw_parts,
+                                    resolution=resolution,
+                                    cpu_price=cached_part_price(cpu, "cpu", price_cache),
+                                    gpu_price=cached_part_price(gpu, "gpu", price_cache),
                                 )
                                 score += 0.15 * min(1.0, safe_float(storage.get("capacity"), 0) / (2000 if tier == "high" else 1000))
+                            score += .45 * sum(accessory_values[kind][part_cache_key(raw_parts[kind])]
+                                               for kind in ("ram", "storage"))
                             item = (score, raw_parts, total, budget_fit, overrun, power)
                             rank = candidate_rank(item)
                             if pair not in best_by_pair or rank < best_by_pair[pair][0]:
@@ -1010,7 +1099,7 @@ def plan_ordering_metrics(plan: Dict[str, Any]) -> Dict[str, float]:
     }
 
 def tier_upgrade_quality(lower: Dict[str, Any], upper: Dict[str, Any]) -> int:
-    """-1 rejects any regression; 0/1/2 distinguish equal/small/clear upgrades.
+    """-1 rejects regressions/marginal steps; 1/2 are CPU/game or GPU/work steps.
 
     FPS may tie in a capped game. A faster GPU or CPU still provides a real
     tier distinction, whereas an expensive board or PSU alone does not.
@@ -1022,8 +1111,6 @@ def tier_upgrade_quality(lower: Dict[str, Any], upper: Dict[str, Any]) -> int:
     lower_id = performance_model_key(lower_gpu, "gpu")
     upper_id = performance_model_key(upper_gpu, "gpu")
     work = lower.get("mode") == "work" and upper.get("mode") == "work"
-    if not work and lower_id and lower_id == upper_id:
-        return -1
     if lower.get("price_order_required") or upper.get("price_order_required"):
         if safe_int(upper.get("totalPrice"), 0) <= safe_int(lower.get("totalPrice"), 0):
             return -1
@@ -1034,13 +1121,17 @@ def tier_upgrade_quality(lower: Dict[str, Any], upper: Dict[str, Any]) -> int:
         key: upper_metrics.get(key, 0.0) - lower_metrics.get(key, 0.0)
         for key in ("gpu", "cpu", "fps", "work")
     }
-    if not work and gains["gpu"] < max(2.0, lower_metrics.get("gpu", 0.0) * 0.05):
-        return -1
-    if work and gains["work"] < 2.0:
-        return -1
-    if any(gain >= max(2.0, lower_metrics.get(key, 0.0) * 0.05) for key, gain in gains.items()):
-        return 2
-    return 1 if any(gain > 1e-6 for gain in gains.values()) else 0
+    if work:
+        return 2 if gains["work"] >= max(5.0, lower_metrics.get("work", 0.0) * .10) else -1
+    # A different SKU or a 5% index change is too small for a distinct tier.
+    gpu_upgrade = lower_id != upper_id and gains["gpu"] >= max(3.0, lower_metrics.get("gpu", 0.0) * .15)
+    # CPU-bound games may benefit from the same GPU with a faster CPU, but the
+    # selected game must show a material average or 1% Low gain as well.
+    game_gain = any(upper_metrics.get(key, 0) - lower_metrics.get(key, 0)
+                    >= max(5.0, lower_metrics.get(key, 0) * .15) for key in ("fps", "low1"))
+    cpu_limited = ((lower.get("fps") or {}).get("bottleneck") or {}).get("limiting_component") == "cpu"
+    cpu_upgrade = cpu_limited and gains["cpu"] >= max(3.0, lower_metrics.get("cpu", 0.0) * .10) and game_gain
+    return 2 if gpu_upgrade else 1 if cpu_upgrade else -1
 
 def select_ordered_tier_plans(candidate_sets: Dict[str, List[Dict[str, Any]]]) -> Dict[str, Dict[str, Any]]:
     """Find the best valid chain with hard component and FPS constraints.
@@ -1097,6 +1188,21 @@ def complete_recommendation_tiers(results, candidate_sets, request):
         plan["budget_mode"] = request.budget_mode
         plan["tierBudget"] = request.tier_budget(tier)
         plan.setdefault("predictions", {}).setdefault("tier", {})["label"] = tier
+        if previous:
+            before, after = plan_ordering_metrics(previous), plan_ordering_metrics(plan)
+            gains = {key: round(100 * (after.get(key, 0) / before[key] - 1), 1)
+                     for key in ("gpu", "cpu", "fps", "low1", "work") if before.get(key, 0) > 0}
+            label = {"low": "실속 구성", "mid": "균형 구성", "high": "고성능 구성"}[previous["tier"]]
+            if request.mode == "work":
+                detail = f"작업 성능 지수 +{gains.get('work', 0):g}%"
+            else:
+                detail = (f"GPU 성능 지수 +{gains.get('gpu', 0):g}%" if gains.get("gpu", 0) >= 15
+                          else f"CPU 병목 개선 · 예상 1% Low +{gains.get('low1', 0):g}%")
+                detail += f" · 예상 평균 FPS +{gains.get('fps', 0):g}%"
+            plan["tier_upgrade"] = {"from_tier": previous["tier"], "gains_pct": gains,
+                                    "summary": f"{label} 대비 {detail}"}
+        else:
+            plan.pop("tier_upgrade", None)
         pricing.recompute_plan_total(plan)
         completed[tier] = plan
         previous = plan

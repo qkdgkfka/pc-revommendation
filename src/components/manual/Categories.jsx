@@ -8,7 +8,7 @@ function Categories({ type, parts }) {
   const store = useStore();
   return h(
     "nav",
-    { className: "pc-categories", "aria-label": "부품 카테고리" },
+    { className: "pc-categories ui-panel", "aria-label": "부품 카테고리" },
     BUILDER_PARTS.map((meta) =>
       h(
         Button,

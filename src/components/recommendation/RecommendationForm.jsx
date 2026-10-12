@@ -1,6 +1,6 @@
 import React from "react";
 import { useApp } from "../../state/context.jsx";
-import { Icon } from "../Controls.jsx";
+import { Icon, SegmentedControl } from "../Controls.jsx";
 import GamePicker from "../GamePicker.jsx";
 import { WorkSelect } from "../WorkSelect.jsx";
 
@@ -23,6 +23,10 @@ const CHIPSETS = [
   { value: "nopref", label: "선호 없음" },
   { value: "nvidia", label: "NVIDIA" },
   { value: "amd", label: "AMD" },
+];
+const PURPOSES = [
+  { value: "game", label: "게임", id: "panelModeGame" },
+  { value: "work", label: "작업", id: "panelModeWork" },
 ];
 const MAKERS = [
   ["msi", "MSI"],
@@ -100,7 +104,7 @@ export default function RecommendationForm() {
   const loading = state.recommendation.loading;
   return (
     <form
-      className="ai-form"
+      className="ai-form ui-panel"
       aria-labelledby="ai-form-heading"
       onSubmit={(event) => {
         event.preventDefault();
@@ -139,23 +143,12 @@ export default function RecommendationForm() {
         </p>
       </Field>
       <Field title="사용 목적">
-        <div className="ai-purpose">
-          {[
-            ["game", "게임", "panelModeGame"],
-            ["work", "작업", "panelModeWork"],
-          ].map(([value, label, id]) => (
-            <button
-              type="button"
-              key={value}
-              id={id}
-              aria-pressed={state.panelMode === value}
-              className={state.panelMode === value ? "is-selected" : ""}
-              onClick={() => store.update({ panelMode: value })}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          label="사용 목적"
+          options={PURPOSES}
+          value={state.panelMode}
+          onChange={(panelMode) => store.update({ panelMode })}
+        />
         {state.panelMode === "game" ? (
           <div id="panelGameSub" className="ai-purpose-detail">
             <GamePicker />

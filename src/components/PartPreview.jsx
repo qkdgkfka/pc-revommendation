@@ -57,6 +57,7 @@ export default function PartPreview({ part, type, children }) {
     }, 220);
   };
   const price = effectivePrice(part);
+  const provenance = priceProvenance(part);
   return (
     <div
       ref={target}
@@ -95,9 +96,9 @@ export default function PartPreview({ part, type, children }) {
                 <span className="preview-price">
                   {price == null ? "가격 미확인" : money(price)}
                 </span>
-                <span className="preview-source">
-                  {priceProvenance(part).text}
-                </span>
+                {provenance.text && (
+                  <span className="preview-source">{provenance.text}</span>
+                )}
               </div>
             </div>,
             document.body,

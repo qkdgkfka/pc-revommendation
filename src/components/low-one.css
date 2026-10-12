@@ -1,0 +1,19 @@
+.pc-low1-metric {
+  margin-top: 14px;
+  padding: 11px 12px;
+  border: 1px solid var(--pc-line);
+  border-radius: var(--pc-radius-sm);
+  background: var(--pc-surface);
+}
+.pc-low1-metric > div:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--pc-text-sm);
+}
+.pc-low1-metric strong {
+  font-variant-numeric: tabular-nums;
+  color: var(--pc-ink);
+}

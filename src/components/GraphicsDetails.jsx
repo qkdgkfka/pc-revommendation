@@ -1,8 +1,12 @@
 import React from "react";
-const display = (value) =>
-  Number.isFinite(Number(value))
-    ? Number(value).toLocaleString("ko-KR", { maximumFractionDigits: 1 })
-    : "—";
+import { nonNegativeNumber } from "../domain/numbers.js";
+import { safeExternalUrl } from "../domain/urls.js";
+const display = (value) => {
+  const number = nonNegativeNumber(value);
+  return number === null
+    ? "—"
+    : number.toLocaleString("ko-KR", { maximumFractionDigits: 1 });
+};
 /** Loaded only after the user expands graphics details. */
 export default function GraphicsDetails({ fps, id }) {
   const rows = (fps.graphics_modes || []).filter(
@@ -55,9 +59,8 @@ export default function GraphicsDetails({ fps, id }) {
                   : [row.source_url],
               ),
             ]
-              .filter(
-                (url) => typeof url === "string" && /^https:\/\//.test(url),
-              )
+              .map(safeExternalUrl)
+              .filter(Boolean)
               .map((url, index) => (
                 <a
                   key={url}

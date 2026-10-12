@@ -1,5 +1,6 @@
 """Shared Danawa extraction; matching policies and optional soup stay with callers."""
 import re
+from html.parser import HTMLParser
 from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
 from urllib.parse import parse_qsl, urljoin, urlsplit
 
@@ -7,6 +8,104 @@ from product_parsing import clean_visible_text, parse_price_value, strip_html_ta
 
 
 DANAWA_PRODUCT_LINK_SELECTOR = ".prod_name a, a[name='productName'], a.prod_name, a"
+
+
+class _SearchNode:
+    def __init__(self, tag, attrs, parent=None):
+        self.tag, self.attrs, self.parent = tag, dict(attrs), parent
+        self.children = []
+
+    def text(self):
+        return ''.join(child.text() if isinstance(child, _SearchNode) else child for child in self.children)
+
+    def walk(self):
+        yield self
+        for child in self.children:
+            if isinstance(child, _SearchNode):
+                yield from child.walk()
+
+
+class _ModernDanawaParser(HTMLParser):
+    """Read rendered product cards; never execute or depend on Next.js scripts."""
+    _VOID = {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'}
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.cards, self.stack = [], []
+
+    def handle_starttag(self, tag, attrs):
+        if not self.stack:
+            if tag != 'li' or not str(dict(attrs).get('data-product-seq', '')).isdigit():
+                return
+            node = _SearchNode(tag, attrs)
+            self.cards.append(node)
+        else:
+            node = _SearchNode(tag, attrs, self.stack[-1])
+            self.stack[-1].children.append(node)
+        if tag not in self._VOID:
+            self.stack.append(node)
+
+    def handle_startendtag(self, tag, attrs):
+        self.handle_starttag(tag, attrs)
+        if tag not in self._VOID:
+            self.handle_endtag(tag)
+
+    def handle_endtag(self, tag):
+        for index in range(len(self.stack) - 1, -1, -1):
+            if self.stack[index].tag == tag:
+                del self.stack[index:]
+                break
+
+    def handle_data(self, text):
+        if self.stack:
+            self.stack[-1].children.append(text)
+
+
+def danawa_modern_products(html: str) -> Iterator[Dict[str, Any]]:
+    """Extract each visible option's own name, price, category and retail SKU."""
+    if 'data-product-seq' not in html:
+        return
+    parser = _ModernDanawaParser()
+    parser.feed(html)
+    for rank, card in enumerate(parser.cards, 1):
+        nodes = list(card.walk())
+        images = [node for node in nodes if node.tag == 'img']
+        title = next((node.text() for node in nodes if node.tag == 'a'
+                      and node.parent and node.parent.tag == 'p'
+                      and 'prod.danawa.com/info/' in node.attrs.get('href', '')), '')
+        name = clean_visible_text(title or (images[0].attrs.get('alt') if images else ''))
+        if not name:
+            continue
+        category = next((node.text() for node in nodes if node.tag == 'dl' and '상품분류' in node.text()), '')
+        image = next((node.attrs.get('data-src') or node.attrs.get('src') for node in images
+                      if node.attrs.get('data-src') or node.attrs.get('src')), '')
+        for anchor in (node for node in nodes if node.tag == 'a'):
+            price = re.fullmatch(r'([\d,]+)\s*원', clean_visible_text(anchor.text()))
+            if not price:
+                continue
+            url = anchor.attrs.get('href', '')
+            try:
+                code = dict(parse_qsl(urlsplit(url).query)).get('pcode', '')
+            except ValueError:
+                continue
+            if not code.isdigit():
+                continue
+            # The label and price must share their option row. Climbing only
+            # within this card cannot borrow another card's capacity or price.
+            row, labels = anchor.parent, []
+            while row and row is not card and row.tag not in {'ul', 'li'}:
+                labels = [node for node in row.walk() if node.tag == 'span'
+                          and 'truncate' in node.attrs.get('class', '').split()]
+                if labels:
+                    break
+                row = row.parent
+            if len(labels) != 1:
+                continue
+            label = clean_visible_text(labels[0].text())
+            yield {'code': code, 'name': f'{name} ({label})' if label and label not in name else name,
+                   'price': parse_price_value(price.group(1)), 'url': url, 'category': clean_visible_text(category),
+                   'image_url': image, 'spec_text': clean_visible_text(card.text()), 'rank': rank}
+
 _CATEGORY_TOKENS = {
     "gpu": ("그래픽", "vga"),
     "cpu": ("cpu", "프로세서"),

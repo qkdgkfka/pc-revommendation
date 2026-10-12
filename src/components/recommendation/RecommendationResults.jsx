@@ -1,7 +1,9 @@
-import React, { lazy, Suspense, useEffect, useState } from "react";
+import React, { lazy, Suspense, useEffect } from "react";
 import { useApp } from "../../state/context.jsx";
 import { Icon } from "../Controls.jsx";
-const RecommendationCard = lazy(() => import("./RecommendationCard.jsx"));
+import RecommendationProgress from "./RecommendationProgress.jsx";
+const loadRecommendationCard = () => import("./RecommendationCard.jsx");
+const RecommendationCard = lazy(loadRecommendationCard);
 
 const TIERS = ["low", "mid", "high"];
 function Placeholder() {
@@ -41,51 +43,16 @@ function LoadingResults() {
     </div>
   );
 }
-function RecommendationProgress({ hasPrevious, startedAt, onCancel }) {
-  const secondsSinceStart = () =>
-    Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
-  const [elapsed, setElapsed] = useState(secondsSinceStart);
-  useEffect(() => {
-    const updateElapsed = () =>
-      setElapsed(Math.max(0, Math.floor((Date.now() - startedAt) / 1000)));
-    updateElapsed();
-    const timer = setInterval(updateElapsed, 1000);
-    return () => clearInterval(timer);
-  }, [startedAt]);
-  return (
-    <div className="ai-progress">
-      <div className="ai-progress-message" role="status">
-        <strong>
-          <span className="spinner" aria-hidden="true" />
-          {hasPrevious
-            ? "견적을 다시 분석하고 있어요"
-            : "조건에 맞는 견적을 분석하고 있어요"}
-          <span className="ai-progress-time" aria-hidden="true">
-            {elapsed}초
-          </span>
-        </strong>
-        <p>
-          {elapsed >= 8
-            ? "판매처 응답에 따라 시간이 더 걸릴 수 있어요. 조건을 유지한 채 취소할 수 있어요."
-            : "판매가와 제품 사진, 부품 호환성과 예상 성능을 확인해요."}
-        </p>
-        {hasPrevious ? (
-          <p>아래는 이전 분석 결과예요. 새 결과가 준비되면 바뀝니다.</p>
-        ) : null}
-      </div>
-      <button type="button" className="ai-cancel" onClick={onCancel}>
-        분석 취소
-      </button>
-    </div>
-  );
-}
 export default function RecommendationResults() {
   const { state, store } = useApp(["recommendation", "lastRecommendation"]);
   const { loading, error, kind } = state.recommendation;
   const recommendation = state.lastRecommendation;
+  useEffect(() => {
+    if (loading) void loadRecommendationCard().catch(() => {});
+  }, [loading]);
   return (
     <section
-      className="ai-results"
+      className="ai-results ui-panel"
       id="resultsWrap"
       aria-labelledby="ai-results-heading"
     >
@@ -133,9 +100,7 @@ export default function RecommendationResults() {
               ))}
             </div>
           </Suspense>
-        ) : loading ? (
-          <LoadingResults />
-        ) : (
+        ) : loading ? null : (
           <Placeholder />
         )}
       </div>

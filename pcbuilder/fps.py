@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import sqlite3
 import copy
+from functools import lru_cache
 from threading import RLock
 from product_metadata import (
     canonical_name,
@@ -13,6 +14,7 @@ from product_metadata import (
     safe_int,
 )
 from game_benchmarks import estimate_from_measurements, load_measurements
+from bottleneck_estimation import estimate_bottleneck
 from graphics_estimates import graphics_scenarios
 from typing import Any, Dict, List, Optional, Tuple
 from server_catalogs import (
@@ -43,6 +45,7 @@ def _fps_revision():
     import game_database
     import graphics_estimates
     import rendering_calibration
+    import ray_tracing_estimates
     fields = ('id', 'name', 'performance_ref_id', 'perf', 'perf_1080', 'perf_1440',
               'perf_2160', 'gb', 'type', 'speed')
     references = tuple((kind, tuple(tuple(part.get(field) for field in fields) for part in rows))
@@ -50,6 +53,7 @@ def _fps_revision():
     revision = (database_stamp(), file_stamp(game_benchmarks.SNAPSHOT_PATH),
                 file_stamp(game_database.DB_PATH), file_stamp(str(game_database.DB_PATH) + '-wal'),
                 file_stamp(rendering_calibration.CALIBRATION_PATH),
+                file_stamp(ray_tracing_estimates.RT_DATA_PATH),
                 references)
     if revision != _benchmark_revision:
         with _benchmark_lock:
@@ -57,7 +61,8 @@ def _fps_revision():
                 game_benchmarks.clear_caches()
                 for function in (graphics_estimates.graphics_measurements,
                                  graphics_estimates.feature_support,
-                                 rendering_calibration.calibration_data):
+                                 rendering_calibration.calibration_data,
+                                 ray_tracing_estimates.rt_data):
                     clear = getattr(function, 'cache_clear', None)
                     if clear:
                         clear()
@@ -213,13 +218,24 @@ def db_lookup_benchmarks(part: Dict[str, Any], game: str, fallback_all: bool = T
     return all_samples
 
 
+@lru_cache(maxsize=1)
+def _game_alias_index(options):
+    aliases = {}
+    for identifier, label, names in options:
+        for name in (label, *names):
+            # Preserve the catalog's first-match precedence for shared aliases.
+            aliases.setdefault(normalize_text(name).replace(" ", "_"), identifier)
+    return aliases
+
+
 def normalized_game_key(game: Any) -> str:
     key = normalize_text(game).replace(" ", "_")
+    # Include the actual lookup fields so replacement, reordering, and in-place
+    # edits invalidate the index without normalizing every name on each call.
+    options = tuple((item["id"], item["label"], tuple(item.get("aliases") or ()))
+                    for item in GAME_OPTIONS)
     aliases = {"cs2": "csgo2", "cyberpunk_2077": "cyberpunk2077", "apex_legends": "apex", "final_fantasy_xiv": "ffxiv"}
-    for item in GAME_OPTIONS:
-        if key == normalize_text(item["label"]).replace(" ", "_"):
-            return item["id"]
-    return aliases.get(key, key)
+    return _game_alias_index(options).get(key, aliases.get(key, key))
 
 def game_frame_cap(game: Any) -> Optional[float]:
     return state.GAME_FRAME_CAPS.get(normalized_game_key(game))
@@ -329,7 +345,7 @@ def adjust_benchmark_quality(avg: float, low: float, source_setting: str, target
     return avg * ratio, low * ratio
 
 def estimate_fps_from_catalog(gpu: Dict[str, Any], cpu: Dict[str, Any], ram: Dict[str, Any],
-                              game: str, resolution: str, setting: str) -> Tuple[float, float]:
+                              game: str, resolution: str, setting: str) -> Tuple[float, Optional[float]]:
     g = normalize_text(game).replace(" ", "_")
     profile = GAME_FPS_PROFILES.get(g, GAME_FPS_PROFILES["default"])
     base = hierarchy_fps(gpu, resolution, setting)
@@ -343,8 +359,7 @@ def estimate_fps_from_catalog(gpu: Dict[str, Any], cpu: Dict[str, Any], ram: Dic
     else:
         raw = base * profile["scale"].get(resolution, 1.0)
     avg = max(5.0, raw * cpu_fps_factor(cpu, game, resolution, setting, raw) * ram_fps_factor(ram, game))
-    low1 = avg * safe_float(profile.get("low1"), 0.78)
-    return round(avg, 1), round(low1, 1)
+    return round(avg, 1), None
 
 def estimate_fps_from_db(gpu: Dict[str, Any], game: str, resolution: str, setting: str) -> Optional[Tuple[float, float]]:
     samples = db_lookup_benchmarks(gpu, game, fallback_all=False)
@@ -401,7 +416,7 @@ def _estimate_fps_bundle_uncached(gpu: Dict[str, Any], cpu: Dict[str, Any], ram:
                                 game: str, resolution: str, refresh: int, tier: str, genres: List[str],
                                 *, high_only: bool = False) -> Dict[str, Any]:
     fps_by_option: Dict[str, float] = {}
-    low1_by_option: Dict[str, float] = {}
+    low1_by_option: Dict[str, Optional[float]] = {}
     option_evidence: Dict[str, Dict[str, Any]] = {}
     game = normalized_game_key(game)
     genre_class, _ = pricing.game_profile(game)
@@ -415,7 +430,8 @@ def _estimate_fps_bundle_uncached(gpu: Dict[str, Any], cpu: Dict[str, Any], ram:
         if measured:
             avg, low, evidence = measured
         else:
-            avg, low = estimate_fps_from_catalog(gpu, cpu, ram, game, resolution, opt)
+            avg, _ = estimate_fps_from_catalog(gpu, cpu, ram, game, resolution, opt)
+            low = None
             cpu_norm = retail.clamp(safe_float(cpu.get("perf"), 0.0) / 100.0, .16, 1.08)
             cpu_ceiling = profile["cpu_cap"][resolution] * (.48 + cpu_norm * .64) * {"low":1.18,"medium":1.08,"high":1.,"ultra":.94}[opt]
             gpu_ceiling = max(avg, hierarchy_fps(gpu, resolution, opt) or avg) * profile["scale"][resolution]
@@ -423,34 +439,39 @@ def _estimate_fps_bundle_uncached(gpu: Dict[str, Any], cpu: Dict[str, Any], ram:
             gpu_penalty = max(0, 1 - avg / max(avg, cpu_ceiling)) * 100
             evidence = {
                 "method": "model_estimate", "confidence": "low", "low1_estimated": True,
+                "low1_method": "unavailable", "low1_confidence": "unavailable", "low1_range": None,
+                "low1_unavailable_reason": "해당 게임의 검증된 1% Low 실측 자료가 없습니다",
                 "source_url": "", "source_title": "", "reference_gpu": "", "reference_cpu": "",
                 "conditions": "게임별 실측 자료 없음 · Native · RT/프레임 생성 OFF",
                 "range": {"min": round(avg * .60, 1), "max": round(avg * 1.40, 1)},
                 "range_method": "heuristic_allowance_not_statistical_interval",
-                "notes": ["해당 게임의 검증된 실측 데이터가 없어 GPU 지수와 게임 부하 모델로 추정했습니다", "1% Low는 추정치"],
+                "notes": ["해당 게임의 검증된 실측 데이터가 없어 GPU 지수와 게임 부하 모델로 추정했습니다", "1% Low 실측 자료 없음 · 고정 비율로 생성하지 않습니다"],
                 "bottleneck": {"estimated": True, "cpu_penalty_pct": cpu_penalty,
+                               "cpu_fps_ceiling": cpu_ceiling, "gpu_fps_ceiling": gpu_ceiling,
                                "gpu_penalty_pct": gpu_penalty, "limiting_component": "cpu" if cpu_penalty > gpu_penalty else "gpu",
                                "method": "workload_model", "note": "게임 부하 모델 추정 · 실측 병목률 아님"},
             }
-        bottleneck = evidence.get("bottleneck") or {}
-        if "gpu_penalty_pct" not in bottleneck:
-            bottleneck["gpu_penalty_pct"] = max(0, 1 - avg / max(avg, safe_float(bottleneck.get("cpu_fps_ceiling"), avg))) * 100
-        cpu_percent = round(retail.clamp(safe_float(bottleneck.get("cpu_penalty_pct"), 0), 0, 100), 1)
-        gpu_percent = round(retail.clamp(safe_float(bottleneck.get("gpu_penalty_pct"), 0), 0, 100), 1)
-        bottleneck.update({"cpu_percent": cpu_percent, "gpu_percent": gpu_percent,
-                           "percent": max(cpu_percent, gpu_percent),
-                           "limiting_component": "balanced" if max(cpu_percent, gpu_percent) < 10 else "cpu" if cpu_percent >= gpu_percent else "gpu",
-                           "comparison_source_url": "https://pc-builds.com/ko/bottleneck-calculator/",
-                           "note": "선택 게임·해상도·옵션의 성능 여유 차이를 퍼센트로 보정한 자체 추정 · PC-Builds 수치와는 다를 수 있음"})
+        evidence['bottleneck'] = estimate_bottleneck(
+            gpu, cpu, game, resolution, opt, avg, evidence, load_measurements(), CATALOGS,
+            frame_cap=cap)
         if cap:
-            avg, low = min(avg, cap), min(low, cap)
+            avg, low = min(avg, cap), min(low, cap) if low is not None else None
             evidence["range"] = {key: round(min(value, cap), 1) for key, value in evidence["range"].items()}
+            if evidence.get('low1_range'):
+                evidence['low1_range'] = {key: round(min(value, cap), 1) for key, value in evidence['low1_range'].items()}
         fps_by_option[opt] = round(avg, 1)
-        low1_by_option[opt] = round(min(avg, max(1.0, low)), 1)
+        low1_by_option[opt] = round(min(avg, max(1.0, low)), 1) if low is not None else None
         option_evidence[opt] = evidence
 
-    # Preserve every measured value. Preset interpolation is monotonic by
-    # construction; a source measurement must not be rewritten to enforce order.
+    # Different review scenes/patches need not have comparable preset FPS.
+    # Preserve evidence, and disclose that distinction instead of sorting or
+    # clamping source values to create a misleading smooth preset curve.
+    contexts = {tuple(item.get(key, "") for key in
+                      ("source_url", "reference_cpu", "reference_ram", "game_version", "workload_note"))
+                for item in option_evidence.values()}
+    preset_comparable = len(contexts) <= 1
+    comparison_note = ("옵션별 테스트 출처나 환경이 달라 FPS를 직접 비교하기 어려울 수 있습니다."
+                       if not preset_comparable else "")
     high_avg, high_low = fps_by_option["high"], low1_by_option["high"]
     evidence = option_evidence["high"]
     target_fps = target_fps_for_game(tier, refresh, game)
@@ -469,11 +490,14 @@ def _estimate_fps_bundle_uncached(gpu: Dict[str, Any], cpu: Dict[str, Any], ram:
         "capacity_label": metrics["capacity_label"], "frame_cap": cap, "fps_source": fps_source,
         "fps_source_label": {"measured_benchmark": "동일 CPU·GPU 실측 참고", "benchmark_calibrated": "실측 기반 보정 추정", "model_estimate": "모델 추정 · 실측 자료 없음"}[fps_source],
         "confidence": evidence["confidence"], "option_evidence": option_evidence,
+        "preset_comparable": preset_comparable, "preset_comparison_note": comparison_note,
         "fps_range_by_option": {opt: item["range"] for opt, item in option_evidence.items()},
         "benchmark_source_url": evidence["source_url"], "benchmark_source_title": evidence["source_title"],
         "benchmark_reference_gpu": evidence["reference_gpu"], "benchmark_reference_cpu": evidence["reference_cpu"],
         "benchmark_conditions": evidence["conditions"], "estimation_notes": evidence["notes"],
         "low1_is_estimated": evidence["low1_estimated"],
+        "low1_method": evidence["low1_method"], "low1_confidence": evidence["low1_confidence"],
+        "low1_range_by_option": {opt: item.get('low1_range') for opt, item in option_evidence.items()},
         "bottleneck": evidence.get("bottleneck", {"estimated": True, "limiting_component": "unknown", "note": "게임별 실측 자료가 없어 병목을 신뢰성 있게 계산할 수 없습니다"}),
         "bottleneck_by_option": {opt: item.get("bottleneck") for opt, item in option_evidence.items()},
     }
@@ -497,11 +521,12 @@ def attach_graphics_modes(fps, gpu, cpu, game, resolution, *, persist=False):
         from game_database import save_prediction, digest
         from graphics_estimates import graphics_measurements, feature_support
         from rendering_calibration import calibration_data
+        from ray_tracing_estimates import rt_data
         conditions={"gpu":gpu.get("performance_ref_id") or gpu.get("id"),
                     "cpu":cpu.get("performance_ref_id") or cpu.get("id"),
                     "game":game,"resolution":resolution,"preset":"high",
                     "native_options":fps["fps_by_option"],"bottleneck":fps.get("bottleneck")}
-        revision="graphics-v4-reviewed-pairs:"+digest([list(graphics_measurements()),feature_support(),calibration_data()])
+        revision="graphics-v5-native-rt-pairs:"+digest([list(graphics_measurements()),feature_support(),calibration_data(),rt_data()])
         save_prediction(conditions,fps["graphics_modes"],revision)
     except (sqlite3.Error, OSError, ValueError):
         logging.warning("Could not persist graphics prediction", exc_info=True)

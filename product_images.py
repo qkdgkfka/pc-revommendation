@@ -5,15 +5,16 @@ import hashlib
 import tempfile
 import time
 
-DISK_CACHE_DIR = Path(__file__).resolve().parent / "data" / "product_images"
 from html.parser import HTMLParser
 from threading import RLock
 from time import monotonic
 from urllib.parse import parse_qs, urljoin, urlparse, urlunparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 from pcbuilder.cache import SingleFlight
+from url_safety import safe_external_url
 
 
+DISK_CACHE_DIR = Path(__file__).resolve().parent / "data" / "product_images"
 MAX_BYTES = 5 * 1024 * 1024
 CACHE_BYTES = 24 * 1024 * 1024
 CACHE_SECONDS = 6 * 60 * 60
@@ -31,7 +32,10 @@ IMAGE_DOMAINS = (
 def retailer_image_url(value):
     """The public image endpoint must not become a general URL proxy."""
     try:
-        parsed = urlparse(str(value or '').strip())
+        raw = safe_external_url(value)
+        if not raw:
+            return ''
+        parsed = urlparse(raw)
         host = (parsed.hostname or '').lower()
         allowed = any(host == domain or host.endswith('.' + domain)
                       for domain in IMAGE_DOMAINS)

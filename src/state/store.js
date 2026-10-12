@@ -1,4 +1,5 @@
 import { catalogPatch } from "./catalog.js";
+import { createFpsCalculator } from "./fpsCalculator.js";
 import {
   initialState,
   recommendationDefaults,
@@ -123,6 +124,8 @@ export function createAppStore(options = {}) {
     let data;
     try {
       data = await response.json();
+      if (!data || typeof data !== "object" || Array.isArray(data))
+        throw new Error("JSON object required");
     } catch {
       throw new RequestError(
         "upstream",
@@ -626,6 +629,13 @@ export function createAppStore(options = {}) {
     );
   }
   return {
+    ...createFpsCalculator({
+      getState,
+      publish,
+      requests,
+      json,
+      timeout: options.timeout,
+    }),
     getState,
     subscribe: (listener) => {
       listeners.add(listener);

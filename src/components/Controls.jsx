@@ -41,3 +41,39 @@ export function Button({ children, onClick, className = "", ...props }) {
     children,
   );
 }
+
+export function PageHeading({ title, children }) {
+  return (
+    <header className="ui-page-heading">
+      <h2>{title}</h2>
+      <p>{children}</p>
+    </header>
+  );
+}
+
+export function SegmentedControl({
+  label,
+  options,
+  value,
+  onChange,
+  className = "",
+}) {
+  return (
+    <div
+      className={`ui-segmented ${className}`}
+      role="group"
+      aria-label={label}
+    >
+      {options.map((option) => (
+        <Button
+          key={option.value}
+          id={option.id}
+          aria-pressed={value === option.value}
+          onClick={() => onChange(option.value)}
+        >
+          {option.label}
+        </Button>
+      ))}
+    </div>
+  );
+}

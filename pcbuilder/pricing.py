@@ -165,6 +165,8 @@ def fps_capacity_label(
         return "측정 대기"
 
     average_coverage = average / target
+    if low1_fps is None:
+        return ('평균 목표 충족' if average_coverage >= 1 else '평균 목표 미달') + ' · 1% Low 자료 없음'
     low1_coverage = low1 / low_target if low_target > 0 else average_coverage
     if average_coverage >= 1.20 and low1_coverage >= 1.0:
         return "목표 성능 여유"
@@ -199,8 +201,8 @@ def value_metrics(
         "target_fps": round(target, 1),
         "target_low1_fps": round(low_target, 1),
         "target_coverage": round(target_coverage, 3),
-        "low1_target_coverage": round(low1_target_coverage, 3),
-        "capacity_label": fps_capacity_label(avg_fps, low1, target, low_target),
+        "low1_target_coverage": round(low1_target_coverage, 3) if low1_fps is not None else None,
+        "capacity_label": fps_capacity_label(avg_fps, low1_fps, target, low_target),
     }
 
 def value_label(value_score: float) -> str:
@@ -457,7 +459,7 @@ def recompute_plan_total(plan: Dict[str, Any]) -> None:
             plan["predictions"][part_type]["pred_price"] = safe_int(parts[part_type].get("price"), 0)
     fps = plan.setdefault("fps", {})
     high = safe_float(fps.get("fps_by_option", {}).get("high"), 0.0)
-    high_low1 = safe_float(fps.get("low1_by_option", {}).get("high"), 0.0)
+    high_low1 = fps.get("low1_by_option", {}).get("high")
     plan["cost_per_frame"] = round(total / high) if total > 0 and high > 0 else None
     fps["cost_per_frame"] = plan["cost_per_frame"]
     fps["price_per_frame_krw"] = None

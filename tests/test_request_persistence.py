@@ -29,6 +29,7 @@ class RequestPersistenceTests(unittest.TestCase):
         with patch('graphics_estimates.calibration_data', return_value=empty), \
              patch('rendering_calibration.calibration_data', return_value=empty), \
              patch('graphics_estimates.graphics_measurements', return_value=()), \
+             patch('ray_tracing_estimates.rt_data', return_value={}), \
              patch('graphics_estimates.feature_support', return_value={'cyberpunk2077': {'dlss': True, 'fg': True, 'mfg': True}}):
             response = server.fps_estimate_response({
                 'gpu': 'gpu_rtx5070', 'cpu': 'cpu_r5_7600', 'ram': 'ram_32_ddr5',

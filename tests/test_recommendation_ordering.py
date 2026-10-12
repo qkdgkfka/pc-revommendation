@@ -126,6 +126,8 @@ class CatalogRecommendationTests(unittest.TestCase):
                 for lower, upper in zip(values, values[1:]):
                     self.assertFalse(upper.get("same_configuration"))
                     self.assertGreater(server.tier_upgrade_quality(lower, upper), 0)
+                    self.assertEqual(lower['tier'], upper['tier_upgrade']['from_tier'])
+                    self.assertIn('대비', upper['tier_upgrade']['summary'])
                 for result in values:
                     parts = result["parts"]
                     self.assertGreater(result["totalPrice"], 0)

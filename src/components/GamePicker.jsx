@@ -37,9 +37,11 @@ export default function GamePicker({ manual = false }) {
     id = useId();
   const category = manual ? state.csGameCategory : state.gameCategory,
     value = manual ? state.csGame : state.game,
-    games = state.games.filter(
-      (game) => gameCategoryFor(game.id, state.games) === category,
-    ),
+    games = open
+      ? state.games.filter(
+          (game) => gameCategoryFor(game.id, state.games) === category,
+        )
+      : [],
     selected = state.games.find((game) => game.id === value);
   useEffect(() => {
     if (!open) return;

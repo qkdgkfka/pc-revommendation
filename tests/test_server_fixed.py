@@ -33,7 +33,9 @@ class FpsEstimatorTests(unittest.TestCase):
         self.assertGreater(fps["fps_by_option"]["high"], 0)
         self.assertGreater(fps["fps_by_option"]["low"], fps["fps_by_option"]["high"])
         self.assertIn("percent", fps["bottleneck"])
-        self.assertIn("gamersnexus.net", fps["benchmark_source_url"])
+        # The requested High preset takes precedence over another review's Ultra.
+        self.assertIn("geekawhat.com", fps["benchmark_source_url"])
+        self.assertIn("High", fps["option_evidence"]["high"]["reference_preset"])
 
     def test_frame_capped_game_uses_effective_target(self):
         fps = server.estimate_fps_bundle(
@@ -43,7 +45,8 @@ class FpsEstimatorTests(unittest.TestCase):
         self.assertEqual(60.0, fps["frame_cap"])
         self.assertEqual(60.0, fps["fps_by_option"]["high"])
         self.assertEqual(60.0, fps["target_fps"])
-        self.assertEqual("목표 성능 충족", fps["capacity_label"])
+        self.assertIsNone(fps["low1_by_option"]["high"])
+        self.assertEqual("평균 목표 충족 · 1% Low 자료 없음", fps["capacity_label"])
 
     def test_target_coverage_is_not_marked_insufficient_for_expensive_build(self):
         metrics = server.value_metrics(104.4, 2_500_000, 60, 79.3, 48)

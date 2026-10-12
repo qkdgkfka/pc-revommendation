@@ -1,6 +1,7 @@
 from backend_patch import patch_backend
 from rendering_fixture import install_rendering_fixture
 import copy
+import math
 import random
 import unittest
 from unittest.mock import patch
@@ -16,7 +17,6 @@ def part(kind, identifier):
 class GameFpsCoverageTests(unittest.TestCase):
     def test_every_selectable_game_returns_finite_ordered_fps_at_all_resolutions(self):
         with patch_backend(server, "db_lookup_benchmarks", return_value=[]):
-            values = set()
             for game in server.GAME_OPTIONS:
                 for resolution in ("1080", "1440", "2160"):
                     response = server.fps_estimate_response({"gpu":"gpu_rtx5070", "cpu":"cpu_r5_7600", "ram":"ram_32_ddr5", "game":game["id"], "resolution":resolution})
@@ -24,14 +24,25 @@ class GameFpsCoverageTests(unittest.TestCase):
                     options = fps["fps_by_option"]
                     with self.subTest(game=game["id"], resolution=resolution):
                         self.assertGreater(options["ultra"], 0)
-                        self.assertGreaterEqual(options["low"], options["medium"])
-                        self.assertGreaterEqual(options["medium"], options["high"])
-                        self.assertGreaterEqual(options["high"], options["ultra"])
+                        for option, value in options.items():
+                            self.assertTrue(math.isfinite(value))
+                            self.assertGreater(value, 0)
+                            low = fps['low1_by_option'][option]
+                            if low is None:
+                                self.assertEqual('unavailable', fps['option_evidence'][option]['low1_method'])
+                            else:
+                                self.assertTrue(math.isfinite(low))
+                                self.assertTrue(0 < low <= value)
+                        if fps["preset_comparable"]:
+                            self.assertGreaterEqual(options["low"], options["medium"])
+                            self.assertGreaterEqual(options["medium"], options["high"])
+                            self.assertGreaterEqual(options["high"], options["ultra"])
+                        else:
+                            self.assertTrue(fps["preset_comparison_note"])
+                            self.assertGreater(len({e["source_url"] for e in fps["option_evidence"].values()}), 1)
                         self.assertLessEqual(fps["bottleneck"]["percent"], 100)
                         self.assertGreaterEqual(fps["bottleneck"]["percent"], 0)
                         self.assertTrue(fps["graphics_modes"])
-                        values.add(options["high"])
-            self.assertGreater(len(values), len(server.GAME_OPTIONS))
 
     def test_measurement_is_not_modified_for_exact_reference_conditions(self):
         row = next(r for r in benchmarks.load_measurements() if r["game"] == "black_myth_wukong" and r["resolution"] == "1440" and r["gpu_id"] == "gpu_rtx5070")

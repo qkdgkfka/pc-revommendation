@@ -1,0 +1,316 @@
+.fps-calculator-layout {
+  display: grid;
+  grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.fps-calculator-form {
+  padding: 26px;
+}
+.fps-calculator-form header {
+  margin-bottom: 24px;
+}
+.fps-eyebrow {
+  color: var(--pc-blue);
+  font-size: var(--pc-text-sm);
+  font-weight: 650;
+}
+.fps-calculator-form h3 {
+  font-size: 19px;
+  margin: 6px 0;
+}
+.fps-calculator-form header p {
+  color: var(--pc-muted);
+  font-size: var(--pc-text-md);
+  line-height: 1.6;
+}
+.fps-select {
+  position: relative;
+  margin-bottom: 22px;
+}
+.fps-select label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--pc-text-md);
+  font-weight: 650;
+  margin-bottom: 9px;
+}
+.fps-select label svg {
+  color: var(--pc-muted);
+}
+.fps-select-control {
+  position: relative;
+}
+.fps-select-control input {
+  width: 100%;
+  height: 46px;
+  padding: 0 34px 0 12px;
+  border: 1px solid var(--pc-line);
+  border-radius: 9px;
+  font: inherit;
+  font-size: var(--pc-text-md);
+  background: var(--pc-surface);
+  color: var(--pc-ink);
+}
+.fps-select-control input::placeholder {
+  color: var(--pc-muted);
+}
+.fps-select-control > svg {
+  position: absolute;
+  right: 12px;
+  top: 15px;
+  pointer-events: none;
+  color: var(--pc-muted);
+}
+.fps-select-control.with-artwork input {
+  padding-left: 64px;
+}
+.fps-select-control.with-artwork > img {
+  position: absolute;
+  left: 12px;
+  top: 9px;
+  width: 42px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+.fps-select-popup button > img {
+  width: 42px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: 5px;
+  flex-shrink: 0;
+}
+.fps-select-popup button > span {
+  flex: 1;
+}
+.fps-select-popup {
+  position: absolute;
+  top: 100%;
+  margin-top: 5px;
+  width: 100%;
+  z-index: 40;
+  border: 1px solid var(--pc-line);
+  background: var(--pc-surface);
+  border-radius: 9px;
+  box-shadow: var(--pc-shadow-popover);
+  overflow: hidden;
+}
+.fps-select-popup [role="listbox"] {
+  max-height: 240px;
+  overflow: auto;
+}
+.fps-select-popup button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 12px;
+  text-align: left;
+  font: inherit;
+  font-size: var(--pc-text-md);
+  color: var(--pc-ink);
+  cursor: pointer;
+}
+.fps-select-popup button:is(:hover, .is-active) {
+  background: var(--pc-blue-soft);
+  color: var(--pc-blue);
+}
+.fps-select-popup p,
+.fps-select-count {
+  display: block;
+  font-size: var(--pc-text-xs);
+  color: var(--pc-muted);
+  padding: 10px 12px;
+  border-top: 1px solid var(--pc-line);
+}
+.fps-resolution {
+  border: 0;
+  padding: 0;
+  margin: 0 0 20px;
+  min-width: 0;
+}
+.fps-resolution legend {
+  font-size: var(--pc-text-md);
+  font-weight: 650;
+  margin-bottom: 10px;
+}
+.fps-resolution .pc-button {
+  font-size: var(--pc-text-xs);
+  padding: 9px 4px;
+  min-width: 0;
+}
+.fps-assumptions {
+  display: flex;
+  gap: 9px;
+  padding: 14px;
+  background: var(--pc-soft);
+  border-radius: 9px;
+  color: var(--pc-muted);
+  font-size: var(--pc-text-sm);
+  line-height: 1.65;
+  margin-bottom: 20px;
+}
+.fps-assumptions > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.fps-assumptions strong {
+  color: var(--pc-ink);
+  display: block;
+  font-weight: 600;
+}
+.fps-assumptions span {
+  display: block;
+  margin-top: 3px;
+}
+.fps-calculate-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--pc-blue);
+  color: white;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.fps-calculate-button:hover {
+  background: var(--pc-blue-hover);
+}
+.fps-calculate-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.fps-cancel-button {
+  display: block;
+  margin: 12px auto 0;
+  border: 0;
+  background: transparent;
+  color: var(--pc-muted);
+  font: inherit;
+  font-size: var(--pc-text-md);
+  cursor: pointer;
+}
+.fps-form-note {
+  font-size: var(--pc-text-sm);
+  color: var(--pc-warning);
+  line-height: 1.6;
+  margin: 0 0 14px;
+}
+.fps-form-note button {
+  font: inherit;
+  color: var(--pc-blue);
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.fps-calculator-output {
+  min-height: 620px;
+  padding: 28px;
+}
+.fps-calculator-output.has-result {
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+.fps-calculator-empty {
+  min-height: 560px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 14px;
+}
+.fps-calculator-empty h3 {
+  font-size: 19px;
+  line-height: 1.6;
+  word-break: keep-all;
+}
+.fps-calculator-empty p {
+  font-size: var(--pc-text-md);
+  line-height: 1.9;
+  color: var(--pc-muted);
+  word-break: keep-all;
+}
+.fps-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 20px;
+  color: var(--pc-blue);
+  background: var(--pc-blue-soft);
+  margin-bottom: 6px;
+}
+.fps-empty-legend {
+  display: flex;
+  gap: 22px;
+  margin-top: 16px;
+  font-size: var(--pc-text-sm);
+  color: var(--pc-muted);
+}
+.fps-empty-legend span:before {
+  content: "";
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--pc-blue);
+  margin-right: 7px;
+}
+.fps-empty-legend span + span:before {
+  background: var(--pc-success);
+}
+.fps-calculator-empty .fps-low-explanation {
+  font-size: var(--pc-text-sm);
+}
+.fps-calculator-error .fps-calculate-button {
+  max-width: 200px;
+}
+@media (max-width: 1000px) {
+  .fps-calculator-layout {
+    grid-template-columns: 320px minmax(0, 1fr);
+    gap: 18px;
+  }
+  .fps-calculator-form,
+  .fps-calculator-output {
+    padding: 20px;
+  }
+  .hero {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 720px) {
+  .fps-calculator-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+  .fps-calculator-output {
+    min-height: 350px;
+  }
+  .fps-calculator-empty {
+    min-height: 310px;
+  }
+  .pc-mode-switch .pc-button {
+    white-space: normal;
+    font-size: var(--pc-text-sm);
+    padding: 10px 6px;
+  }
+  .fps-select-popup [role="listbox"] {
+    max-height: 200px;
+  }
+}

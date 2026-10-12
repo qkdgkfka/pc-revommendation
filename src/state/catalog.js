@@ -23,6 +23,8 @@ export function catalogPatch(data, state) {
         label: g.label || g.name || g.id,
         group: g.group || "기타",
         category: g.category || gameCategoryFor(g.id, state.games),
+        english_title: g.english_title || "",
+        aliases: Array.isArray(g.aliases) ? g.aliases : [],
       }))
     : state.games;
   const workProfiles = structuredClone(state.workProfiles);

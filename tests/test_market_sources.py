@@ -45,6 +45,30 @@ def compuzone_row(category='1016', name='[MSI] 지포스 RTX 5060 Ti D7 16GB'):
 
 
 class MarketplaceParserTests(unittest.TestCase):
+    def test_modern_danawa_cards_keep_each_package_price_and_product_code(self):
+        html = (ROOT / 'tests/fixtures/danawa_modern_search.html').read_text(encoding='utf-8')
+        products = server.parse_danawa_browse_products(html, 'https://search.danawa.com/?query=CPU', 'cpu')
+        self.assertEqual(['danawa_cpu_70531547', 'danawa_cpu_70679912'], [row['id'] for row in products])
+        self.assertEqual([633970, 720000], [row['price'] for row in products])
+        self.assertTrue(products[0]['name'].endswith('(멀티팩 정품)'))
+        self.assertTrue(products[1]['name'].endswith('(정품)'))
+        self.assertEqual('AM5', products[0]['socket'])
+        self.assertEqual('https://img.danuri.io/catalog-image/cpu.jpeg', products[0]['image_url'])
+
+    def test_modern_danawa_capacity_and_unpriced_options_cannot_borrow_other_prices(self):
+        html = (ROOT / 'tests/fixtures/danawa_modern_search.html').read_text(encoding='utf-8')
+        products = server.parse_danawa_browse_products(html, 'https://search.danawa.com/', 'storage')
+        self.assertEqual([(120000, 1000), (210000, 2000)], [(row['price'], row['capacity']) for row in products])
+        self.assertEqual(['danawa_storage_101', 'danawa_storage_102'], [row['id'] for row in products])
+
+    def test_modern_option_without_its_own_label_does_not_take_a_siblings_label(self):
+        html = '''<li data-product-seq="101"><p><a href="https://prod.danawa.com/info/?pcode=101&amp;cate=112760">Samsung 990 PRO</a></p><ul>
+        <div><div><span class="truncate">1TB</span></div><div><a href="https://prod.danawa.com/info/?pcode=101&amp;cate=112760">120,000원</a></div></div>
+        <div><div></div><div><a href="https://prod.danawa.com/info/?pcode=102&amp;cate=112760">210,000원</a></div></div>
+        </ul></li>'''
+        products = server.parse_danawa_browse_products(html, 'https://search.danawa.com/', 'storage')
+        self.assertEqual(['danawa_storage_101'], [row['id'] for row in products])
+
     def test_danawa_variants_keep_their_own_price_capacity_and_sku(self):
         products = server.parse_danawa_browse_products(danawa_group(), 'https://search.danawa.com/', 'storage', 40)
         self.assertEqual([(120000, 1000), (210000, 2000)], [(p['price'], p['capacity']) for p in products])
@@ -99,6 +123,52 @@ class MarketplaceAvailabilityTests(unittest.TestCase):
         self.assertEqual('live', result['status'])
         self.assertEqual(1, len(result['items']))
         self.assertEqual(210000, result['items'][0]['price'])
+
+    def test_modern_danawa_search_is_live_and_keeps_its_next_page(self):
+        html = (ROOT / 'tests/fixtures/danawa_modern_search.html').read_text(encoding='utf-8')
+        with patch_backend(server, '_market_fetch_html', return_value=html):
+            result = server._market_source_page('cpu', '', 1, 40, 'danawa')
+        self.assertEqual('live', result['status'])
+        self.assertTrue(result['has_more'])
+        self.assertEqual(2, len(result['items']))
+
+    def test_modern_search_taking_five_seconds_can_finish_within_the_product_deadline(self):
+        html = (ROOT / 'tests/fixtures/danawa_modern_search.html').read_text(encoding='utf-8')
+        def fetch(url, provider, timeout=8):
+            # The external service needs five seconds to transfer its larger
+            # rendered page; no real network or delay is needed in this test.
+            if timeout < 5:
+                raise TimeoutError('The read operation timed out')
+            return html
+        with patch_backend(server, '_market_fetch_html', side_effect=fetch):
+            result = server.market_products_response('cpu', source='danawa', persist=False)
+        self.assertTrue(result['ok'])
+        self.assertEqual('live', result['status'])
+        self.assertEqual(2, len(result['items']))
+
+    def test_modern_merchant_only_page_is_recognized_without_inventing_catalog_skus(self):
+        html = '''<div id="searchProductArea"></div><ul><li class="border-b">
+        <p><a href="https://prod.danawa.com/bridge/go_link_goods.php?cmpny_c=EE128&amp;link_prod_c=3509600922&amp;cate=112753">MSI Gaming GeForce RTX 4070 Ti</a></p>
+        <span>1,793,000원</span></li></ul><nav aria-label="페이지 네비게이션">
+        <button aria-label="페이지 4">4</button></nav>'''
+        with patch_backend(server, '_market_fetch_html', return_value=html):
+            result = server._market_source_page('gpu', '4070', 3, 40, 'danawa')
+        self.assertEqual('empty', result['status'])
+        self.assertEqual([], result['items'])
+        self.assertTrue(result['has_more'])
+        self.assertNotIn('error_kind', result)
+
+    def test_modern_page_group_boundary_uses_only_an_enabled_next_group(self):
+        for disabled, expected in [('', True), (' disabled=""', False)]:
+            with self.subTest(disabled=bool(disabled)):
+                html = f'''<div id="searchProductArea"></div><ul><li>
+                <a href="https://prod.danawa.com/bridge/go_link_goods.php?link_prod_c=3509600922">MSI RTX 4070 Ti</a>
+                </li></ul><nav aria-label="페이지 네비게이션">
+                <button aria-label="페이지 10">10</button>
+                <button{disabled} aria-label="다음 페이지 그룹">다음</button></nav>'''
+                with patch_backend(server, '_market_fetch_html', return_value=html):
+                    result = server._market_source_page('gpu', '4070', 10, 40, 'danawa', refresh=True)
+                self.assertEqual(expected, result['has_more'])
 
     def test_block_or_timeout_is_unavailable_and_never_a_verified_price(self):
         with patch_backend(server, '_market_fetch_html', return_value='<html>Service unavailable</html>'):

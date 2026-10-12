@@ -285,5 +285,1321 @@
     "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1903340/be3305b02d4db0dffa3458537118423bf2792d7e/header.jpg?t=1782830877",
     "sha256": "46d1f4ff44db8766a752a19088103299d8312badd59f51b63dbc00e9a3c7993d",
     "checked_at": "2026-09-25T13:02:37.871823+00:00"
+  },
+  "helldivers2": {
+    "name": "HELLDIVERS™ 2",
+    "source_url": "https://store.steampowered.com/app/553850/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/553850/850e2f9e5bb15c5706bb9a1edc832f4f782e8be5/header.jpg?t=1789585784",
+    "sha256": "101eb36e36b5c2cc09c41e13c881c729869b94e3eb4da1e2c6d5ea00c2ad43d0",
+    "checked_at": "2026-10-09T12:25:45.739035+00:00"
+  },
+  "rust": {
+    "name": "Rust",
+    "source_url": "https://store.steampowered.com/app/252490/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/252490/header.jpg?t=1781536981",
+    "sha256": "a5807b6f2f4265ee4a588de7a8c777b149a1cdc92cf1afca38a3099bfbeabcd3",
+    "checked_at": "2026-10-09T12:25:45.757543+00:00"
+  },
+  "palworld": {
+    "name": "Palworld",
+    "source_url": "https://store.steampowered.com/app/1623730/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1623730/6912f19c43a95ff5fe514eedd35e68bf12335459/header.jpg?t=1790336367",
+    "sha256": "d12dab06e7e5f0a518293a38e630416fb51fb0a296c5f49a3f9c2e406b04fbfb",
+    "checked_at": "2026-10-09T12:25:45.765442+00:00"
+  },
+  "diablo4": {
+    "name": "Diablo® IV",
+    "source_url": "https://store.steampowered.com/app/2344520/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2344520/80f21a42e378b93e8fbb68ee43103be8ab84891b/header.jpg?t=1789491624",
+    "sha256": "97ed9943277f8053dd032264005db98d378914c1768f5131721cf657e22c041c",
+    "checked_at": "2026-10-09T12:25:46.048695+00:00"
+  },
+  "path_of_exile2": {
+    "name": "Path of Exile 2",
+    "source_url": "https://store.steampowered.com/app/2694490/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2694490/24eeddcbda17903f03d819588757e40845f8115f/header.jpg?t=1787697213",
+    "sha256": "62bbdd76a78b03fdfff9cd6846dd20d63f4b20b95f30ba78fbd428b0637d7bb7",
+    "checked_at": "2026-10-09T12:25:46.049567+00:00"
+  },
+  "monster_hunter_wilds": {
+    "name": "Monster Hunter Wilds",
+    "source_url": "https://store.steampowered.com/app/2246340/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2246340/header.jpg?t=1787549555",
+    "sha256": "426e2badf49d59700faa57e6612cfe8b430553476f94d768dcdb329e481b1bd3",
+    "checked_at": "2026-10-09T12:25:46.189557+00:00"
+  },
+  "warframe": {
+    "name": "Warframe",
+    "source_url": "https://store.steampowered.com/app/230410/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/230410/1a3e7c2a05ce4e5cad5ac4c7e858cf5b0934704e/header.jpg?t=1790176468",
+    "sha256": "74710ffe93a041e26b47446480909ccff17687d29aed4bf033ba630810e4f771",
+    "checked_at": "2026-10-09T12:25:46.355776+00:00"
+  },
+  "valheim": {
+    "name": "Valheim",
+    "source_url": "https://store.steampowered.com/app/892970/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/892970/1888731b59362fca6c026cdbafa3dfffd45c3146/header_alt_assets_6.jpg?t=1791544831",
+    "sha256": "b9eb18682f909462ead3b79156d429a026bdb31a9ec594f3632945dc72294238",
+    "checked_at": "2026-10-09T12:25:46.369330+00:00"
+  },
+  "gta5_legacy": {
+    "name": "Grand Theft Auto V Legacy",
+    "source_url": "https://store.steampowered.com/app/271590/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/271590/header.jpg?t=1765387725",
+    "sha256": "e1ee8ed03ef2926d224e331a1bc61711822bbe7261cf847624089c1e95207a9a",
+    "checked_at": "2026-10-09T12:25:46.514270+00:00"
+  },
+  "total_war_warhammer3": {
+    "name": "Total War: WARHAMMER III",
+    "source_url": "https://store.steampowered.com/app/1142710/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1142710/header.jpg?t=1790321531",
+    "sha256": "164d666ee482d343de8af6ceaf856300b14bdb8e46319cc36ca994ed21bfc16b",
+    "checked_at": "2026-10-09T12:25:46.625546+00:00"
+  },
+  "civilization6": {
+    "name": "Sid Meier’s Civilization® VI",
+    "source_url": "https://store.steampowered.com/app/289070/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/289070/header.jpg?t=1784651829",
+    "sha256": "fbebadfe4def4a064d339d075f05e4f7a9d598af3ad6df6dd5e4c0509c3a5b61",
+    "checked_at": "2026-10-09T12:25:46.675391+00:00"
+  },
+  "destiny2": {
+    "name": "Destiny 2",
+    "source_url": "https://store.steampowered.com/app/1085660/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1085660/0ccf0dc0a8c4ec078db7ab99ddc820b2fa884441/header.jpg?t=1781815889",
+    "sha256": "9d1c5da71dc1c6adfedca29a01d17afa33b7842e051d7106bca66e65015e913a",
+    "checked_at": "2026-10-09T12:25:46.825153+00:00"
+  },
+  "delta_force": {
+    "name": "Delta Force",
+    "source_url": "https://store.steampowered.com/app/2507950/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2507950/09ef134458549352e5b5a06ed7f97cf00d729b62/header_alt_assets_14.jpg?t=1790238079",
+    "sha256": "feb591cd587a84723dc697fabcdb2f3c204e45920794b387e0806fa78ea7093b",
+    "checked_at": "2026-10-09T12:25:46.930886+00:00"
+  },
+  "stalker2": {
+    "name": "S.T.A.L.K.E.R. 2: Heart of Chornobyl",
+    "source_url": "https://store.steampowered.com/app/1643320/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1643320/9c8da5440ab033af46b9c7fecfd37166479d2ea6/header.jpg?t=1790259592",
+    "sha256": "de604a97ebe40a1dfaa734eb5620eeeb8c1695d16ea3f5f71eb14119fe3852ac",
+    "checked_at": "2026-10-09T12:25:46.932046+00:00"
+  },
+  "jedi_survivor": {
+    "name": "STAR WARS Jedi: Survivor™",
+    "source_url": "https://store.steampowered.com/app/1774580/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1774580/header.jpg?t=1788257050",
+    "sha256": "3ba6573826bb863450fb595130440db510df3a6e0a0a52202256413bc0547619",
+    "checked_at": "2026-10-09T12:25:47.106226+00:00"
+  },
+  "dragon_age_veilguard": {
+    "name": "Dragon Age™: The Veilguard",
+    "source_url": "https://store.steampowered.com/app/1845910/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1845910/header.jpg?t=1777414790",
+    "sha256": "3f95eff5bb5192c5b90f170dd1ace8ef693e82aed338fac7b15d2a9a53ecfb92",
+    "checked_at": "2026-10-09T12:25:47.322626+00:00"
+  },
+  "plague_tale_requiem": {
+    "name": "A Plague Tale: Requiem",
+    "source_url": "https://store.steampowered.com/app/1182900/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1182900/header.jpg?t=1784712272",
+    "sha256": "1ecefd8000001541ef8b8744db9ea02adad50a4831c270a67d412e8a19f7088a",
+    "checked_at": "2026-10-09T12:25:47.327796+00:00"
+  },
+  "war_thunder": {
+    "name": "War Thunder",
+    "source_url": "https://store.steampowered.com/app/236390/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/236390/38881c549e623fe432af4e7b4bc3952b443906f5/header.jpg?t=1790873564",
+    "sha256": "d7976c3d737481899c813d256aae50c9a6178a2c08953178d6b560f794758810",
+    "checked_at": "2026-10-09T12:25:47.471004+00:00"
+  },
+  "kingdom_come_deliverance2": {
+    "name": "Kingdom Come: Deliverance II",
+    "source_url": "https://store.steampowered.com/app/1771300/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1771300/header.jpg?t=1777975568",
+    "sha256": "dde4c2135930817a3fb26508a1a03ac65a06d3c6a92fa1b97510adf2f86dea19",
+    "checked_at": "2026-10-09T12:25:47.674941+00:00"
+  },
+  "spider_man_remastered": {
+    "name": "Marvel’s Spider-Man Remastered",
+    "source_url": "https://store.steampowered.com/app/1817070/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1817070/header.jpg?t=1787838689",
+    "sha256": "84417fb73690f07c8f24852f63f220fcc0d422a580cd8fdfd0e62d554bfaff78",
+    "checked_at": "2026-10-09T12:25:47.702464+00:00"
+  },
+  "forza_horizon5": {
+    "name": "Forza Horizon 5",
+    "source_url": "https://store.steampowered.com/app/1551360/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1551360/header.jpg?t=1788546569",
+    "sha256": "a89ea66dfff93085cf3d4eed53d6c98d2090e57049e8c607965b0e27357285d1",
+    "checked_at": "2026-10-09T12:25:47.951789+00:00"
+  },
+  "shadow_of_tomb_raider": {
+    "name": "Shadow of the Tomb Raider: Definitive Edition",
+    "source_url": "https://store.steampowered.com/app/750920/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/750920/header.jpg?t=1765239925",
+    "sha256": "f6a0435708fc3084a84e8a48d5978506af5fbf16848cc43ec1f3595ab39fb57d",
+    "checked_at": "2026-10-09T12:25:48.063242+00:00"
+  },
+  "control": {
+    "name": "CONTROL Ultimate Edition",
+    "source_url": "https://store.steampowered.com/app/870780/",
+    "image_url": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/870780/ec621653454cdad232187af4eb79f23c05aceca5/header.jpg?t=1781607969",
+    "sha256": "bd4c3f2d967908343f34b6013810da58a69ff1fabc691157e3d8a1bc8127928b",
+    "checked_at": "2026-10-09T12:25:48.819349+00:00"
+  },
+  "league_of_legends": {
+    "name": "League of Legends",
+    "source_url": "https://www.leagueoflegends.com/en-us/",
+    "image_url": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/news/565197caf987af4e4da307df6e2b235a28714736-837x469.jpg?accountingTag=LoL?w=1200&h=630&fm=webp&fit=crop&crop=center",
+    "sha256": "cd1d704134664941690f0282209fd46bbfeb4c9abbac536ccc08492d8e86d97e",
+    "checked_at": "2026-10-09T12:27:20.036641+00:00"
+  },
+  "escape_from_tarkov": {
+    "name": "Escape from Tarkov",
+    "source_url": "https://pc-builds.com/ko/games/03C/escape-from-tarkov",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2xlq.jpg",
+    "sha256": "2a75ea469cda8ab702e42c95767cf6d4357774da92ffd56be3081500ad7e011c",
+    "checked_at": "2026-10-10T07:01:32.178204+00:00"
+  },
+  "minecraft_java_edition": {
+    "name": "Minecraft: Java Edition",
+    "source_url": "https://pc-builds.com/ko/games/040/minecraft-java-edition",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coa77e.jpg",
+    "sha256": "80b6b8aa173de8bd4fa9d1ce295e880c462298fca803aedb51add32d5f78dbb1",
+    "checked_at": "2026-10-10T07:01:32.186475+00:00"
+  },
+  "naruto_shippuden_ultimate_ninja_storm_4": {
+    "name": "Naruto Shippuden: Ultimate Ninja Storm 4",
+    "source_url": "https://pc-builds.com/ko/games/035/naruto-shippuden-ultimate-ninja-storm-4",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3whm.jpg",
+    "sha256": "5a53b63bc9e822c76b313a6cba599bed5f96e3b5bccde3e19b2fa9465e0c0f9b",
+    "checked_at": "2026-10-10T07:01:32.186581+00:00"
+  },
+  "roblox": {
+    "name": "Roblox",
+    "source_url": "https://pc-builds.com/ko/games/03S/roblox",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co5u9i.jpg",
+    "sha256": "533dff37999a907d83dcd5d416245b292985c3cf493d15b5234fe9d503fd10af",
+    "checked_at": "2026-10-10T07:01:32.195458+00:00"
+  },
+  "call_of_duty_warzone": {
+    "name": "Call of Duty: Warzone",
+    "source_url": "https://pc-builds.com/ko/games/01R/call-of-duty-warzone",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co20o8.jpg",
+    "sha256": "87e7f959224457ea5d1a1c51583ac39fc0ebc5ee8e1ed84b26bac026296902ca",
+    "checked_at": "2026-10-10T07:01:32.199375+00:00"
+  },
+  "mount_blade_ii_bannerlord": {
+    "name": "Mount & Blade II: Bannerlord",
+    "source_url": "https://pc-builds.com/ko/games/022/mount-blade-ii-bannerlord",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaar4.jpg",
+    "sha256": "b5c5161d765637e0c371016360b32e7ad46f72afacdb51a7e853d43ee793d9af",
+    "checked_at": "2026-10-10T07:01:32.202788+00:00"
+  },
+  "inside": {
+    "name": "Inside",
+    "source_url": "https://pc-builds.com/ko/games/07d/inside",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2fca.jpg",
+    "sha256": "041843503d9da97892eef91dcacc78d5ffb538952a5dd187de01a7ca5255e7d0",
+    "checked_at": "2026-10-10T07:01:32.245709+00:00"
+  },
+  "microsoft_flight_simulator": {
+    "name": "Microsoft Flight Simulator",
+    "source_url": "https://pc-builds.com/ko/games/01Z/microsoft-flight-simulator",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2dqk.jpg",
+    "sha256": "2a18aa539a67c758d2cc853f62bdd37cd00402cc35c7f8fcebec09d98a9b28ae",
+    "checked_at": "2026-10-10T07:01:32.257374+00:00"
+  },
+  "forza_horizon_4": {
+    "name": "Forza Horizon 4",
+    "source_url": "https://pc-builds.com/ko/games/02y/forza-horizon-4",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2e1a.jpg",
+    "sha256": "a38c506c3da73b9da4adb127920b17d2faec8b3566f3236329173ea59f6efba7",
+    "checked_at": "2026-10-10T07:01:32.262472+00:00"
+  },
+  "pc_building_simulator": {
+    "name": "PC Building Simulator",
+    "source_url": "https://pc-builds.com/ko/games/029/pc-building-simulator",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1p77.jpg",
+    "sha256": "64881cefd2e9b161d70b3ea84f8b586a12532d8199f9ebeb973fef3b5d1e3043",
+    "checked_at": "2026-10-10T07:01:32.265890+00:00"
+  },
+  "terraria": {
+    "name": "Terraria",
+    "source_url": "https://pc-builds.com/ko/games/05Y/terraria",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaamg.jpg",
+    "sha256": "0822a1b34ae32f261174c80446f10be84a0874ec4b76be86db41d213e261d629",
+    "checked_at": "2026-10-10T07:01:32.269714+00:00"
+  },
+  "death_stranding": {
+    "name": "Death Stranding",
+    "source_url": "https://pc-builds.com/ko/games/01N/death-stranding",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co5vq8.jpg",
+    "sha256": "d914c4a575445cd7693c961c8afad3bce998ed4be787cd698007bed83a390805",
+    "checked_at": "2026-10-10T07:01:32.298595+00:00"
+  },
+  "forza_horizon_3": {
+    "name": "Forza Horizon 3",
+    "source_url": "https://pc-builds.com/ko/games/02P/forza-horizon-3",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2e25.jpg",
+    "sha256": "ae59afdde9ee7b19bc09a59effb9aa7235fee982a955690d1bc24d0def7a0c79",
+    "checked_at": "2026-10-10T07:01:32.350575+00:00"
+  },
+  "hard_west": {
+    "name": "Hard West",
+    "source_url": "https://pc-builds.com/ko/games/07X/hard-west",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2fz8.jpg",
+    "sha256": "0198b04a1ab659c7debd611cad90438021ba9ac0478052cd8cf91872b863c4f0",
+    "checked_at": "2026-10-10T07:01:32.446455+00:00"
+  },
+  "the_sims_3": {
+    "name": "The Sims 3",
+    "source_url": "https://pc-builds.com/ko/games/04l/the-sims-3",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co5vwl.jpg",
+    "sha256": "799142b544a98b29b1f002f51962506e0ee9f1322aff075ef366f02c08748b3c",
+    "checked_at": "2026-10-10T07:01:32.483598+00:00"
+  },
+  "the_long_drive": {
+    "name": "The Long Drive",
+    "source_url": "https://pc-builds.com/ko/games/0ay/the-long-drive",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co20xv.jpg",
+    "sha256": "e593a39b99f3166bf8447033fedc2a8863672fa0a9c96633ae8bd0940b20deba",
+    "checked_at": "2026-10-10T07:01:32.495001+00:00"
+  },
+  "to_the_core": {
+    "name": "To the Core",
+    "source_url": "https://pc-builds.com/ko/games/0hW/to-the-core",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co6z17.jpg",
+    "sha256": "ec01234931b8b60ae723a04dd134485139bc12daed75fa1141607256725d7a93",
+    "checked_at": "2026-10-10T07:01:32.500562+00:00"
+  },
+  "beamng_drive": {
+    "name": "BeamNG.drive",
+    "source_url": "https://pc-builds.com/ko/games/03q/beamng-drive",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1sym.jpg",
+    "sha256": "1b94129133edb7c6f29a5a8ba56577231d3ef8e8d9fe6efb385bf1c1c0e1c266",
+    "checked_at": "2026-10-10T07:01:32.504313+00:00"
+  },
+  "greedfall": {
+    "name": "GreedFall",
+    "source_url": "https://pc-builds.com/ko/games/04X/greedfall",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1ppo.jpg",
+    "sha256": "d4a81c0a1e335a3df3d5450e8627fb6f2db6bf8dcb4949f346c03c68b1d90d10",
+    "checked_at": "2026-10-10T07:01:32.507646+00:00"
+  },
+  "bodycam": {
+    "name": "Bodycam",
+    "source_url": "https://pc-builds.com/ko/games/0ar/bodycam",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co7mli.jpg",
+    "sha256": "130d99c698f251cbfbc2498a6dcbcda75b883c6d609014ceb42a4c645bccb11c",
+    "checked_at": "2026-10-10T07:01:32.552297+00:00"
+  },
+  "rocket_league": {
+    "name": "Rocket League",
+    "source_url": "https://pc-builds.com/ko/games/03H/rocket-league",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coa90v.jpg",
+    "sha256": "7477fb49a31e96d3ef1a23abce83077df8a313b4a8545b1fe47b8088c8c9b855",
+    "checked_at": "2026-10-10T07:01:32.565521+00:00"
+  },
+  "transistor": {
+    "name": "Transistor",
+    "source_url": "https://pc-builds.com/ko/games/07n/transistor",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1pi1.jpg",
+    "sha256": "2c90baf34e9d24bf953369acda3ad2e4bb42854beef7c5ff38d13d4b442e377d",
+    "checked_at": "2026-10-10T07:01:32.589585+00:00"
+  },
+  "squad": {
+    "name": "Squad",
+    "source_url": "https://pc-builds.com/ko/games/03t/squad",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaasd.jpg",
+    "sha256": "a94554801d0cdeaf12db34e39421632c98eb69c068ccc3b03d8d4bbe74a1bf12",
+    "checked_at": "2026-10-10T07:01:32.592972+00:00"
+  },
+  "the_technomancer": {
+    "name": "The Technomancer",
+    "source_url": "https://pc-builds.com/ko/games/07j/the-technomancer",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1ppu.jpg",
+    "sha256": "edd58a3a41180e10ec2faa3b6129729e204871fbf752688e0c30ebf0b44d39ee",
+    "checked_at": "2026-10-10T07:01:32.636866+00:00"
+  },
+  "dying_light": {
+    "name": "Dying Light",
+    "source_url": "https://pc-builds.com/ko/games/03D/dying-light",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co65yq.jpg",
+    "sha256": "67b8929197e973659591695c9a1a8ef824eaf137ff97d63a1b7cd5f72b708fdb",
+    "checked_at": "2026-10-10T07:01:32.643667+00:00"
+  },
+  "assetto_corsa": {
+    "name": "Assetto Corsa",
+    "source_url": "https://pc-builds.com/ko/games/05L/assetto-corsa",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaauq.jpg",
+    "sha256": "792d7a21f8f41ec19e8ad2dd7a6ea256bc31ffaaa9b659a580ef947e16f018ff",
+    "checked_at": "2026-10-10T07:01:32.689400+00:00"
+  },
+  "unpacking": {
+    "name": "Unpacking",
+    "source_url": "https://pc-builds.com/ko/games/0db/unpacking",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1t45.jpg",
+    "sha256": "920acab26365a267f683bca6658800348d72b9546a5ea34311862a5ad5213380",
+    "checked_at": "2026-10-10T07:01:32.703721+00:00"
+  },
+  "fallout_76": {
+    "name": "Fallout 76",
+    "source_url": "https://pc-builds.com/ko/games/04H/fallout-76",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1yc4.jpg",
+    "sha256": "5f157c66ef5dd3412e74c72af4925bd51f0168e69f16c9a490eafb1219f39e37",
+    "checked_at": "2026-10-10T07:01:32.728253+00:00"
+  },
+  "conan_exiles": {
+    "name": "Conan Exiles",
+    "source_url": "https://pc-builds.com/ko/games/05y/conan-exiles",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coa90l.jpg",
+    "sha256": "541b55e708bbba7ef8c587fb73ef51a3e0e3657fdde671739a86bbe040981846",
+    "checked_at": "2026-10-10T07:01:32.735250+00:00"
+  },
+  "dead_by_daylight": {
+    "name": "Dead by Daylight",
+    "source_url": "https://pc-builds.com/ko/games/02T/dead-by-daylight",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co5zky.jpg",
+    "sha256": "f12f92e326e4febfa4dacc26f8a377f1cd80c86f0a25d440937231dc62075057",
+    "checked_at": "2026-10-10T07:01:32.743932+00:00"
+  },
+  "diablo_iii": {
+    "name": "Diablo III",
+    "source_url": "https://pc-builds.com/ko/games/05A/diablo-iii",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2l1u.jpg",
+    "sha256": "4df262ea968ba8f6252972a9e2394c8bab9f5b227403f2bd5ff06b3fd631bb5a",
+    "checked_at": "2026-10-10T07:01:32.757877+00:00"
+  },
+  "ark_survival_evolved": {
+    "name": "Ark: Survival Evolved",
+    "source_url": "https://pc-builds.com/ko/games/02R/ark-survival-evolved",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co493k.jpg",
+    "sha256": "62361adabe052959e8a73dec84dbd506de9f38bdc5737ee2d2e19d046062a678",
+    "checked_at": "2026-10-10T07:01:32.788706+00:00"
+  },
+  "fallout_4": {
+    "name": "Fallout 4",
+    "source_url": "https://pc-builds.com/ko/games/04t/fallout-4",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1yc6.jpg",
+    "sha256": "45470495643687a8bf8194a495a2fd04de8c2e845d4068e58ec5e59651890254",
+    "checked_at": "2026-10-10T07:01:32.812499+00:00"
+  },
+  "the_binding_of_isaac_rebirth": {
+    "name": "The Binding of Isaac: Rebirth",
+    "source_url": "https://pc-builds.com/ko/games/08l/the-binding-of-isaac-rebirth",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaare.jpg",
+    "sha256": "c0af5445eb68402df110ff9dce9be87fa7c137e159963974dac0cffcf08c1e3d",
+    "checked_at": "2026-10-10T07:01:32.823702+00:00"
+  },
+  "osu": {
+    "name": "Osu!",
+    "source_url": "https://pc-builds.com/ko/games/04r/osu",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8a4m.jpg",
+    "sha256": "d569056f1753dddf8dac58211d89375bc14db1677a14ec85999f06cc9e3feb7a",
+    "checked_at": "2026-10-10T07:01:32.828670+00:00"
+  },
+  "arma_3": {
+    "name": "Arma 3",
+    "source_url": "https://pc-builds.com/ko/games/04n/arma-3",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaaut.jpg",
+    "sha256": "1fa148c605576088b1743ba797cb03cb4faaeddfb3e7374b87bdb5aff6462756",
+    "checked_at": "2026-10-10T07:01:32.872942+00:00"
+  },
+  "stardew_valley": {
+    "name": "Stardew Valley",
+    "source_url": "https://pc-builds.com/ko/games/06y/stardew-valley",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coa93h.jpg",
+    "sha256": "0f35bffef29b3decdd5488475a1b84dab4c59212c7a9c8a9526040a4aa6c76d4",
+    "checked_at": "2026-10-10T07:01:32.878945+00:00"
+  },
+  "the_elder_scrolls_v_skyrim": {
+    "name": "The Elder Scrolls V: Skyrim",
+    "source_url": "https://pc-builds.com/ko/games/04z/the-elder-scrolls-v-skyrim",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1tnw.jpg",
+    "sha256": "521414f553562d98e1e421e6cf3b506cd7b4769de2303be0f1dfefe4d54ed833",
+    "checked_at": "2026-10-10T07:01:32.922639+00:00"
+  },
+  "the_sims_4": {
+    "name": "The Sims 4",
+    "source_url": "https://pc-builds.com/ko/games/043/the-sims-4",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3h3l.jpg",
+    "sha256": "439490e2c7780052d997a6a995fede7b8a0a7992223411d8cc71eb6583ff7501",
+    "checked_at": "2026-10-10T07:01:32.927842+00:00"
+  },
+  "unravel": {
+    "name": "Unravel",
+    "source_url": "https://pc-builds.com/ko/games/07L/unravel",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co95jp.jpg",
+    "sha256": "e771f7b45bb2d881100b136239c15a938fe9f33442e1ad676bc32745f9d2a34b",
+    "checked_at": "2026-10-10T07:01:32.968314+00:00"
+  },
+  "day_of_the_tentacle_remastered": {
+    "name": "Day of the Tentacle Remastered",
+    "source_url": "https://pc-builds.com/ko/games/08j/day-of-the-tentacle-remastered",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2865.jpg",
+    "sha256": "8f073b92d47f4762ab9be6642dd41b3129115842832d2a27575176612109b7bd",
+    "checked_at": "2026-10-10T07:01:32.973647+00:00"
+  },
+  "tekken_7": {
+    "name": "Tekken 7",
+    "source_url": "https://pc-builds.com/ko/games/02w/tekken-7",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1w4f.jpg",
+    "sha256": "f0480dc1c58a55608308a4daa509c548af3d0c2658b09ec2a186f307bb48fe00",
+    "checked_at": "2026-10-10T07:01:32.978928+00:00"
+  },
+  "subnautica": {
+    "name": "Subnautica",
+    "source_url": "https://pc-builds.com/ko/games/02t/subnautica",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coa938.jpg",
+    "sha256": "1ae90e4ecb85c019de13ca42dad0a61bf01f7b961d808d10c59983a673779358",
+    "checked_at": "2026-10-10T07:01:32.983551+00:00"
+  },
+  "borderlands_3": {
+    "name": "Borderlands 3",
+    "source_url": "https://pc-builds.com/ko/games/02F/borderlands-3",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co20r3.jpg",
+    "sha256": "97f8da6f8c5cfd4f5b85a6466a301b144ae2f18780f16c5812bb10035ca57e0d",
+    "checked_at": "2026-10-10T07:01:33.023915+00:00"
+  },
+  "the_medium": {
+    "name": "The Medium",
+    "source_url": "https://pc-builds.com/ko/games/01M/the-medium",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2z0q.jpg",
+    "sha256": "d81dfb40986d06a468c5a29c58fd7fe56ce5bd864217da1591a0c1c0be46806e",
+    "checked_at": "2026-10-10T07:01:33.034536+00:00"
+  },
+  "portal_2": {
+    "name": "Portal 2",
+    "source_url": "https://pc-builds.com/ko/games/04K/portal-2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1rs4.jpg",
+    "sha256": "d1095f550fc52adc5b06ccb80bcb3a973a7c12e8235c783b48ab9da95eee1e2d",
+    "checked_at": "2026-10-10T07:01:33.051414+00:00"
+  },
+  "cities_skylines": {
+    "name": "Cities: Skylines",
+    "source_url": "https://pc-builds.com/ko/games/03g/cities-skylines",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaas0.jpg",
+    "sha256": "710454cb15649cbeaa35af0382877a2247abe700482324770439515ced0fa045",
+    "checked_at": "2026-10-10T07:01:33.103090+00:00"
+  },
+  "dark_souls": {
+    "name": "Dark Souls",
+    "source_url": "https://pc-builds.com/ko/games/06A/dark-souls",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1x78.jpg",
+    "sha256": "1fc06fb08379a8916d43e736d817f7440afb0e175b7d49a486e96744b0bd16ef",
+    "checked_at": "2026-10-10T07:01:33.200386+00:00"
+  },
+  "warhammer_end_times_vermintide": {
+    "name": "Warhammer: End Times - Vermintide",
+    "source_url": "https://pc-builds.com/ko/games/06f/warhammer-end-times-vermintide",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coa99u.jpg",
+    "sha256": "c09bb2a728ad501e590b8c81eab6702ac4b72d36c62b82be971b9c246ff0a9d8",
+    "checked_at": "2026-10-10T07:01:33.214511+00:00"
+  },
+  "downwell": {
+    "name": "Downwell",
+    "source_url": "https://pc-builds.com/ko/games/07E/downwell",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co284e.jpg",
+    "sha256": "e6b1eeffa08238f49d16132a07ce54b6381f4ac13f541ae3ca3ebe9feda1300b",
+    "checked_at": "2026-10-10T07:01:33.220999+00:00"
+  },
+  "scum": {
+    "name": "Scum",
+    "source_url": "https://pc-builds.com/ko/games/02v/scum",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coa05f.jpg",
+    "sha256": "c2775c0341be853d744ec268b2f2490d04f27bfd7cbcd0c9169eb5b3210f5859",
+    "checked_at": "2026-10-10T07:01:33.274448+00:00"
+  },
+  "hitman_2": {
+    "name": "Hitman 2",
+    "source_url": "https://pc-builds.com/ko/games/03b/hitman-2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2qcq.jpg",
+    "sha256": "e815b92789f6e6579987e2fbf842becd489d2b2ffca25b13323603bfef73523d",
+    "checked_at": "2026-10-10T07:01:33.279271+00:00"
+  },
+  "rebel_galaxy": {
+    "name": "Rebel Galaxy",
+    "source_url": "https://pc-builds.com/ko/games/087/rebel-galaxy",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2e24.jpg",
+    "sha256": "6d55882e8868a450ca57c490837b58e652a1058c9d28a1f25f18506fa3eaa24c",
+    "checked_at": "2026-10-10T07:01:33.283474+00:00"
+  },
+  "world_of_tanks": {
+    "name": "World of Tanks",
+    "source_url": "https://pc-builds.com/ko/games/04A/world-of-tanks",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaeeu.jpg",
+    "sha256": "ae9366164bd9a031ef9ff788a0ec0e2d9054b43a1811179e2900195fe4405b47",
+    "checked_at": "2026-10-10T07:01:33.324291+00:00"
+  },
+  "payday_2": {
+    "name": "Payday 2",
+    "source_url": "https://pc-builds.com/ko/games/06K/payday-2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaaqu.jpg",
+    "sha256": "f915dce6b3ab7142f8bc816a193d0d7af5784f3b368c01d5d44f83b506c8ecf4",
+    "checked_at": "2026-10-10T07:01:33.334764+00:00"
+  },
+  "divinity_original_sin": {
+    "name": "Divinity: Original Sin",
+    "source_url": "https://pc-builds.com/ko/games/07v/divinity-original-sin",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2axn.jpg",
+    "sha256": "8055ebcc743bbfa77c32c0cf771f40a0c09fe2ee587fc4962fd7e6aeadd0c6cd",
+    "checked_at": "2026-10-10T07:01:33.464530+00:00"
+  },
+  "horizon_zero_dawn": {
+    "name": "Horizon Zero Dawn",
+    "source_url": "https://pc-builds.com/ko/games/02b/horizon-zero-dawn",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2una.jpg",
+    "sha256": "51e617841bd1ee15e224da26e1dad30ed5486acb1e1945d0e27fd505ba59f615",
+    "checked_at": "2026-10-10T07:01:33.506115+00:00"
+  },
+  "dropsy": {
+    "name": "Dropsy",
+    "source_url": "https://pc-builds.com/ko/games/07T/dropsy",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2fl0.jpg",
+    "sha256": "1e9855fff29ca98263c990ed551f954d93fcda51693949bd79c47a1fe187af51",
+    "checked_at": "2026-10-10T07:01:33.510864+00:00"
+  },
+  "sekiro_shadows_die_twice": {
+    "name": "Sekiro: Shadows Die Twice",
+    "source_url": "https://pc-builds.com/ko/games/01X/sekiro-shadows-die-twice",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2a23.jpg",
+    "sha256": "b74b33775baa5aace42921038be89e2705a9d47810b0d04306dd0ee1694a1bcb",
+    "checked_at": "2026-10-10T07:01:33.514183+00:00"
+  },
+  "star_wars_jedi_fallen_order": {
+    "name": "Star Wars Jedi: Fallen Order",
+    "source_url": "https://pc-builds.com/ko/games/01P/star-wars-jedi-fallen-order",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1rbi.jpg",
+    "sha256": "adba35cead4ddbe861b539decb2486ccaac7ad1a076b73ee02029bc3b158dd4d",
+    "checked_at": "2026-10-10T07:01:33.550881+00:00"
+  },
+  "dave_the_diver": {
+    "name": "Dave the Diver",
+    "source_url": "https://pc-builds.com/ko/games/0dh/dave-the-diver",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaav7.jpg",
+    "sha256": "4422785069a29a4bbd02df52158e4273f33118d65c221d1d3784b5b1f2f39357",
+    "checked_at": "2026-10-10T07:01:33.555065+00:00"
+  },
+  "darkest_dungeon": {
+    "name": "Darkest Dungeon",
+    "source_url": "https://pc-builds.com/ko/games/07G/darkest-dungeon",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaaw2.jpg",
+    "sha256": "588c9854c36eae2cee7be3e189a96b99848b05a35c9c286ae04cf9f9b629c938",
+    "checked_at": "2026-10-10T07:01:33.555144+00:00"
+  },
+  "trove": {
+    "name": "Trove",
+    "source_url": "https://pc-builds.com/ko/games/063/trove",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/yckmopwynvlncm1ub3om.jpg",
+    "sha256": "a6ecdc902700415a70819d10338d57ff4cb102717c6beb3e5d4112dfd557c3c3",
+    "checked_at": "2026-10-10T07:01:33.562829+00:00"
+  },
+  "nba_2k25": {
+    "name": "NBA 2K25",
+    "source_url": "https://pc-builds.com/ko/games/0c2/nba-2k25",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8te0.jpg",
+    "sha256": "7e642be0e9fe8dd3bee4c2405096d95593a52f1f7d39c4ac402268ef20106096",
+    "checked_at": "2026-10-10T07:01:33.566727+00:00"
+  },
+  "runescape": {
+    "name": "RuneScape",
+    "source_url": "https://pc-builds.com/ko/games/05p/runescape",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coagxt.jpg",
+    "sha256": "d7e5924c6d124afebaeaebb0af7b7658640b332fec72fbbf48c30d25dcef3669",
+    "checked_at": "2026-10-10T07:01:33.602198+00:00"
+  },
+  "stellaris": {
+    "name": "Stellaris",
+    "source_url": "https://pc-builds.com/ko/games/064/stellaris",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaaru.jpg",
+    "sha256": "f43e3a809616a05bc772bd9347bd7be0bc838d04ede85c0a107c67133c13e185",
+    "checked_at": "2026-10-10T07:01:33.605687+00:00"
+  },
+  "grand_theft_auto_san_andreas": {
+    "name": "Grand Theft Auto: San Andreas",
+    "source_url": "https://pc-builds.com/ko/games/044/grand-theft-auto-san-andreas",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2lb9.jpg",
+    "sha256": "8f6a8446fea52cb23348258ffc8304e13324ea2366bb9b07d46bcc8171d4843e",
+    "checked_at": "2026-10-10T07:01:33.610011+00:00"
+  },
+  "rimworld": {
+    "name": "RimWorld",
+    "source_url": "https://pc-builds.com/ko/games/07B/rimworld",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaaqj.jpg",
+    "sha256": "bbee2c36ee16ca0b0490946189f2a5ec2f7173eb945936f0ed1b9101b66ada59",
+    "checked_at": "2026-10-10T07:01:33.647423+00:00"
+  },
+  "call_of_duty_4_modern_warfare": {
+    "name": "Call of Duty 4: Modern Warfare",
+    "source_url": "https://pc-builds.com/ko/games/04p/call-of-duty-4-modern-warfare",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1wko.jpg",
+    "sha256": "9903fd1dfeb9ebdc76562063c64eba109a5b71bbfe1436e0620958dcf669e599",
+    "checked_at": "2026-10-10T07:01:33.652464+00:00"
+  },
+  "dayz": {
+    "name": "DayZ",
+    "source_url": "https://pc-builds.com/ko/games/034/dayz",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2dhb.jpg",
+    "sha256": "c2173d7224e4ca95a4bf74976813acaf61d76d172c09a4de8125fd5df1428b10",
+    "checked_at": "2026-10-10T07:01:33.697039+00:00"
+  },
+  "god_of_war": {
+    "name": "God of War",
+    "source_url": "https://pc-builds.com/ko/games/04b/god-of-war",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1tmu.jpg",
+    "sha256": "7b878a4bcc0307b394b852f7c02774546139a4ee4c242cb01be01c39f4070c4f",
+    "checked_at": "2026-10-10T07:01:33.786801+00:00"
+  },
+  "arma_2": {
+    "name": "Arma 2",
+    "source_url": "https://pc-builds.com/ko/games/06c/arma-2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2ehb.jpg",
+    "sha256": "c4dd85e2c6a4c0e6a1a7cd22200acf43c1be7ed32c65dc6ba90a1af789bdd730",
+    "checked_at": "2026-10-10T07:01:33.794406+00:00"
+  },
+  "prey": {
+    "name": "Prey",
+    "source_url": "https://pc-builds.com/ko/games/05G/prey",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co9aoh.jpg",
+    "sha256": "ff85bb8460cfbef22258c8935b3652229436d399918b0b4d5ad8a037f736f623",
+    "checked_at": "2026-10-10T07:01:33.840350+00:00"
+  },
+  "forza_motorsport_7": {
+    "name": "Forza Motorsport 7",
+    "source_url": "https://pc-builds.com/ko/games/04R/forza-motorsport-7",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co24hd.jpg",
+    "sha256": "856cd239b241e5ad372f6334596d436c568959204f9cb4d8a19800115aaec29e",
+    "checked_at": "2026-10-10T07:01:33.845212+00:00"
+  },
+  "the_elder_scrolls_online": {
+    "name": "The Elder Scrolls Online",
+    "source_url": "https://pc-builds.com/ko/games/05z/the-elder-scrolls-online",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co9nt3.jpg",
+    "sha256": "c85ff3e3d2d41e6e383e1929884da9db1dcbab445171673952c68de52c6fb888",
+    "checked_at": "2026-10-10T07:01:33.869657+00:00"
+  },
+  "borderlands_2": {
+    "name": "Borderlands 2",
+    "source_url": "https://pc-builds.com/ko/games/05t/borderlands-2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co9ba3.jpg",
+    "sha256": "9fc9de02a752e8df05378f178271f62b75121f9b0e8326aa0affdc43ca90a38d",
+    "checked_at": "2026-10-10T07:01:33.875572+00:00"
+  },
+  "adr1ft": {
+    "name": "Adr1ft",
+    "source_url": "https://pc-builds.com/ko/games/06E/adr1ft",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3wo2.jpg",
+    "sha256": "11fe392df5eb715d37c574ab566bc027e1211b1ec9d2a6ddaa24ddb037641f08",
+    "checked_at": "2026-10-10T07:01:33.914798+00:00"
+  },
+  "euro_truck_simulator_2": {
+    "name": "Euro Truck Simulator 2",
+    "source_url": "https://pc-builds.com/ko/games/04o/euro-truck-simulator-2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co7et5.jpg",
+    "sha256": "062b89831cb6504e2784b53d069c4f42fd199b59e5ae174ccf87a03be53a7f97",
+    "checked_at": "2026-10-10T07:01:33.919785+00:00"
+  },
+  "garry_s_mod": {
+    "name": "Garry's Mod",
+    "source_url": "https://pc-builds.com/ko/games/05u/garry-s-mod",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8pgw.jpg",
+    "sha256": "c806c26c3b278d238a4f46f92ce5bffc246879fb32a1b29ed72d3ff9e810d27b",
+    "checked_at": "2026-10-10T07:01:33.960528+00:00"
+  },
+  "tom_clancy_s_ghost_recon_breakpoint": {
+    "name": "Tom Clancy's Ghost Recon: Breakpoint",
+    "source_url": "https://pc-builds.com/ko/games/02U/tom-clancy-s-ghost-recon-breakpoint",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1xro.jpg",
+    "sha256": "3df36c18163324102c0656ae00f8897414675d1b1b5636e5cdddf4a5d00e5da8",
+    "checked_at": "2026-10-10T07:01:34.022880+00:00"
+  },
+  "dirt_3": {
+    "name": "Dirt 3",
+    "source_url": "https://pc-builds.com/ko/games/05d/dirt-3",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2gdo.jpg",
+    "sha256": "04f86997e86a52e334536acc04df01529f600e87a9dd7a82bcd56029db4b77fc",
+    "checked_at": "2026-10-10T07:01:34.070574+00:00"
+  },
+  "factorio": {
+    "name": "Factorio",
+    "source_url": "https://pc-builds.com/ko/games/06z/factorio",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1tfy.jpg",
+    "sha256": "2d5fc4e3bec33f7e498f2b1468d5556f4fc3da806fa2868b5f2048a2fe170bcc",
+    "checked_at": "2026-10-10T07:01:34.085137+00:00"
+  },
+  "grand_theft_auto_iv": {
+    "name": "Grand Theft Auto IV",
+    "source_url": "https://pc-builds.com/ko/games/045/grand-theft-auto-iv",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2lbv.jpg",
+    "sha256": "825900005ccd2fa5425ea4cd5bba013efafe50cc9bce8daf3a9c75b9acb2e7f3",
+    "checked_at": "2026-10-10T07:01:34.094632+00:00"
+  },
+  "resident_evil_7_biohazard": {
+    "name": "Resident Evil 7: Biohazard",
+    "source_url": "https://pc-builds.com/ko/games/02M/resident-evil-7-biohazard",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8uu1.jpg",
+    "sha256": "378fc5bc799cd8172fd7bc843e3e33de489a9972252a7f4e09ffb14d224420b6",
+    "checked_at": "2026-10-10T07:01:34.132644+00:00"
+  },
+  "citizens_of_earth": {
+    "name": "Citizens of Earth",
+    "source_url": "https://pc-builds.com/ko/games/07e/citizens-of-earth",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1qlr.jpg",
+    "sha256": "e2d506d0ec7d3d503eaae551f311c49de7f3010cc79b9c7574195b8bbda56264",
+    "checked_at": "2026-10-10T07:01:34.140291+00:00"
+  },
+  "mafia_ii": {
+    "name": "Mafia II",
+    "source_url": "https://pc-builds.com/ko/games/04m/mafia-ii",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2n13.jpg",
+    "sha256": "563c294cbfd69c4f02ee1f4a2dd7a072a17101a2601f485541e39346cfe9360e",
+    "checked_at": "2026-10-10T07:01:34.182655+00:00"
+  },
+  "battlefield_1": {
+    "name": "Battlefield 1",
+    "source_url": "https://pc-builds.com/ko/games/02V/battlefield-1",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2n9d.jpg",
+    "sha256": "95afd0d977dac0e77acc92834c381cdb5f9432d5aff068e032613a25df1df57c",
+    "checked_at": "2026-10-10T07:01:34.186621+00:00"
+  },
+  "team_fortress_2": {
+    "name": "Team Fortress 2",
+    "source_url": "https://pc-builds.com/ko/games/05C/team-fortress-2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co6rzl.jpg",
+    "sha256": "562b28e018d06fc048c266bdd8ac19e21c193cecfe1f97dd15117030f89ab619",
+    "checked_at": "2026-10-10T07:01:34.225858+00:00"
+  },
+  "need_for_speed_heat": {
+    "name": "Need for Speed: Heat",
+    "source_url": "https://pc-builds.com/ko/games/02X/need-for-speed-heat",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co209t.jpg",
+    "sha256": "da319a5bb16679ef419d4f5f74d73aa388f0c48f6604bd86b62a8226164a783e",
+    "checked_at": "2026-10-10T07:01:34.231135+00:00"
+  },
+  "heroes_of_the_storm": {
+    "name": "Heroes of the Storm",
+    "source_url": "https://pc-builds.com/ko/games/05R/heroes-of-the-storm",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co9sx0.jpg",
+    "sha256": "7689e9a4d48fb0c6e91312df0c03218d7b271f209a36104d80e10e6505e8f5a4",
+    "checked_at": "2026-10-10T07:01:34.247421+00:00"
+  },
+  "the_forest": {
+    "name": "The Forest",
+    "source_url": "https://pc-builds.com/ko/games/02m/the-forest",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co20x5.jpg",
+    "sha256": "2fec5b591fe516669d01ea03350374ff88f60f4e2cc5681f5236542ae3a4addd",
+    "checked_at": "2026-10-10T07:01:34.294666+00:00"
+  },
+  "total_war_attila": {
+    "name": "Total War: Attila",
+    "source_url": "https://pc-builds.com/ko/games/04Q/total-war-attila",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2rpx.jpg",
+    "sha256": "eebbb2ae0e28f26bafdc2eaa96f560a7fb269162e8c72e481c9d035c27720f0b",
+    "checked_at": "2026-10-10T07:01:34.302035+00:00"
+  },
+  "dark_souls_iii": {
+    "name": "Dark Souls III",
+    "source_url": "https://pc-builds.com/ko/games/03N/dark-souls-iii",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1vcf.jpg",
+    "sha256": "2704744940495c45665c1c48b5d4bdb48571cae5e57a1f230ee38f451657291c",
+    "checked_at": "2026-10-10T07:01:34.327454+00:00"
+  },
+  "dragon_ball_z_kakarot": {
+    "name": "Dragon Ball Z: Kakarot",
+    "source_url": "https://pc-builds.com/ko/games/024/dragon-ball-z-kakarot",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2kqa.jpg",
+    "sha256": "d1a4e91b01cc51b313bac5c33e9a3c7ac88b8aa9af4ba831d64190c3a6f26a9a",
+    "checked_at": "2026-10-10T07:01:34.357877+00:00"
+  },
+  "no_man_s_sky": {
+    "name": "No Man's Sky",
+    "source_url": "https://pc-builds.com/ko/games/03y/no-man-s-sky",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coacrk.jpg",
+    "sha256": "06c27a1f96e23cf33bf686af0c95b0ff1ab04775f3daf745000ba6fcb77f2e33",
+    "checked_at": "2026-10-10T07:01:34.369422+00:00"
+  },
+  "moonlighter": {
+    "name": "Moonlighter",
+    "source_url": "https://pc-builds.com/ko/games/07r/moonlighter",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1vck.jpg",
+    "sha256": "63d606ef3d20dbbfba10c2e14fffc75ba09c3a8bfa719a9873fa8bc42460f269",
+    "checked_at": "2026-10-10T07:01:34.455411+00:00"
+  },
+  "path_of_exile": {
+    "name": "Path of Exile",
+    "source_url": "https://pc-builds.com/ko/games/05F/path-of-exile",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1n6w.jpg",
+    "sha256": "8c1af2b7f9829af64be6a5f57ebe2e3775c4cc6fd689bc52dd74db1fc12e8db3",
+    "checked_at": "2026-10-10T07:01:34.516928+00:00"
+  },
+  "frostpunk": {
+    "name": "Frostpunk",
+    "source_url": "https://pc-builds.com/ko/games/05w/frostpunk",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/mferu1am1yv5pcy5aplm.jpg",
+    "sha256": "3f7ca3fab996a8b5af1f8028709cf05cb34f07ff65558ca0404768a269824617",
+    "checked_at": "2026-10-10T07:01:34.520975+00:00"
+  },
+  "vampyr": {
+    "name": "Vampyr",
+    "source_url": "https://pc-builds.com/ko/games/081/vampyr",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8lrg.jpg",
+    "sha256": "47459effa2162f3e76588446abd17ffb4be281ef16f76275b7b7f1c2333b12a1",
+    "checked_at": "2026-10-10T07:01:34.527356+00:00"
+  },
+  "ark_survival_ascended": {
+    "name": "Ark: Survival Ascended",
+    "source_url": "https://pc-builds.com/ko/games/0js/ark-survival-ascended",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co7ace.jpg",
+    "sha256": "65b1aa37347471ea41c3808880413a029d5df129aeedf280fb120e4af61673c9",
+    "checked_at": "2026-10-10T07:01:34.564848+00:00"
+  },
+  "soma": {
+    "name": "Soma",
+    "source_url": "https://pc-builds.com/ko/games/07I/soma",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2a20.jpg",
+    "sha256": "70409a0daa76d0de1685e3056a374c774058c96f056676dbcbec2d2089b85934",
+    "checked_at": "2026-10-10T07:01:34.591423+00:00"
+  },
+  "battlefield_v": {
+    "name": "Battlefield V",
+    "source_url": "https://pc-builds.com/ko/games/038/battlefield-v",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1xbv.jpg",
+    "sha256": "acc52b5ab195c7beba6b19c0e33953598931737e3a3e8d3467ed8ff80329932d",
+    "checked_at": "2026-10-10T07:01:34.607905+00:00"
+  },
+  "slay_the_spire": {
+    "name": "Slay the Spire",
+    "source_url": "https://pc-builds.com/ko/games/07o/slay-the-spire",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1iyf.jpg",
+    "sha256": "d35e52ef77ec004ab3ed91cfc7cd49007e151ebc8d40e0b3665505933ab568a7",
+    "checked_at": "2026-10-10T07:01:34.646301+00:00"
+  },
+  "alien_isolation": {
+    "name": "Alien: Isolation",
+    "source_url": "https://pc-builds.com/ko/games/06U/alien-isolation",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1vzu.jpg",
+    "sha256": "57114aeb8e704753e0732b35cce09a6453b32b9dd3882c95d76eeb20ca68f75a",
+    "checked_at": "2026-10-10T07:01:34.675053+00:00"
+  },
+  "x_plane_11": {
+    "name": "X-Plane 11",
+    "source_url": "https://pc-builds.com/ko/games/02I/x-plane-11",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1nrg.jpg",
+    "sha256": "b0c2c46c5ac2450cf1b9614ded92be69f1b92b3cd7a180f4b3c62a00dcde123e",
+    "checked_at": "2026-10-10T07:01:34.720578+00:00"
+  },
+  "metro_exodus": {
+    "name": "Metro Exodus",
+    "source_url": "https://pc-builds.com/ko/games/025/metro-exodus",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coab4p.jpg",
+    "sha256": "53b2da1147b069d5a1623935f0c7c201f2631fd78fc440184a85f947409fe401",
+    "checked_at": "2026-10-10T07:01:34.747988+00:00"
+  },
+  "dirt_showdown": {
+    "name": "Dirt Showdown",
+    "source_url": "https://pc-builds.com/ko/games/05n/dirt-showdown",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2gdp.jpg",
+    "sha256": "f3bacc8710af2284f2d2ab4691709cd72bc2a8b240dcbdf28992699f97a539e1",
+    "checked_at": "2026-10-10T07:01:34.758482+00:00"
+  },
+  "dishonored_2": {
+    "name": "Dishonored 2",
+    "source_url": "https://pc-builds.com/ko/games/04Y/dishonored-2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co9e29.jpg",
+    "sha256": "213ab8c2891c2afd16fa659938e23b32c2104361a91fc625b9a90260b75dd209",
+    "checked_at": "2026-10-10T07:01:34.835884+00:00"
+  },
+  "watch_dogs": {
+    "name": "Watch Dogs",
+    "source_url": "https://pc-builds.com/ko/games/03J/watch-dogs",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2p5w.jpg",
+    "sha256": "781c80503914213d8dc5b1ebf85cdf8d7f53f6a67abd1f61853eef4d2a3da430",
+    "checked_at": "2026-10-10T07:01:34.866805+00:00"
+  },
+  "xcom_2": {
+    "name": "XCOM 2",
+    "source_url": "https://pc-builds.com/ko/games/06S/xcom-2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1mvj.jpg",
+    "sha256": "d0a2aed8b5b704ff340b61d44ba01f3bfdf414b3306c4b9e682091b3278e9210",
+    "checked_at": "2026-10-10T07:01:34.899807+00:00"
+  },
+  "call_of_duty_black_ops": {
+    "name": "Call of Duty: Black Ops",
+    "source_url": "https://pc-builds.com/ko/games/04c/call-of-duty-black-ops",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1wkl.jpg",
+    "sha256": "d86af455b1db7b1247359a37eccd49eaa132857227ea5e3dcdae6a1a75ef5dfb",
+    "checked_at": "2026-10-10T07:01:34.947024+00:00"
+  },
+  "the_last_of_us_part_ii_remastered": {
+    "name": "The Last of Us Part II Remastered",
+    "source_url": "https://pc-builds.com/ko/games/0m6/the-last-of-us-part-ii-remastered",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coa1gr.jpg",
+    "sha256": "c9c54a7425ee64d8f4c962d83134a42a53774c167860f259de61d9b5b98d4a0c",
+    "checked_at": "2026-10-10T07:01:34.979289+00:00"
+  },
+  "fallout_new_vegas": {
+    "name": "Fallout: New Vegas",
+    "source_url": "https://pc-builds.com/ko/games/06J/fallout-new-vegas",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1u60.jpg",
+    "sha256": "3a31c3e504e98aa74b0854b8bc4b295971a3dd3ee7f3b151c531e855c166fdb3",
+    "checked_at": "2026-10-10T07:01:34.988457+00:00"
+  },
+  "crysis_3": {
+    "name": "Crysis 3",
+    "source_url": "https://pc-builds.com/ko/games/04j/crysis-3",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2on3.jpg",
+    "sha256": "da826e916f676b197ac9f3dfe85934b4800f8faa3676158b242b6c3b24135229",
+    "checked_at": "2026-10-10T07:01:35.062068+00:00"
+  },
+  "plague_inc_evolved": {
+    "name": "Plague Inc: Evolved",
+    "source_url": "https://pc-builds.com/ko/games/07c/plague-inc-evolved",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coa98w.jpg",
+    "sha256": "45cebf4bc790898c71035dcf7f06e8ae9178b4f05025f11e37de6fcab79c14e6",
+    "checked_at": "2026-10-10T07:01:35.104500+00:00"
+  },
+  "the_witness": {
+    "name": "The Witness",
+    "source_url": "https://pc-builds.com/ko/games/07f/the-witness",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3hih.jpg",
+    "sha256": "d7543b1c9634fb1bc8e3b785e7a98c7b20bed383988df36973eaf9118c8a4413",
+    "checked_at": "2026-10-10T07:01:35.129060+00:00"
+  },
+  "mount_blade_warband": {
+    "name": "Mount & Blade: Warband",
+    "source_url": "https://pc-builds.com/ko/games/066/mount-blade-warband",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1y8y.jpg",
+    "sha256": "5ae8f262a3f4f6708f6f58fbc322bd8bdbd627407331bb76190bdc3211725e60",
+    "checked_at": "2026-10-10T07:01:35.180316+00:00"
+  },
+  "starbound": {
+    "name": "Starbound",
+    "source_url": "https://pc-builds.com/ko/games/06T/starbound",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co4b19.jpg",
+    "sha256": "40f2d28a7ae0bf6caf4767ab8ade26eb8c9d41c302810d48b6cfddf91545e846",
+    "checked_at": "2026-10-10T07:01:35.221041+00:00"
+  },
+  "resident_evil_2": {
+    "name": "Resident Evil 2",
+    "source_url": "https://pc-builds.com/ko/games/04F/resident-evil-2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1ir3.jpg",
+    "sha256": "078bfc761dcae121fac04eaf1bdecf3f7349c31b8f4b5265576a832b8d47ed88",
+    "checked_at": "2026-10-10T07:01:35.230362+00:00"
+  },
+  "assassin_s_creed_origins": {
+    "name": "Assassin's Creed Origins",
+    "source_url": "https://pc-builds.com/ko/games/02G/assassin-s-creed-origins",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1rbe.jpg",
+    "sha256": "6769d108b0e21d3b841334db805a419fd77c0e641c7690f06fd33b193024af93",
+    "checked_at": "2026-10-10T07:01:35.276034+00:00"
+  },
+  "dark_souls_ii": {
+    "name": "Dark Souls II",
+    "source_url": "https://pc-builds.com/ko/games/06g/dark-souls-ii",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2eoo.jpg",
+    "sha256": "5a739f15d741814177f24afe3d2dcb728292c22edde9e1a1aa932867f6a4fd8a",
+    "checked_at": "2026-10-10T07:01:35.281369+00:00"
+  },
+  "superhot": {
+    "name": "SuperHot",
+    "source_url": "https://pc-builds.com/ko/games/079/superhot",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co7ybp.jpg",
+    "sha256": "96d4b39a65683323d2dd17007e17d6587d169cfd9f7882b71c9da30115433186",
+    "checked_at": "2026-10-10T07:01:35.299697+00:00"
+  },
+  "hearthstone": {
+    "name": "Hearthstone",
+    "source_url": "https://pc-builds.com/ko/games/05I/hearthstone",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1sh2.jpg",
+    "sha256": "7fb3c7afd385ea93171177d8533b8955a6ea06dad2458432f269c7728598181f",
+    "checked_at": "2026-10-10T07:01:35.303416+00:00"
+  },
+  "titanfall_2": {
+    "name": "Titanfall 2",
+    "source_url": "https://pc-builds.com/ko/games/06P/titanfall-2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/fhbeilnghyhhmjqhinqa.jpg",
+    "sha256": "78830fa1c54a8d14a4f390ab85ce9e3b2948e87eac22c1d0a6f5f0e9b9ca679f",
+    "checked_at": "2026-10-10T07:01:35.325126+00:00"
+  },
+  "batman_arkham_city": {
+    "name": "Batman: Arkham City",
+    "source_url": "https://pc-builds.com/ko/games/04V/batman-arkham-city",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1voh.jpg",
+    "sha256": "ff2f3bc07980baee380327a79956ded88ecb67becfb42c4fdfaae2e1fa8240a2",
+    "checked_at": "2026-10-10T07:01:35.330404+00:00"
+  },
+  "sniper_elite_4": {
+    "name": "Sniper Elite 4",
+    "source_url": "https://pc-builds.com/ko/games/06r/sniper-elite-4",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co24t8.jpg",
+    "sha256": "20cada55a070403288bbde29725cccb00c0735225bf1742d8739b209c5239537",
+    "checked_at": "2026-10-10T07:01:35.338993+00:00"
+  },
+  "valiant_hearts_the_great_war": {
+    "name": "Valiant Hearts: The Great War",
+    "source_url": "https://pc-builds.com/ko/games/08r/valiant-hearts-the-great-war",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co25zo.jpg",
+    "sha256": "a71632e4ea50ed65ae1db5f4dfade8e70e2fa0b06f59ab9b3d53d6187b23e016",
+    "checked_at": "2026-10-10T07:01:35.367468+00:00"
+  },
+  "dcs_world": {
+    "name": "DCS World",
+    "source_url": "https://pc-builds.com/ko/games/04a/dcs-world",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co20u6.jpg",
+    "sha256": "bfe5f3d20bcd683c22b98eeb366ebf6461a4a749cfc8372256ff513f98f3c9ef",
+    "checked_at": "2026-10-10T07:01:35.372636+00:00"
+  },
+  "total_war_shogun_2": {
+    "name": "Total War: Shogun 2",
+    "source_url": "https://pc-builds.com/ko/games/05k/total-war-shogun-2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2rpy.jpg",
+    "sha256": "2f5886b7a3ff060538c8d7fdf3acf2d994c9bb0ba91b6951612453fc9737bac8",
+    "checked_at": "2026-10-10T07:01:35.415660+00:00"
+  },
+  "battlefield_3": {
+    "name": "Battlefield 3",
+    "source_url": "https://pc-builds.com/ko/games/04y/battlefield-3",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1xbu.jpg",
+    "sha256": "59c6af6ba2533e48e13cee1c397ce8044657ca1502cafcca4152bc684bcd9670",
+    "checked_at": "2026-10-10T07:01:35.533453+00:00"
+  },
+  "the_talos_principle": {
+    "name": "The Talos Principle",
+    "source_url": "https://pc-builds.com/ko/games/052/the-talos-principle",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1rb5.jpg",
+    "sha256": "72794ff89093098c8c6dbe86e64f2e9bee9e7eab7cedcd6c202517eb3c73ed83",
+    "checked_at": "2026-10-10T07:01:35.563037+00:00"
+  },
+  "dragon_age_inquisition": {
+    "name": "Dragon Age: Inquisition",
+    "source_url": "https://pc-builds.com/ko/games/04T/dragon-age-inquisition",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2mvy.jpg",
+    "sha256": "7b443c8d44d4cd80ac2b0395e57442d544bf5e6f54c656aa99e6854120935ac3",
+    "checked_at": "2026-10-10T07:01:35.568057+00:00"
+  },
+  "assassin_s_creed_valhalla": {
+    "name": "Assassin's Creed Valhalla",
+    "source_url": "https://pc-builds.com/ko/games/02L/assassin-s-creed-valhalla",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2ed3.jpg",
+    "sha256": "fb49f6258e609aa50a7aab5ebc1a0d4827f5a399dbbb1e2ee096ae3baa5edb44",
+    "checked_at": "2026-10-10T07:01:35.581796+00:00"
+  },
+  "unturned": {
+    "name": "Unturned",
+    "source_url": "https://pc-builds.com/ko/games/06O/unturned",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaary.jpg",
+    "sha256": "c32d528a7cc5ca769214e83a50d3197051f206ecbab4d829a21b47db4ce889c3",
+    "checked_at": "2026-10-10T07:01:35.595006+00:00"
+  },
+  "total_war_warhammer_ii": {
+    "name": "Total War: Warhammer II",
+    "source_url": "https://pc-builds.com/ko/games/04S/total-war-warhammer-ii",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co9rsu.jpg",
+    "sha256": "34a09632a6c08d43c6fcfbedb2215949d5ca2dcb14e3b102f88552d546520319",
+    "checked_at": "2026-10-10T07:01:35.634518+00:00"
+  },
+  "hearts_of_iron_iv": {
+    "name": "Hearts of Iron IV",
+    "source_url": "https://pc-builds.com/ko/games/06N/hearts-of-iron-iv",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaaql.jpg",
+    "sha256": "43307024494f3d1ba14d6530b7572a020b7970acc608d0963add7d63334df8f8",
+    "checked_at": "2026-10-10T07:01:35.639339+00:00"
+  },
+  "firewatch": {
+    "name": "Firewatch",
+    "source_url": "https://pc-builds.com/ko/games/072/firewatch",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1m35.jpg",
+    "sha256": "a007fbc56ab25d0ef1bdd15aab518d4eba09a0663df7e2e15b7d8eb8a90ffd1b",
+    "checked_at": "2026-10-10T07:01:35.644207+00:00"
+  },
+  "tom_clancy_s_the_division": {
+    "name": "Tom Clancy's The Division",
+    "source_url": "https://pc-builds.com/ko/games/04O/tom-clancy-s-the-division",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1yvf.jpg",
+    "sha256": "7ba654c2da115cae9a07ce1b00454b0a8f2dca95fd7118c1a6409452ab63ba64",
+    "checked_at": "2026-10-10T07:01:35.680746+00:00"
+  },
+  "guild_wars_2": {
+    "name": "Guild Wars 2",
+    "source_url": "https://pc-builds.com/ko/games/05s/guild-wars-2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co54tr.jpg",
+    "sha256": "727da75a2d312575a8416067d2ade78280be02dc1c87fa45bfa25fbaafab4f0c",
+    "checked_at": "2026-10-10T07:01:35.690606+00:00"
+  },
+  "ready_or_not": {
+    "name": "Ready or Not",
+    "source_url": "https://pc-builds.com/ko/games/0aD/ready-or-not",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coa98t.jpg",
+    "sha256": "a89b131934bee7ff77859ca74dc37e867f1a7712f3503454f87ffe3d4e52234a",
+    "checked_at": "2026-10-10T07:01:35.695053+00:00"
+  },
+  "far_cry_5": {
+    "name": "Far Cry 5",
+    "source_url": "https://pc-builds.com/ko/games/02C/far-cry-5",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co21a6.jpg",
+    "sha256": "baaece541c7b7194f351a140156c8e525cb2dd77d9016b0f971f4dc24071f168",
+    "checked_at": "2026-10-10T07:01:35.729914+00:00"
+  },
+  "monster_hunter_world": {
+    "name": "Monster Hunter: World",
+    "source_url": "https://pc-builds.com/ko/games/02E/monster-hunter-world",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1rst.jpg",
+    "sha256": "b682c4570fe5513b6e5ae2e47fa3b8b496b9847178b325c9557e0fc32434660b",
+    "checked_at": "2026-10-10T07:01:35.735673+00:00"
+  },
+  "grim_dawn": {
+    "name": "Grim Dawn",
+    "source_url": "https://pc-builds.com/ko/games/06t/grim-dawn",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co41h4.jpg",
+    "sha256": "bfb4ea467d211725bb37e8f13fccbf96f28829d029a4054e6649483cb8ffa3df",
+    "checked_at": "2026-10-10T07:01:35.779078+00:00"
+  },
+  "jurassic_world_evolution": {
+    "name": "Jurassic World Evolution",
+    "source_url": "https://pc-builds.com/ko/games/06X/jurassic-world-evolution",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1uzy.jpg",
+    "sha256": "fc864c65a81706a80ba984f2741ddb851857e39b50ce641ca2072baac4a9916d",
+    "checked_at": "2026-10-10T07:01:35.795312+00:00"
+  },
+  "brawlhalla": {
+    "name": "Brawlhalla",
+    "source_url": "https://pc-builds.com/ko/games/06V/brawlhalla",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co6i3u.jpg",
+    "sha256": "9c3547d07dbcccb15db7123cc9c36c25402cb56eab2b77443b4053296ff30b0a",
+    "checked_at": "2026-10-10T07:01:35.813384+00:00"
+  },
+  "left_4_dead_2": {
+    "name": "Left 4 Dead 2",
+    "source_url": "https://pc-builds.com/ko/games/06j/left-4-dead-2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1y2f.jpg",
+    "sha256": "3f81478ce85a6029f58b38af382f32307c53df66da17d2eba77b261e0d37756b",
+    "checked_at": "2026-10-10T07:01:35.821752+00:00"
+  },
+  "resident_evil_3": {
+    "name": "Resident Evil 3",
+    "source_url": "https://pc-builds.com/ko/games/01Q/resident-evil-3",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co22l7.jpg",
+    "sha256": "d8ec7652f64f3c45e679a8c04576ca3e68bf4bd7f5694cb268607e10ec56277c",
+    "checked_at": "2026-10-10T07:01:35.844979+00:00"
+  },
+  "oxenfree": {
+    "name": "Oxenfree",
+    "source_url": "https://pc-builds.com/ko/games/07m/oxenfree",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2hlq.jpg",
+    "sha256": "c6847bdbee96fb1d86cc0fa34b48e823174f63cf2be88a96f8884cffea5a831b",
+    "checked_at": "2026-10-10T07:01:35.911259+00:00"
+  },
+  "far_cry_4": {
+    "name": "Far Cry 4",
+    "source_url": "https://pc-builds.com/ko/games/03R/far-cry-4",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2npa.jpg",
+    "sha256": "ff6e7e4fe38c3ffbe89c012782732f22e7808f30ac9a19859b814b93b0b64173",
+    "checked_at": "2026-10-10T07:01:35.923952+00:00"
+  },
+  "biomutant": {
+    "name": "Biomutant",
+    "source_url": "https://pc-builds.com/ko/games/089/biomutant",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1rse.jpg",
+    "sha256": "8f00c7d20de8090c001cccd0e58d8d1517968bc3b4015aad15dee3e42c5feac9",
+    "checked_at": "2026-10-10T07:01:35.954853+00:00"
+  },
+  "kingdom_come_deliverance": {
+    "name": "Kingdom Come: Deliverance",
+    "source_url": "https://pc-builds.com/ko/games/02j/kingdom-come-deliverance",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co4aqi.jpg",
+    "sha256": "2286b5014ac3b7f3dc0da4d23dea073a47a9685f82b19fef461962c0283c2127",
+    "checked_at": "2026-10-10T07:01:35.973612+00:00"
+  },
+  "call_of_duty_black_ops_4": {
+    "name": "Call of Duty: Black Ops 4",
+    "source_url": "https://pc-builds.com/ko/games/04G/call-of-duty-black-ops-4",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1wkf.jpg",
+    "sha256": "93ae37c4c7eb5790d18ed8da87532522f84c4646899f4ebc97d17f24d8ea1d66",
+    "checked_at": "2026-10-10T07:01:36.056505+00:00"
+  },
+  "7_days_to_die": {
+    "name": "7 Days to Die",
+    "source_url": "https://pc-builds.com/ko/games/05r/7-days-to-die",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaaqz.jpg",
+    "sha256": "63a5b744c578ad1d05d0eb0b89cc6ec8b655bc913ff71dc1c5d3c88f2490b16f",
+    "checked_at": "2026-10-10T07:01:36.076980+00:00"
+  },
+  "total_war_rome_ii": {
+    "name": "Total War: Rome II",
+    "source_url": "https://pc-builds.com/ko/games/03A/total-war-rome-ii",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1qs5.jpg",
+    "sha256": "130cd137229bfca341a6c7c2c5e7bf0948cc800f03b45d0ccbd571669eeab20e",
+    "checked_at": "2026-10-10T07:01:36.137888+00:00"
+  },
+  "just_cause_4": {
+    "name": "Just Cause 4",
+    "source_url": "https://pc-builds.com/ko/games/02Y/just-cause-4",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co27or.jpg",
+    "sha256": "38ed9ec524121fb8d78858386aebd2f9f88d8577d2665c901979365612d32ebd",
+    "checked_at": "2026-10-10T07:01:36.202608+00:00"
+  },
+  "middle_earth_shadow_of_mordor": {
+    "name": "Middle-earth: Shadow of Mordor",
+    "source_url": "https://pc-builds.com/ko/games/050/middle-earth-shadow-of-mordor",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co20pd.jpg",
+    "sha256": "df6059d270737f6223d4547d672489b395f9fb1de698613a3548a0aafe66124b",
+    "checked_at": "2026-10-10T07:01:36.211086+00:00"
+  },
+  "warhammer_vermintide_2": {
+    "name": "Warhammer: Vermintide 2",
+    "source_url": "https://pc-builds.com/ko/games/05o/warhammer-vermintide-2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co20u8.jpg",
+    "sha256": "39313563a4c31c079c04241ddc20df7622e6bce5b24723665ea4fe22f0e89d49",
+    "checked_at": "2026-10-10T07:01:36.279148+00:00"
+  },
+  "atomic_heart": {
+    "name": "Atomic Heart",
+    "source_url": "https://pc-builds.com/ko/games/0bb/atomic-heart",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co68ag.jpg",
+    "sha256": "8a14589e9a3a3ffb874b86661dd194b0be983a8b99b9adaebc194202f74e2c93",
+    "checked_at": "2026-10-10T07:01:36.288623+00:00"
+  },
+  "tom_clancy_s_the_division_2": {
+    "name": "Tom Clancy's The Division 2",
+    "source_url": "https://pc-builds.com/ko/games/02e/tom-clancy-s-the-division-2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1xrm.jpg",
+    "sha256": "b15cd2fa3b38125948f9885d1e32cc923525fac8da2df8d8e6c3987be7bb244a",
+    "checked_at": "2026-10-10T07:01:36.313407+00:00"
+  },
+  "pillars_of_eternity_ii_deadfire": {
+    "name": "Pillars of Eternity II: Deadfire",
+    "source_url": "https://pc-builds.com/ko/games/07D/pillars-of-eternity-ii-deadfire",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2wuo.jpg",
+    "sha256": "32dd36bf9f03f56972ae63265d45b6a3aaef0662bf571e9cb78f57706cf22960",
+    "checked_at": "2026-10-10T07:01:36.369530+00:00"
+  },
+  "need_for_speed_rivals": {
+    "name": "Need for Speed: Rivals",
+    "source_url": "https://pc-builds.com/ko/games/04i/need-for-speed-rivals",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co20a3.jpg",
+    "sha256": "d31fbb48c8c8311d50a90bf4d07a595bf807cdc5802377f625f3e861460e53fe",
+    "checked_at": "2026-10-10T07:01:36.434268+00:00"
+  },
+  "south_park_the_stick_of_truth": {
+    "name": "South Park: The Stick of Truth",
+    "source_url": "https://pc-builds.com/ko/games/075/south-park-the-stick-of-truth",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1v8x.jpg",
+    "sha256": "a73118bbfbed6d4e6e0c38207b836e63a89573ad6db0cabbe40cfb24f042bc4e",
+    "checked_at": "2026-10-10T07:01:36.451669+00:00"
+  },
+  "deus_ex_mankind_divided": {
+    "name": "Deus Ex: Mankind Divided",
+    "source_url": "https://pc-builds.com/ko/games/055/deus-ex-mankind-divided",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co25jt.jpg",
+    "sha256": "907ca0ee62326ec931380d2e716d9c16d8404c76cc6682d49ce5ea99ad417d43",
+    "checked_at": "2026-10-10T07:01:36.517176+00:00"
+  },
+  "undertale": {
+    "name": "Undertale",
+    "source_url": "https://pc-builds.com/ko/games/06b/undertale",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2855.jpg",
+    "sha256": "e06f41bb4752e1e3bfc92dcbc13b691c548d63452ddb93c40b3d883ff57c9f8c",
+    "checked_at": "2026-10-10T07:01:36.519126+00:00"
   }
 }

@@ -1,15 +1,14 @@
 import { queryString, partUrl } from "./products.js";
+import { safeExternalUrl } from "./urls.js";
 export function partImageUrl(part, type = "") {
   if (!part?.name && !part?.product_name) return "";
   const name = part.product_name || part.name;
+  const imageUrl = safeExternalUrl(part.image_url);
   const params = queryString({
     name: String(name),
     type: String(type || part.part_type || part.type || ""),
     image_url:
-      /^https?:\/\//i.test(part.image_url || "") &&
-      !String(part.image_url).includes("/api/part-image")
-        ? part.image_url
-        : "",
+      imageUrl && !imageUrl.includes("/api/part-image") ? imageUrl : "",
     product_url: partUrl(part),
   });
   return `/api/part-image?${params}`;

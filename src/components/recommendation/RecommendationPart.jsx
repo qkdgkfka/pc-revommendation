@@ -32,9 +32,11 @@ export default function RecommendationPart({ part, type, label }) {
               {displayName(part)}
             </a>
           </span>
-          <span className={"price-provenance " + provenance.status}>
-            {provenance.text}
-          </span>
+          {provenance.text && (
+            <span className={"price-provenance " + provenance.status}>
+              {provenance.text}
+            </span>
+          )}
         </span>
         <span className="part-price">
           {effectivePrice(part) != null

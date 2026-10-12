@@ -1,6 +1,7 @@
 import React, { lazy, Suspense, useId, useState } from "react";
 import { suitabilityFromScore, workScore } from "../domain/performance.js";
 import { workFillClass } from "../domain/products.js";
+import LowOneMetric from "./LowOneMetric.jsx";
 const GraphicsDetails = lazy(() => import("./GraphicsDetails.jsx"));
 function GraphicsToggle({ fps }) {
   const [open, setOpen] = useState(false),
@@ -93,6 +94,13 @@ export function FpsChart({ fps, game, resolution, compact = false }) {
             게임 기본 {fps.frame_cap}fps 제한 반영
           </div>
         ) : null}
+        {fps.fps_source_label ? (
+          <p className="chart-note">{fps.fps_source_label}</p>
+        ) : null}
+        {fps.preset_comparison_note ? (
+          <p className="chart-note">{fps.preset_comparison_note}</p>
+        ) : null}
+        <LowOneMetric fps={fps} />
       </div>
       <GraphicsToggle key={fps.game + "-" + resolution} fps={fps} />
     </>
@@ -127,13 +135,11 @@ export function WorkChart({
               }
             : suitabilityFromScore(score);
         return (
-          <div className={compact ? "wb-row" : "chart-row"} key={key}>
-            <span
-              className={compact ? "wb-lbl" : "chart-lbl wide"}
-              style={
-                key === selected ? { fontWeight: 800, color: "#0d1b3e" } : {}
-              }
-            >
+          <div
+            className={`work-chart-row ${compact ? "wb-row" : "chart-row"}${key === selected ? " is-selected" : ""}`}
+            key={key}
+          >
+            <span className={compact ? "wb-lbl" : "chart-lbl wide"}>
               {profile.name}
             </span>
             <div className={compact ? "wb-bg" : "chart-bg"}>

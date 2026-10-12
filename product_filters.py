@@ -21,6 +21,7 @@ BRANDS = {
  'SAPPHIRE':r'sapphire|사파이어', 'PowerColor':r'powercolor|파워컬러', 'XFX':r'\bxfx\b',
  'Transcend':r'transcend|트랜센드', 'KIOXIA':r'kioxia|키오시아', 'SanDisk':r'sandisk|샌디스크', 'ABKO':r'abko|앱코', 'LIAN LI':r'lian[- ]?li|리안리', 'BIWIN':r'biwin', 'ZOTAC':r'zotac|조텍', 'PALIT':r'palit|팰릿', 'Lexar':r'lexar|렉사',
 }
+BRAND_PATTERNS = tuple((brand, re.compile(pattern, re.I)) for brand, pattern in BRANDS.items())
 FIELDS = {
  'cpu': [('platform','CPU 제조사'),('cpu_family','제품군'),('generation','세대'),('socket','CPU 소켓'),('memory_type','지원 메모리'),('cores','코어 수'),('threads','스레드 수')],
  'mb': [('manufacturer','제조사'),('platform','CPU 플랫폼'),('socket','CPU 소켓'),('chipset','칩셋'),('memory_type','메모리 규격'),('form_factor','보드 크기'),('pcie_x16','그래픽카드 슬롯')],
@@ -35,8 +36,12 @@ SPEED_RANGES = [(1,599,'600 미만'),(600,2999,'600–2,999'),(3000,6999,'3,000�
 WATT_RANGES = [(1,499,'500W 미만'),(500,599,'500–599W'),(600,699,'600–699W'),(700,799,'700–799W'),(800,899,'800–899W'),(900,999,'900–999W'),(1000,1299,'1000–1299W'),(1300,99999,'1300W 이상')]
 
 def first(pattern, text, group=1):
-    m = re.search(pattern, str(text or ''), re.I)
+    m = _case_insensitive_pattern(pattern).search(str(text or ''))
     return m.group(group) if m else ''
+
+@lru_cache(maxsize=256)
+def _case_insensitive_pattern(pattern):
+    return re.compile(pattern, re.I)
 
 def number(v):
     try: return float(str(v).replace(',',''))
@@ -56,7 +61,7 @@ def _normalize(kind, source):
     text = name + ' / ' + spec; d = {}
     # Retail product name is SKU-specific; detailed spec can describe grouped variants.
     brand_text = (p.get('manufacturer') or '') + ' ' + name
-    d['manufacturer'] = next((b for b,pat in BRANDS.items() if re.search(pat, brand_text,re.I)), '')
+    d['manufacturer'] = next((brand for brand, pattern in BRAND_PATTERNS if pattern.search(brand_text)), '')
     if not d['manufacturer']:
         candidate = (p.get('manufacturer') or p.get('brand') or '').strip('[] ')
         # Legacy imports sometimes put a chipset or CPU platform in `brand`.
@@ -187,10 +192,13 @@ def option_label(key, value):
     return LABELS.get(value,str(value))
 
 def facets(kind, rows, selected=None):
+    fields = FIELDS.get(kind, ())
+    if not fields:
+        return []
     selected=selected or {}; normalized=[r.get('specs') or normalize_specs(r,kind) for r in rows]
     result=[]
     priority=['AM5','LGA1851','LGA1700','AM4','DDR5','DDR4','Intel','AMD','B850','B650','B760','B860','Z890','X870','32','16','64','2000','1000']
-    for key,label in FIELDS.get(kind,[]):
+    for key,label in fields:
         candidates=normalized
         if kind=='mb' and key=='chipset':
             dependencies={k:v for k,v in selected.items() if k in ('socket','platform')}

@@ -1,0 +1,56 @@
+/* One visual language for recommendations, the builder, and shared details. */
+:root {
+  --pc-bg: #f6f8fb;
+  --pc-surface: #ffffff;
+  --pc-ink: #202b3d;
+  --pc-muted: #637083;
+  --pc-line: #e2e7ef;
+  --pc-soft: #f1f4f8;
+  --pc-blue: #3269d4;
+  --pc-blue-hover: #2556b5;
+  --pc-blue-soft: #edf3ff;
+  --pc-blue-line: #c5d6f7;
+  --pc-focus: #8baef2;
+  --pc-success: #287759;
+  --pc-warning: #956322;
+  --pc-danger: #b44848;
+  --pc-radius: 16px;
+  --pc-radius-sm: 8px;
+  --pc-space-1: 4px;
+  --pc-space-2: 8px;
+  --pc-space-3: 12px;
+  --pc-space-4: 16px;
+  --pc-space-5: 24px;
+  --pc-space-6: 32px;
+  --pc-text-xs: 14px;
+  --pc-text-sm: 15px;
+  --pc-text-md: 16px;
+  --pc-text-base: 16px;
+  --pc-text-lg: 20px;
+  --pc-shadow: 0 2px 6px #202b3d06;
+  --pc-shadow-popover: 0 12px 32px #202b3d1a;
+  --pc-transition: 150ms ease;
+  --font:
+    Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR",
+    sans-serif;
+  --mono: var(--font);
+  /* Compatibility aliases for shared charts and product details. */
+  --bg: var(--pc-bg);
+  --card: var(--pc-surface);
+  --accent: var(--pc-blue);
+  --acc-lt: var(--pc-blue-soft);
+  --acc-dk: var(--pc-blue-hover);
+  --muted: var(--pc-muted);
+  --border: var(--pc-line);
+  --shadow: var(--pc-shadow);
+  --shadow-lg: var(--pc-shadow-popover);
+  --radius: var(--pc-radius);
+  --rsm: var(--pc-radius-sm);
+  --low-c: var(--pc-blue);
+  --mid-c: var(--pc-blue);
+  --high-c: var(--pc-blue);
+  --wb-great: var(--pc-success);
+  --wb-good: var(--pc-blue);
+  --wb-ok: var(--pc-warning);
+  --wb-poor: var(--pc-danger);
+}

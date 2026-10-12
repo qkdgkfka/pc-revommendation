@@ -1,0 +1,2737 @@
+[
+  {
+    "id": "dota2",
+    "label": "도타 2",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "moba"
+  },
+  {
+    "id": "f1_24",
+    "label": "F1 24",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "sim"
+  },
+  {
+    "id": "the_last_of_us1",
+    "label": "더 라스트 오브 어스 파트 I",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa"
+  },
+  {
+    "id": "spider_man2",
+    "label": "마블 스파이더맨 2",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld"
+  },
+  {
+    "id": "ratchet_clank",
+    "label": "라쳇 앤 클랭크: 리프트 어파트",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa"
+  },
+  {
+    "id": "space_marine2",
+    "label": "워해머 40,000: 스페이스 마린 2",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa"
+  },
+  {
+    "id": "expedition33",
+    "label": "클레르 옵스퀴르: 33 원정대",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "rpg"
+  },
+  {
+    "id": "valorant",
+    "label": "발로란트",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps"
+  },
+  {
+    "id": "csgo2",
+    "label": "CS2",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps"
+  },
+  {
+    "id": "csgo",
+    "label": "CS:GO",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps"
+  },
+  {
+    "id": "overwatch2",
+    "label": "오버워치 2",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps"
+  },
+  {
+    "id": "apex",
+    "label": "에이펙스 레전드",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps"
+  },
+  {
+    "id": "rainbow6",
+    "label": "레인보우 식스 시즈",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps"
+  },
+  {
+    "id": "pubg",
+    "label": "배틀그라운드",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps"
+  },
+  {
+    "id": "cyberpunk2077",
+    "label": "사이버펑크 2077",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "rpg"
+  },
+  {
+    "id": "baldurs_gate3",
+    "label": "발더스 게이트 3",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "rpg"
+  },
+  {
+    "id": "god_of_war_ragnarok",
+    "label": "갓 오브 워 라그나로크",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa"
+  },
+  {
+    "id": "black_myth_wukong",
+    "label": "검은 신화: 오공",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa"
+  },
+  {
+    "id": "witcher3",
+    "label": "더 위쳐 3",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "rpg"
+  },
+  {
+    "id": "elden_ring",
+    "label": "엘든 링",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "rpg"
+  },
+  {
+    "id": "ghost_of_tsushima",
+    "label": "고스트 오브 쓰시마",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld"
+  },
+  {
+    "id": "red_dead_redemption2",
+    "label": "레드 데드 리뎀션 2",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld"
+  },
+  {
+    "id": "horizon_forbidden_west",
+    "label": "호라이즌 포비든 웨스트",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld"
+  },
+  {
+    "id": "hogwarts_legacy",
+    "label": "호그와트 레거시",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld"
+  },
+  {
+    "id": "starfield",
+    "label": "스타필드",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld"
+  },
+  {
+    "id": "genshin_impact",
+    "label": "원신",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "subculture"
+  },
+  {
+    "id": "wuthering_waves",
+    "label": "명조: 워더링 웨이브",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "subculture"
+  },
+  {
+    "id": "zenless_zone_zero",
+    "label": "젠레스 존 제로",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "subculture"
+  },
+  {
+    "id": "lostark",
+    "label": "로스트아크",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "mmo"
+  },
+  {
+    "id": "wow",
+    "label": "WoW",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "mmo"
+  },
+  {
+    "id": "ffxiv",
+    "label": "파이널 판타지 XIV",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "mmo"
+  },
+  {
+    "id": "cities_skylines2",
+    "label": "시티즈 스카이라인 2",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "sim"
+  },
+  {
+    "id": "msfs2024",
+    "label": "MS 플라이트 시뮬레이터 2024",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "sim"
+  },
+  {
+    "id": "farming_sim",
+    "label": "파밍 시뮬레이터",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "sim"
+  },
+  {
+    "id": "fortnite",
+    "label": "포트나이트",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps"
+  },
+  {
+    "id": "marvel_rivals",
+    "label": "마블 라이벌즈",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps"
+  },
+  {
+    "id": "cod_black_ops6",
+    "label": "콜 오브 듀티: 블랙 옵스 6",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps"
+  },
+  {
+    "id": "dragons_dogma2",
+    "label": "드래곤즈 도그마 2",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "rpg"
+  },
+  {
+    "id": "dying_light2",
+    "label": "다잉 라이트 2",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld"
+  },
+  {
+    "id": "resident_evil4",
+    "label": "바이오하자드 RE:4",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa"
+  },
+  {
+    "id": "alan_wake2",
+    "label": "앨런 웨이크 2",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa"
+  },
+  {
+    "id": "rust",
+    "label": "러스트",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Rust",
+      "러스트",
+      "rust"
+    ],
+    "english_title": "Rust",
+    "steam_app_id": 252490
+  },
+  {
+    "id": "palworld",
+    "label": "팰월드",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Palworld",
+      "팔월드"
+    ],
+    "english_title": "Palworld",
+    "steam_app_id": 1623730
+  },
+  {
+    "id": "helldivers2",
+    "label": "헬다이버즈 2",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "HELLDIVERS 2",
+      "헬다이버2",
+      "헬다이버즈2"
+    ],
+    "english_title": "HELLDIVERS 2",
+    "steam_app_id": 553850
+  },
+  {
+    "id": "diablo4",
+    "label": "디아블로 IV",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "rpg",
+    "aliases": [
+      "Diablo IV",
+      "디아블로4",
+      "디아4",
+      "Diablo 4"
+    ],
+    "english_title": "Diablo IV",
+    "steam_app_id": 2344520
+  },
+  {
+    "id": "path_of_exile2",
+    "label": "패스 오브 엑자일 2",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "rpg",
+    "aliases": [
+      "Path of Exile 2",
+      "POE2",
+      "POE 2",
+      "패오엑2"
+    ],
+    "english_title": "Path of Exile 2",
+    "steam_app_id": 2694490
+  },
+  {
+    "id": "monster_hunter_wilds",
+    "label": "몬스터 헌터 와일즈",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "rpg",
+    "aliases": [
+      "Monster Hunter Wilds",
+      "몬헌 와일즈",
+      "몬헌와일즈"
+    ],
+    "english_title": "Monster Hunter Wilds",
+    "steam_app_id": 2246340
+  },
+  {
+    "id": "valheim",
+    "label": "발헤임",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Valheim"
+    ],
+    "english_title": "Valheim",
+    "steam_app_id": 892970
+  },
+  {
+    "id": "warframe",
+    "label": "워프레임",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Warframe"
+    ],
+    "english_title": "Warframe",
+    "steam_app_id": 230410
+  },
+  {
+    "id": "gta5_legacy",
+    "label": "GTA V 레거시",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Grand Theft Auto V Legacy",
+      "GTA V",
+      "GTA5",
+      "GTA 5 Legacy"
+    ],
+    "english_title": "Grand Theft Auto V Legacy",
+    "steam_app_id": 271590
+  },
+  {
+    "id": "total_war_warhammer3",
+    "label": "토탈 워: 워해머 III",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "sim",
+    "aliases": [
+      "Total War: WARHAMMER III",
+      "토탈워 워해머3",
+      "워해머3",
+      "Total War Warhammer 3"
+    ],
+    "english_title": "Total War: WARHAMMER III",
+    "steam_app_id": 1142710
+  },
+  {
+    "id": "civilization6",
+    "label": "시드 마이어의 문명 VI",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "sim",
+    "aliases": [
+      "Sid Meier's Civilization VI",
+      "문명6",
+      "문명 6",
+      "Civ6",
+      "Civilization 6"
+    ],
+    "english_title": "Sid Meier's Civilization VI",
+    "steam_app_id": 289070
+  },
+  {
+    "id": "destiny2",
+    "label": "데스티니 가디언즈",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Destiny 2",
+      "데스티니2",
+      "데스티니 2"
+    ],
+    "english_title": "Destiny 2",
+    "steam_app_id": 1085660
+  },
+  {
+    "id": "stalker2",
+    "label": "스토커 2: 하트 오브 초르노빌",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "S.T.A.L.K.E.R. 2: Heart of Chornobyl",
+      "스토커2",
+      "STALKER 2",
+      "Stalker2"
+    ],
+    "english_title": "S.T.A.L.K.E.R. 2: Heart of Chornobyl",
+    "steam_app_id": 1643320
+  },
+  {
+    "id": "delta_force",
+    "label": "델타 포스",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Delta Force",
+      "델타포스"
+    ],
+    "english_title": "Delta Force",
+    "steam_app_id": 2507950
+  },
+  {
+    "id": "jedi_survivor",
+    "label": "스타워즈 제다이: 서바이버",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "STAR WARS Jedi: Survivor",
+      "제다이 서바이버",
+      "Jedi Survivor"
+    ],
+    "english_title": "STAR WARS Jedi: Survivor",
+    "steam_app_id": 1774580
+  },
+  {
+    "id": "plague_tale_requiem",
+    "label": "플래그 테일: 레퀴엠",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "A Plague Tale: Requiem",
+      "플래그테일 레퀴엠",
+      "Plague Tale Requiem"
+    ],
+    "english_title": "A Plague Tale: Requiem",
+    "steam_app_id": 1182900
+  },
+  {
+    "id": "dragon_age_veilguard",
+    "label": "드래곤 에이지: 베일가드",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "rpg",
+    "aliases": [
+      "Dragon Age: The Veilguard",
+      "드래곤에이지 베일가드",
+      "Dragon Age Veilguard"
+    ],
+    "english_title": "Dragon Age: The Veilguard",
+    "steam_app_id": 1845910
+  },
+  {
+    "id": "war_thunder",
+    "label": "워 썬더",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "sim",
+    "aliases": [
+      "War Thunder",
+      "워썬더"
+    ],
+    "english_title": "War Thunder",
+    "steam_app_id": 236390
+  },
+  {
+    "id": "spider_man_remastered",
+    "label": "마블 스파이더맨 리마스터",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Marvel's Spider-Man Remastered",
+      "스파이더맨 리마스터",
+      "Spider-Man Remastered"
+    ],
+    "english_title": "Marvel's Spider-Man Remastered",
+    "steam_app_id": 1817070
+  },
+  {
+    "id": "kingdom_come_deliverance2",
+    "label": "킹덤 컴: 딜리버런스 II",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "rpg",
+    "aliases": [
+      "Kingdom Come: Deliverance II",
+      "킹덤컴2",
+      "킹덤 컴 2",
+      "KCD2",
+      "Kingdom Come Deliverance 2"
+    ],
+    "english_title": "Kingdom Come: Deliverance II",
+    "steam_app_id": 1771300
+  },
+  {
+    "id": "league_of_legends",
+    "label": "리그 오브 레전드",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "moba",
+    "aliases": [
+      "League of Legends",
+      "롤",
+      "LoL",
+      "리그오브레전드"
+    ],
+    "english_title": "League of Legends"
+  },
+  {
+    "id": "forza_horizon5",
+    "label": "포르자 호라이즌 5",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "sim",
+    "aliases": [
+      "Forza Horizon 5",
+      "포르자5",
+      "포르자 호라이즌5",
+      "FH5"
+    ],
+    "english_title": "Forza Horizon 5",
+    "steam_app_id": 1551360
+  },
+  {
+    "id": "shadow_of_tomb_raider",
+    "label": "섀도 오브 더 툼 레이더",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "Shadow of the Tomb Raider",
+      "섀도 오브 툼레이더",
+      "쉐도우 오브 툼레이더",
+      "SOTTR"
+    ],
+    "english_title": "Shadow of the Tomb Raider",
+    "steam_app_id": 750920
+  },
+  {
+    "id": "control",
+    "label": "컨트롤",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "Control Ultimate Edition",
+      "Control"
+    ],
+    "english_title": "Control Ultimate Edition",
+    "steam_app_id": 870780
+  },
+  {
+    "id": "call_of_duty_warzone",
+    "label": "콜 오브 듀티: 워존",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Call of Duty: Warzone",
+      "워존",
+      "COD Warzone"
+    ],
+    "english_title": "Call of Duty: Warzone",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co20o8.jpg"
+  },
+  {
+    "id": "minecraft_java_edition",
+    "label": "마인크래프트: 자바 에디션",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Minecraft: Java Edition",
+      "마크",
+      "Minecraft"
+    ],
+    "english_title": "Minecraft: Java Edition",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coa77e.jpg"
+  },
+  {
+    "id": "roblox",
+    "label": "로블록스",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Roblox"
+    ],
+    "english_title": "Roblox",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co5u9i.jpg"
+  },
+  {
+    "id": "mount_blade_ii_bannerlord",
+    "label": "마운트 앤 블레이드 II: 배너로드",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Mount & Blade II: Bannerlord",
+      "배너로드"
+    ],
+    "english_title": "Mount & Blade II: Bannerlord",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaar4.jpg"
+  },
+  {
+    "id": "naruto_shippuden_ultimate_ninja_storm_4",
+    "label": "나루토 질풍전: 나루티밋 스톰 4",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Naruto Shippuden: Ultimate Ninja Storm 4",
+      "나루토 스톰4"
+    ],
+    "english_title": "Naruto Shippuden: Ultimate Ninja Storm 4",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3whm.jpg"
+  },
+  {
+    "id": "escape_from_tarkov",
+    "label": "이스케이프 프롬 타르코프",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Escape from Tarkov",
+      "타르코프",
+      "EFT"
+    ],
+    "english_title": "Escape from Tarkov",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2xlq.jpg"
+  },
+  {
+    "id": "microsoft_flight_simulator",
+    "label": "마이크로소프트 플라이트 시뮬레이터 (2020)",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "sim",
+    "aliases": [
+      "Microsoft Flight Simulator",
+      "MSFS 2020"
+    ],
+    "english_title": "Microsoft Flight Simulator",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2dqk.jpg"
+  },
+  {
+    "id": "inside",
+    "label": "인사이드",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Inside"
+    ],
+    "english_title": "Inside",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2fca.jpg"
+  },
+  {
+    "id": "terraria",
+    "label": "테라리아",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Terraria"
+    ],
+    "english_title": "Terraria",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaamg.jpg"
+  },
+  {
+    "id": "hard_west",
+    "label": "하드 웨스트",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "sim",
+    "aliases": [
+      "Hard West"
+    ],
+    "english_title": "Hard West",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2fz8.jpg"
+  },
+  {
+    "id": "pc_building_simulator",
+    "label": "PC 빌딩 시뮬레이터",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "PC Building Simulator"
+    ],
+    "english_title": "PC Building Simulator",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1p77.jpg"
+  },
+  {
+    "id": "forza_horizon_4",
+    "label": "포르자 호라이즌 4",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Forza Horizon 4",
+      "FH4"
+    ],
+    "english_title": "Forza Horizon 4",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2e1a.jpg"
+  },
+  {
+    "id": "death_stranding",
+    "label": "데스 스트랜딩",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Death Stranding"
+    ],
+    "english_title": "Death Stranding",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co5vq8.jpg"
+  },
+  {
+    "id": "the_sims_3",
+    "label": "심즈 3",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "sim",
+    "aliases": [
+      "The Sims 3",
+      "심즈3"
+    ],
+    "english_title": "The Sims 3",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co5vwl.jpg"
+  },
+  {
+    "id": "beamng_drive",
+    "label": "빔엔지 드라이브",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "sim",
+    "aliases": [
+      "BeamNG.drive",
+      "빔엔지",
+      "BeamNG"
+    ],
+    "english_title": "BeamNG.drive",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1sym.jpg"
+  },
+  {
+    "id": "to_the_core",
+    "label": "투 더 코어",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "To the Core"
+    ],
+    "english_title": "To the Core",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co6z17.jpg"
+  },
+  {
+    "id": "greedfall",
+    "label": "그리드폴",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "GreedFall"
+    ],
+    "english_title": "GreedFall",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1ppo.jpg"
+  },
+  {
+    "id": "forza_horizon_3",
+    "label": "포르자 호라이즌 3",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Forza Horizon 3",
+      "FH3"
+    ],
+    "english_title": "Forza Horizon 3",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2e25.jpg"
+  },
+  {
+    "id": "squad",
+    "label": "스쿼드",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Squad"
+    ],
+    "english_title": "Squad",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaasd.jpg"
+  },
+  {
+    "id": "the_long_drive",
+    "label": "더 롱 드라이브",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "The Long Drive"
+    ],
+    "english_title": "The Long Drive",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co20xv.jpg"
+  },
+  {
+    "id": "fallout_76",
+    "label": "폴아웃 76",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Fallout 76"
+    ],
+    "english_title": "Fallout 76",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1yc4.jpg"
+  },
+  {
+    "id": "bodycam",
+    "label": "바디캠",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Bodycam"
+    ],
+    "english_title": "Bodycam",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co7mli.jpg"
+  },
+  {
+    "id": "rocket_league",
+    "label": "로켓 리그",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Rocket League",
+      "로켓리그"
+    ],
+    "english_title": "Rocket League",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coa90v.jpg"
+  },
+  {
+    "id": "conan_exiles",
+    "label": "코난 엑자일",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Conan Exiles"
+    ],
+    "english_title": "Conan Exiles",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coa90l.jpg"
+  },
+  {
+    "id": "transistor",
+    "label": "트랜지스터",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Transistor"
+    ],
+    "english_title": "Transistor",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1pi1.jpg"
+  },
+  {
+    "id": "the_technomancer",
+    "label": "더 테크노맨서",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "The Technomancer"
+    ],
+    "english_title": "The Technomancer",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1ppu.jpg"
+  },
+  {
+    "id": "fallout_4",
+    "label": "폴아웃 4",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Fallout 4",
+      "폴아웃4"
+    ],
+    "english_title": "Fallout 4",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1yc6.jpg"
+  },
+  {
+    "id": "osu",
+    "label": "오스!",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Osu!",
+      "osu"
+    ],
+    "english_title": "Osu!",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8a4m.jpg"
+  },
+  {
+    "id": "dying_light",
+    "label": "다잉 라이트",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Dying Light",
+      "다잉라이트"
+    ],
+    "english_title": "Dying Light",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co65yq.jpg"
+  },
+  {
+    "id": "assetto_corsa",
+    "label": "아세토 코르사",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Assetto Corsa"
+    ],
+    "english_title": "Assetto Corsa",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaauq.jpg"
+  },
+  {
+    "id": "unpacking",
+    "label": "언패킹",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Unpacking"
+    ],
+    "english_title": "Unpacking",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1t45.jpg"
+  },
+  {
+    "id": "dead_by_daylight",
+    "label": "데드 바이 데이라이트",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Dead by Daylight",
+      "데바데",
+      "DBD"
+    ],
+    "english_title": "Dead by Daylight",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co5zky.jpg"
+  },
+  {
+    "id": "diablo_iii",
+    "label": "디아블로 III",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Diablo III",
+      "디아블로3",
+      "Diablo 3"
+    ],
+    "english_title": "Diablo III",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2l1u.jpg"
+  },
+  {
+    "id": "ark_survival_evolved",
+    "label": "아크: 서바이벌 이볼브드",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Ark: Survival Evolved",
+      "아크 이볼브드"
+    ],
+    "english_title": "Ark: Survival Evolved",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co493k.jpg"
+  },
+  {
+    "id": "subnautica",
+    "label": "서브노티카",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Subnautica"
+    ],
+    "english_title": "Subnautica",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coa938.jpg"
+  },
+  {
+    "id": "tekken_7",
+    "label": "철권 7",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Tekken 7",
+      "철권7"
+    ],
+    "english_title": "Tekken 7",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1w4f.jpg"
+  },
+  {
+    "id": "the_binding_of_isaac_rebirth",
+    "label": "아이작의 번제: 리버스",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "The Binding of Isaac: Rebirth",
+      "아이작",
+      "Isaac Rebirth"
+    ],
+    "english_title": "The Binding of Isaac: Rebirth",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaare.jpg"
+  },
+  {
+    "id": "the_medium",
+    "label": "더 미디엄",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "The Medium"
+    ],
+    "english_title": "The Medium",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2z0q.jpg"
+  },
+  {
+    "id": "portal_2",
+    "label": "포탈 2",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Portal 2",
+      "포탈2"
+    ],
+    "english_title": "Portal 2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1rs4.jpg"
+  },
+  {
+    "id": "arma_3",
+    "label": "아르마 3",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Arma 3",
+      "아르마3"
+    ],
+    "english_title": "Arma 3",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaaut.jpg"
+  },
+  {
+    "id": "stardew_valley",
+    "label": "스타듀 밸리",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Stardew Valley",
+      "스타듀밸리"
+    ],
+    "english_title": "Stardew Valley",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coa93h.jpg"
+  },
+  {
+    "id": "the_elder_scrolls_v_skyrim",
+    "label": "엘더스크롤 V: 스카이림",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "The Elder Scrolls V: Skyrim",
+      "스카이림",
+      "Skyrim"
+    ],
+    "english_title": "The Elder Scrolls V: Skyrim",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1tnw.jpg"
+  },
+  {
+    "id": "the_sims_4",
+    "label": "심즈 4",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "sim",
+    "aliases": [
+      "The Sims 4",
+      "심즈4"
+    ],
+    "english_title": "The Sims 4",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3h3l.jpg"
+  },
+  {
+    "id": "unravel",
+    "label": "언래블",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Unravel"
+    ],
+    "english_title": "Unravel",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co95jp.jpg"
+  },
+  {
+    "id": "day_of_the_tentacle_remastered",
+    "label": "데이 오브 더 텐타클 리마스터",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Day of the Tentacle Remastered"
+    ],
+    "english_title": "Day of the Tentacle Remastered",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2865.jpg"
+  },
+  {
+    "id": "dark_souls",
+    "label": "다크 소울",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "Dark Souls"
+    ],
+    "english_title": "Dark Souls",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1x78.jpg"
+  },
+  {
+    "id": "borderlands_3",
+    "label": "보더랜드 3",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Borderlands 3",
+      "보더랜드3"
+    ],
+    "english_title": "Borderlands 3",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co20r3.jpg"
+  },
+  {
+    "id": "warhammer_end_times_vermintide",
+    "label": "워해머: 엔드 타임즈 - 버민타이드",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Warhammer: End Times - Vermintide",
+      "Vermintide"
+    ],
+    "english_title": "Warhammer: End Times - Vermintide",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coa99u.jpg"
+  },
+  {
+    "id": "downwell",
+    "label": "다운웰",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Downwell"
+    ],
+    "english_title": "Downwell",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co284e.jpg"
+  },
+  {
+    "id": "rebel_galaxy",
+    "label": "레벨 갤럭시",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Rebel Galaxy"
+    ],
+    "english_title": "Rebel Galaxy",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2e24.jpg"
+  },
+  {
+    "id": "hitman_2",
+    "label": "히트맨 2",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "Hitman 2",
+      "히트맨2"
+    ],
+    "english_title": "Hitman 2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2qcq.jpg"
+  },
+  {
+    "id": "cities_skylines",
+    "label": "시티즈: 스카이라인",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "sim",
+    "aliases": [
+      "Cities: Skylines",
+      "시티즈1"
+    ],
+    "english_title": "Cities: Skylines",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaas0.jpg"
+  },
+  {
+    "id": "payday_2",
+    "label": "페이데이 2",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Payday 2",
+      "페이데이2"
+    ],
+    "english_title": "Payday 2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaaqu.jpg"
+  },
+  {
+    "id": "scum",
+    "label": "스컴",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Scum"
+    ],
+    "english_title": "Scum",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coa05f.jpg"
+  },
+  {
+    "id": "runescape",
+    "label": "룬스케이프",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "RuneScape"
+    ],
+    "english_title": "RuneScape",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coagxt.jpg"
+  },
+  {
+    "id": "divinity_original_sin",
+    "label": "디비니티: 오리지널 신",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "Divinity: Original Sin",
+      "디비니티1"
+    ],
+    "english_title": "Divinity: Original Sin",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2axn.jpg"
+  },
+  {
+    "id": "sekiro_shadows_die_twice",
+    "label": "세키로: 섀도우 다이 트와이스",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "Sekiro: Shadows Die Twice",
+      "세키로",
+      "Sekiro"
+    ],
+    "english_title": "Sekiro: Shadows Die Twice",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2a23.jpg"
+  },
+  {
+    "id": "world_of_tanks",
+    "label": "월드 오브 탱크",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "World of Tanks",
+      "월탱",
+      "WOT"
+    ],
+    "english_title": "World of Tanks",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaeeu.jpg"
+  },
+  {
+    "id": "dropsy",
+    "label": "드롭시",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Dropsy"
+    ],
+    "english_title": "Dropsy",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2fl0.jpg"
+  },
+  {
+    "id": "trove",
+    "label": "트로브",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Trove"
+    ],
+    "english_title": "Trove",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/yckmopwynvlncm1ub3om.jpg"
+  },
+  {
+    "id": "nba_2k25",
+    "label": "NBA 2K25",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "NBA 2K25"
+    ],
+    "english_title": "NBA 2K25",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8te0.jpg"
+  },
+  {
+    "id": "horizon_zero_dawn",
+    "label": "호라이즌 제로 던",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Horizon Zero Dawn",
+      "호제던"
+    ],
+    "english_title": "Horizon Zero Dawn",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2una.jpg"
+  },
+  {
+    "id": "star_wars_jedi_fallen_order",
+    "label": "스타워즈 제다이: 오더의 몰락",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "Star Wars Jedi: Fallen Order",
+      "오더의 몰락",
+      "Jedi Fallen Order"
+    ],
+    "english_title": "Star Wars Jedi: Fallen Order",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1rbi.jpg"
+  },
+  {
+    "id": "darkest_dungeon",
+    "label": "다키스트 던전",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Darkest Dungeon",
+      "다키스트던전"
+    ],
+    "english_title": "Darkest Dungeon",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaaw2.jpg"
+  },
+  {
+    "id": "dave_the_diver",
+    "label": "데이브 더 다이버",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Dave the Diver",
+      "데더다"
+    ],
+    "english_title": "Dave the Diver",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaav7.jpg"
+  },
+  {
+    "id": "god_of_war",
+    "label": "갓 오브 워 (2018)",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "God of War",
+      "갓오브워",
+      "God of War 2018"
+    ],
+    "english_title": "God of War",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1tmu.jpg"
+  },
+  {
+    "id": "stellaris",
+    "label": "스텔라리스",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "sim",
+    "aliases": [
+      "Stellaris"
+    ],
+    "english_title": "Stellaris",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaaru.jpg"
+  },
+  {
+    "id": "arma_2",
+    "label": "아르마 2",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Arma 2"
+    ],
+    "english_title": "Arma 2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2ehb.jpg"
+  },
+  {
+    "id": "grand_theft_auto_san_andreas",
+    "label": "GTA: 산 안드레아스",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Grand Theft Auto: San Andreas",
+      "GTA SA",
+      "산안드레아스"
+    ],
+    "english_title": "Grand Theft Auto: San Andreas",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2lb9.jpg"
+  },
+  {
+    "id": "the_elder_scrolls_online",
+    "label": "엘더스크롤 온라인",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "The Elder Scrolls Online",
+      "ESO"
+    ],
+    "english_title": "The Elder Scrolls Online",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co9nt3.jpg"
+  },
+  {
+    "id": "rimworld",
+    "label": "림월드",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "sim",
+    "aliases": [
+      "RimWorld"
+    ],
+    "english_title": "RimWorld",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaaqj.jpg"
+  },
+  {
+    "id": "call_of_duty_4_modern_warfare",
+    "label": "콜 오브 듀티 4: 모던 워페어",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Call of Duty 4: Modern Warfare",
+      "COD4"
+    ],
+    "english_title": "Call of Duty 4: Modern Warfare",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1wko.jpg"
+  },
+  {
+    "id": "forza_motorsport_7",
+    "label": "포르자 모터스포츠 7",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Forza Motorsport 7",
+      "FM7"
+    ],
+    "english_title": "Forza Motorsport 7",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co24hd.jpg"
+  },
+  {
+    "id": "borderlands_2",
+    "label": "보더랜드 2",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Borderlands 2",
+      "보더랜드2"
+    ],
+    "english_title": "Borderlands 2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co9ba3.jpg"
+  },
+  {
+    "id": "dayz",
+    "label": "데이즈",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "DayZ"
+    ],
+    "english_title": "DayZ",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2dhb.jpg"
+  },
+  {
+    "id": "adr1ft",
+    "label": "애드리프트",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Adr1ft",
+      "Adrift"
+    ],
+    "english_title": "Adr1ft",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3wo2.jpg"
+  },
+  {
+    "id": "prey",
+    "label": "프레이 (2017)",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "Prey",
+      "프레이",
+      "Prey 2017"
+    ],
+    "english_title": "Prey",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co9aoh.jpg"
+  },
+  {
+    "id": "tom_clancy_s_ghost_recon_breakpoint",
+    "label": "고스트 리콘: 브레이크포인트",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Tom Clancy's Ghost Recon: Breakpoint",
+      "Ghost Recon Breakpoint"
+    ],
+    "english_title": "Tom Clancy's Ghost Recon: Breakpoint",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1xro.jpg"
+  },
+  {
+    "id": "dirt_3",
+    "label": "더트 3",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Dirt 3"
+    ],
+    "english_title": "Dirt 3",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2gdo.jpg"
+  },
+  {
+    "id": "factorio",
+    "label": "팩토리오",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "sim",
+    "aliases": [
+      "Factorio"
+    ],
+    "english_title": "Factorio",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1tfy.jpg"
+  },
+  {
+    "id": "euro_truck_simulator_2",
+    "label": "유로 트럭 시뮬레이터 2",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "sim",
+    "aliases": [
+      "Euro Truck Simulator 2",
+      "유로트럭2",
+      "ETS2"
+    ],
+    "english_title": "Euro Truck Simulator 2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co7et5.jpg"
+  },
+  {
+    "id": "grand_theft_auto_iv",
+    "label": "GTA IV",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Grand Theft Auto IV",
+      "GTA4",
+      "GTA 4"
+    ],
+    "english_title": "Grand Theft Auto IV",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2lbv.jpg"
+  },
+  {
+    "id": "garry_s_mod",
+    "label": "게리 모드",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Garry's Mod",
+      "게리모드",
+      "Gmod"
+    ],
+    "english_title": "Garry's Mod",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8pgw.jpg"
+  },
+  {
+    "id": "citizens_of_earth",
+    "label": "시티즌 오브 어스",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Citizens of Earth"
+    ],
+    "english_title": "Citizens of Earth",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1qlr.jpg"
+  },
+  {
+    "id": "mafia_ii",
+    "label": "마피아 II",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Mafia II",
+      "마피아2",
+      "Mafia 2"
+    ],
+    "english_title": "Mafia II",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2n13.jpg"
+  },
+  {
+    "id": "heroes_of_the_storm",
+    "label": "히어로즈 오브 더 스톰",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Heroes of the Storm",
+      "히오스",
+      "HOTS"
+    ],
+    "english_title": "Heroes of the Storm",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co9sx0.jpg"
+  },
+  {
+    "id": "total_war_attila",
+    "label": "토탈 워: 아틸라",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "sim",
+    "aliases": [
+      "Total War: Attila",
+      "토탈워 아틸라"
+    ],
+    "english_title": "Total War: Attila",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2rpx.jpg"
+  },
+  {
+    "id": "resident_evil_7_biohazard",
+    "label": "바이오하자드 7",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "Resident Evil 7: Biohazard",
+      "바하7",
+      "RE7"
+    ],
+    "english_title": "Resident Evil 7: Biohazard",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8uu1.jpg"
+  },
+  {
+    "id": "dark_souls_iii",
+    "label": "다크 소울 III",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "Dark Souls III",
+      "다크소울3",
+      "Dark Souls 3"
+    ],
+    "english_title": "Dark Souls III",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1vcf.jpg"
+  },
+  {
+    "id": "battlefield_1",
+    "label": "배틀필드 1",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Battlefield 1",
+      "배필1",
+      "BF1"
+    ],
+    "english_title": "Battlefield 1",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2n9d.jpg"
+  },
+  {
+    "id": "dragon_ball_z_kakarot",
+    "label": "드래곤볼 Z: 카카로트",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Dragon Ball Z: Kakarot",
+      "카카로트"
+    ],
+    "english_title": "Dragon Ball Z: Kakarot",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2kqa.jpg"
+  },
+  {
+    "id": "team_fortress_2",
+    "label": "팀 포트리스 2",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Team Fortress 2",
+      "팀포2",
+      "TF2"
+    ],
+    "english_title": "Team Fortress 2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co6rzl.jpg"
+  },
+  {
+    "id": "need_for_speed_heat",
+    "label": "니드 포 스피드: 히트",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Need for Speed: Heat",
+      "NFS Heat"
+    ],
+    "english_title": "Need for Speed: Heat",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co209t.jpg"
+  },
+  {
+    "id": "path_of_exile",
+    "label": "패스 오브 엑자일",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Path of Exile",
+      "POE",
+      "패오엑"
+    ],
+    "english_title": "Path of Exile",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1n6w.jpg"
+  },
+  {
+    "id": "moonlighter",
+    "label": "문라이터",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Moonlighter"
+    ],
+    "english_title": "Moonlighter",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1vck.jpg"
+  },
+  {
+    "id": "the_forest",
+    "label": "더 포레스트",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "The Forest",
+      "포레스트"
+    ],
+    "english_title": "The Forest",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co20x5.jpg"
+  },
+  {
+    "id": "vampyr",
+    "label": "뱀파이어",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "Vampyr"
+    ],
+    "english_title": "Vampyr",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co8lrg.jpg"
+  },
+  {
+    "id": "frostpunk",
+    "label": "프로스트펑크",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "sim",
+    "aliases": [
+      "Frostpunk"
+    ],
+    "english_title": "Frostpunk",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/mferu1am1yv5pcy5aplm.jpg"
+  },
+  {
+    "id": "no_man_s_sky",
+    "label": "노 맨즈 스카이",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "No Man's Sky",
+      "노맨즈스카이",
+      "NMS"
+    ],
+    "english_title": "No Man's Sky",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coacrk.jpg"
+  },
+  {
+    "id": "slay_the_spire",
+    "label": "슬레이 더 스파이어",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Slay the Spire",
+      "슬더스"
+    ],
+    "english_title": "Slay the Spire",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1iyf.jpg"
+  },
+  {
+    "id": "soma",
+    "label": "소마",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "Soma"
+    ],
+    "english_title": "Soma",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2a20.jpg"
+  },
+  {
+    "id": "alien_isolation",
+    "label": "에이리언: 아이솔레이션",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "Alien: Isolation",
+      "에일리언 아이솔레이션"
+    ],
+    "english_title": "Alien: Isolation",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1vzu.jpg"
+  },
+  {
+    "id": "ark_survival_ascended",
+    "label": "아크: 서바이벌 어센디드",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Ark: Survival Ascended",
+      "아크 어센디드"
+    ],
+    "english_title": "Ark: Survival Ascended",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co7ace.jpg"
+  },
+  {
+    "id": "metro_exodus",
+    "label": "메트로 엑소더스",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "Metro Exodus"
+    ],
+    "english_title": "Metro Exodus",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coab4p.jpg"
+  },
+  {
+    "id": "dirt_showdown",
+    "label": "더트 쇼다운",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Dirt Showdown"
+    ],
+    "english_title": "Dirt Showdown",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2gdp.jpg"
+  },
+  {
+    "id": "battlefield_v",
+    "label": "배틀필드 V",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Battlefield V",
+      "배필5",
+      "BF5",
+      "Battlefield 5"
+    ],
+    "english_title": "Battlefield V",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1xbv.jpg"
+  },
+  {
+    "id": "xcom_2",
+    "label": "엑스컴 2",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "sim",
+    "aliases": [
+      "XCOM 2",
+      "엑스컴2"
+    ],
+    "english_title": "XCOM 2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1mvj.jpg"
+  },
+  {
+    "id": "dishonored_2",
+    "label": "디스아너드 2",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "Dishonored 2"
+    ],
+    "english_title": "Dishonored 2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co9e29.jpg"
+  },
+  {
+    "id": "watch_dogs",
+    "label": "와치독스",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Watch Dogs",
+      "워치독스"
+    ],
+    "english_title": "Watch Dogs",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2p5w.jpg"
+  },
+  {
+    "id": "x_plane_11",
+    "label": "엑스플레인 11",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "sim",
+    "aliases": [
+      "X-Plane 11"
+    ],
+    "english_title": "X-Plane 11",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1nrg.jpg"
+  },
+  {
+    "id": "call_of_duty_black_ops",
+    "label": "콜 오브 듀티: 블랙 옵스",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Call of Duty: Black Ops",
+      "블랙옵스1"
+    ],
+    "english_title": "Call of Duty: Black Ops",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1wkl.jpg"
+  },
+  {
+    "id": "the_last_of_us_part_ii_remastered",
+    "label": "더 라스트 오브 어스 파트 II 리마스터",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "The Last of Us Part II Remastered",
+      "라오어2",
+      "The Last of Us 2"
+    ],
+    "english_title": "The Last of Us Part II Remastered",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coa1gr.jpg"
+  },
+  {
+    "id": "fallout_new_vegas",
+    "label": "폴아웃: 뉴 베가스",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Fallout: New Vegas",
+      "뉴베가스"
+    ],
+    "english_title": "Fallout: New Vegas",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1u60.jpg"
+  },
+  {
+    "id": "crysis_3",
+    "label": "크라이시스 3",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Crysis 3"
+    ],
+    "english_title": "Crysis 3",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2on3.jpg"
+  },
+  {
+    "id": "plague_inc_evolved",
+    "label": "플레이그 Inc: 이볼브드",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Plague Inc: Evolved",
+      "전염병 주식회사"
+    ],
+    "english_title": "Plague Inc: Evolved",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coa98w.jpg"
+  },
+  {
+    "id": "the_witness",
+    "label": "더 위트니스",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "The Witness"
+    ],
+    "english_title": "The Witness",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co3hih.jpg"
+  },
+  {
+    "id": "mount_blade_warband",
+    "label": "마운트 앤 블레이드: 워밴드",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Mount & Blade: Warband",
+      "워밴드"
+    ],
+    "english_title": "Mount & Blade: Warband",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1y8y.jpg"
+  },
+  {
+    "id": "superhot",
+    "label": "슈퍼핫",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "SuperHot"
+    ],
+    "english_title": "SuperHot",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co7ybp.jpg"
+  },
+  {
+    "id": "starbound",
+    "label": "스타바운드",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Starbound"
+    ],
+    "english_title": "Starbound",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co4b19.jpg"
+  },
+  {
+    "id": "hearthstone",
+    "label": "하스스톤",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Hearthstone"
+    ],
+    "english_title": "Hearthstone",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1sh2.jpg"
+  },
+  {
+    "id": "sniper_elite_4",
+    "label": "스나이퍼 엘리트 4",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Sniper Elite 4"
+    ],
+    "english_title": "Sniper Elite 4",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co24t8.jpg"
+  },
+  {
+    "id": "valiant_hearts_the_great_war",
+    "label": "발리언트 하츠: 더 그레이트 워",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Valiant Hearts: The Great War"
+    ],
+    "english_title": "Valiant Hearts: The Great War",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co25zo.jpg"
+  },
+  {
+    "id": "resident_evil_2",
+    "label": "바이오하자드 RE:2",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "Resident Evil 2",
+      "바하2",
+      "RE2"
+    ],
+    "english_title": "Resident Evil 2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1ir3.jpg"
+  },
+  {
+    "id": "assassin_s_creed_origins",
+    "label": "어쌔신 크리드 오리진",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Assassin's Creed Origins",
+      "어크 오리진",
+      "AC Origins"
+    ],
+    "english_title": "Assassin's Creed Origins",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1rbe.jpg"
+  },
+  {
+    "id": "dark_souls_ii",
+    "label": "다크 소울 II",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "Dark Souls II",
+      "다크소울2",
+      "Dark Souls 2"
+    ],
+    "english_title": "Dark Souls II",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2eoo.jpg"
+  },
+  {
+    "id": "titanfall_2",
+    "label": "타이탄폴 2",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Titanfall 2"
+    ],
+    "english_title": "Titanfall 2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/fhbeilnghyhhmjqhinqa.jpg"
+  },
+  {
+    "id": "batman_arkham_city",
+    "label": "배트맨: 아캄 시티",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Batman: Arkham City",
+      "아캄시티"
+    ],
+    "english_title": "Batman: Arkham City",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1voh.jpg"
+  },
+  {
+    "id": "battlefield_3",
+    "label": "배틀필드 3",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Battlefield 3",
+      "배필3",
+      "BF3"
+    ],
+    "english_title": "Battlefield 3",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1xbu.jpg"
+  },
+  {
+    "id": "firewatch",
+    "label": "파이어워치",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Firewatch"
+    ],
+    "english_title": "Firewatch",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1m35.jpg"
+  },
+  {
+    "id": "dcs_world",
+    "label": "DCS 월드",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "sim",
+    "aliases": [
+      "DCS World",
+      "DCS"
+    ],
+    "english_title": "DCS World",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co20u6.jpg"
+  },
+  {
+    "id": "dragon_age_inquisition",
+    "label": "드래곤 에이지: 인퀴지션",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "Dragon Age: Inquisition",
+      "드래곤에이지 인퀴지션"
+    ],
+    "english_title": "Dragon Age: Inquisition",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2mvy.jpg"
+  },
+  {
+    "id": "the_talos_principle",
+    "label": "탈로스 법칙",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "The Talos Principle"
+    ],
+    "english_title": "The Talos Principle",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1rb5.jpg"
+  },
+  {
+    "id": "unturned",
+    "label": "언턴드",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Unturned"
+    ],
+    "english_title": "Unturned",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaary.jpg"
+  },
+  {
+    "id": "total_war_shogun_2",
+    "label": "토탈 워: 쇼군 2",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "sim",
+    "aliases": [
+      "Total War: Shogun 2",
+      "쇼군2"
+    ],
+    "english_title": "Total War: Shogun 2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2rpy.jpg"
+  },
+  {
+    "id": "total_war_warhammer_ii",
+    "label": "토탈 워: 워해머 II",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "sim",
+    "aliases": [
+      "Total War: Warhammer II",
+      "워해머2",
+      "Total War Warhammer 2"
+    ],
+    "english_title": "Total War: Warhammer II",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co9rsu.jpg"
+  },
+  {
+    "id": "assassin_s_creed_valhalla",
+    "label": "어쌔신 크리드 발할라",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Assassin's Creed Valhalla",
+      "어크 발할라",
+      "AC Valhalla"
+    ],
+    "english_title": "Assassin's Creed Valhalla",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2ed3.jpg"
+  },
+  {
+    "id": "jurassic_world_evolution",
+    "label": "쥬라기 월드 에볼루션",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "sim",
+    "aliases": [
+      "Jurassic World Evolution"
+    ],
+    "english_title": "Jurassic World Evolution",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1uzy.jpg"
+  },
+  {
+    "id": "far_cry_4",
+    "label": "파 크라이 4",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Far Cry 4",
+      "파크라이4"
+    ],
+    "english_title": "Far Cry 4",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2npa.jpg"
+  },
+  {
+    "id": "brawlhalla",
+    "label": "브라울할라",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Brawlhalla"
+    ],
+    "english_title": "Brawlhalla",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co6i3u.jpg"
+  },
+  {
+    "id": "hearts_of_iron_iv",
+    "label": "하츠 오브 아이언 IV",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "sim",
+    "aliases": [
+      "Hearts of Iron IV",
+      "하츠오브아이언4",
+      "HOI4"
+    ],
+    "english_title": "Hearts of Iron IV",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaaql.jpg"
+  },
+  {
+    "id": "tom_clancy_s_the_division",
+    "label": "톰 클랜시의 디비전",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Tom Clancy's The Division",
+      "디비전1",
+      "The Division"
+    ],
+    "english_title": "Tom Clancy's The Division",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1yvf.jpg"
+  },
+  {
+    "id": "ready_or_not",
+    "label": "레디 오어 낫",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Ready or Not",
+      "레디오어낫"
+    ],
+    "english_title": "Ready or Not",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coa98t.jpg"
+  },
+  {
+    "id": "guild_wars_2",
+    "label": "길드 워 2",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Guild Wars 2",
+      "길드워2",
+      "GW2"
+    ],
+    "english_title": "Guild Wars 2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co54tr.jpg"
+  },
+  {
+    "id": "far_cry_5",
+    "label": "파 크라이 5",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Far Cry 5",
+      "파크라이5"
+    ],
+    "english_title": "Far Cry 5",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co21a6.jpg"
+  },
+  {
+    "id": "oxenfree",
+    "label": "옥센프리",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Oxenfree"
+    ],
+    "english_title": "Oxenfree",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2hlq.jpg"
+  },
+  {
+    "id": "monster_hunter_world",
+    "label": "몬스터 헌터: 월드",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "Monster Hunter: World",
+      "몬헌 월드",
+      "MHW"
+    ],
+    "english_title": "Monster Hunter: World",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1rst.jpg"
+  },
+  {
+    "id": "biomutant",
+    "label": "바이오뮤턴트",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Biomutant"
+    ],
+    "english_title": "Biomutant",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1rse.jpg"
+  },
+  {
+    "id": "grim_dawn",
+    "label": "그림 던",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Grim Dawn"
+    ],
+    "english_title": "Grim Dawn",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co41h4.jpg"
+  },
+  {
+    "id": "left_4_dead_2",
+    "label": "레프트 4 데드 2",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Left 4 Dead 2",
+      "레포데2",
+      "L4D2"
+    ],
+    "english_title": "Left 4 Dead 2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1y2f.jpg"
+  },
+  {
+    "id": "resident_evil_3",
+    "label": "바이오하자드 RE:3",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "Resident Evil 3",
+      "바하3",
+      "RE3"
+    ],
+    "english_title": "Resident Evil 3",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co22l7.jpg"
+  },
+  {
+    "id": "call_of_duty_black_ops_4",
+    "label": "콜 오브 듀티: 블랙 옵스 4",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Call of Duty: Black Ops 4",
+      "블랙옵스4"
+    ],
+    "english_title": "Call of Duty: Black Ops 4",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1wkf.jpg"
+  },
+  {
+    "id": "warhammer_vermintide_2",
+    "label": "워해머: 버민타이드 2",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Warhammer: Vermintide 2",
+      "버민타이드2"
+    ],
+    "english_title": "Warhammer: Vermintide 2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co20u8.jpg"
+  },
+  {
+    "id": "7_days_to_die",
+    "label": "세븐 데이즈 투 다이",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "7 Days to Die",
+      "7DTD"
+    ],
+    "english_title": "7 Days to Die",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/coaaqz.jpg"
+  },
+  {
+    "id": "total_war_rome_ii",
+    "label": "토탈 워: 로마 II",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "sim",
+    "aliases": [
+      "Total War: Rome II",
+      "토탈워 로마2"
+    ],
+    "english_title": "Total War: Rome II",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1qs5.jpg"
+  },
+  {
+    "id": "kingdom_come_deliverance",
+    "label": "킹덤 컴: 딜리버런스",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Kingdom Come: Deliverance",
+      "킹덤컴1",
+      "KCD"
+    ],
+    "english_title": "Kingdom Come: Deliverance",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co4aqi.jpg"
+  },
+  {
+    "id": "just_cause_4",
+    "label": "저스트 코즈 4",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Just Cause 4"
+    ],
+    "english_title": "Just Cause 4",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co27or.jpg"
+  },
+  {
+    "id": "middle_earth_shadow_of_mordor",
+    "label": "미들 어스: 섀도우 오브 모르도르",
+    "group": "오픈월드",
+    "category": "openworld",
+    "genre": "openworld",
+    "aliases": [
+      "Middle-earth: Shadow of Mordor",
+      "모르도르"
+    ],
+    "english_title": "Middle-earth: Shadow of Mordor",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co20pd.jpg"
+  },
+  {
+    "id": "atomic_heart",
+    "label": "아토믹 하트",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "Atomic Heart"
+    ],
+    "english_title": "Atomic Heart",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co68ag.jpg"
+  },
+  {
+    "id": "tom_clancy_s_the_division_2",
+    "label": "톰 클랜시의 디비전 2",
+    "group": "FPS / 경쟁형",
+    "category": "fps",
+    "genre": "fps",
+    "aliases": [
+      "Tom Clancy's The Division 2",
+      "디비전2",
+      "The Division 2"
+    ],
+    "english_title": "Tom Clancy's The Division 2",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1xrm.jpg"
+  },
+  {
+    "id": "pillars_of_eternity_ii_deadfire",
+    "label": "필라스 오브 이터니티 II: 데드파이어",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "Pillars of Eternity II: Deadfire",
+      "필라스2"
+    ],
+    "english_title": "Pillars of Eternity II: Deadfire",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2wuo.jpg"
+  },
+  {
+    "id": "need_for_speed_rivals",
+    "label": "니드 포 스피드: 라이벌",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Need for Speed: Rivals",
+      "NFS Rivals"
+    ],
+    "english_title": "Need for Speed: Rivals",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co20a3.jpg"
+  },
+  {
+    "id": "south_park_the_stick_of_truth",
+    "label": "사우스 파크: 진리의 막대",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "South Park: The Stick of Truth"
+    ],
+    "english_title": "South Park: The Stick of Truth",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co1v8x.jpg"
+  },
+  {
+    "id": "undertale",
+    "label": "언더테일",
+    "group": "일반 게임",
+    "category": "game",
+    "genre": "game",
+    "aliases": [
+      "Undertale"
+    ],
+    "english_title": "Undertale",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co2855.jpg"
+  },
+  {
+    "id": "deus_ex_mankind_divided",
+    "label": "데이어스 엑스: 맨카인드 디바이디드",
+    "group": "AAA / GOTY",
+    "category": "aaa",
+    "genre": "aaa",
+    "aliases": [
+      "Deus Ex: Mankind Divided"
+    ],
+    "english_title": "Deus Ex: Mankind Divided",
+    "image_url": "https://images.igdb.com/igdb/image/upload/t_cover_big/co25jt.jpg"
+  }
+]

@@ -7,6 +7,7 @@ from market_search import ProductPager
 from threading import RLock
 from typing import Any, Dict, Optional, Tuple
 from server_catalogs import GAME_OPTIONS, GAME_FPS_PROFILES
+from .cache import MemoryCache
 
 
 APP_DIR = Path(__file__).resolve().parents[1]
@@ -37,7 +38,7 @@ DANAWA_HEADERS = {
 
 IMAGE_URL_CACHE: Dict[Tuple[str, str], str] = {}
 
-PREVIEW_CACHE: Dict[str, Dict[str, str]] = {}
+PREVIEW_CACHE = MemoryCache(max_entries=128, max_bytes=512 * 1024)
 
 GPU_MARKET_PRICE_CACHE: Dict[str, Optional[Dict[str, Any]]] = {}
 
@@ -114,14 +115,6 @@ RECOMMENDATION_CACHE: Dict[Tuple[Any, ...], Tuple[float, Dict[str, Any], float]]
 
 DISPLAY_PRICE_TYPES = {"cpu", "gpu", "ram", "mb", "storage", "psu", "hdd", "case", "software"}
 
-for _game, _weight, _low1 in [
-    ("fortnite", .48, .76), ("marvel_rivals", .40, .74),
-    ("cod_black_ops6", .32, .76), ("dragons_dogma2", .55, .68),
-    ("dying_light2", .22, .76), ("resident_evil4", .20, .78), ("alan_wake2", .16, .72),
-]:
-    GAME_FPS_PROFILES[_game] = {**GAME_FPS_PROFILES["default"], "cpu_weight": _weight, "low1": _low1, "ram_hungry": True}
-
 GAME_FRAME_CAPS = {"elden_ring": 60.0, "genshin_impact": 60.0}
 
 TIER_RANK = {"low": 0, "mid": 1, "high": 2}
-

@@ -3,6 +3,11 @@ import { useApp } from "../state/context.jsx";
 import GamePicker from "./GamePicker.jsx";
 import { FpsChart, WorkChart } from "./Charts.jsx";
 import { WorkSelect } from "./WorkSelect.jsx";
+import { SegmentedControl } from "./Controls.jsx";
+const PURPOSES = [
+  { value: "game", label: "게임", id: "csModeGame" },
+  { value: "work", label: "작업", id: "csModeWork" },
+];
 export default function Performance() {
   const { state, store } = useApp([
       "selected",
@@ -31,27 +36,16 @@ export default function Performance() {
   ]);
   const ready = gpu && cpu && ram;
   return (
-    <section className="pc-performance">
+    <section className="pc-performance ui-panel">
       <h3>예상 성능</h3>
       <section className="use-panel">
-        <div className="mode-toggle">
-          <button
-            type="button"
-            className={"mode-btn" + (state.csMode === "game" ? " active" : "")}
-            id="csModeGame"
-            onClick={() => store.update({ csMode: "game" })}
-          >
-            게임
-          </button>
-          <button
-            type="button"
-            className={"mode-btn" + (state.csMode === "work" ? " active" : "")}
-            id="csModeWork"
-            onClick={() => store.update({ csMode: "work" })}
-          >
-            작업
-          </button>
-        </div>
+        <SegmentedControl
+          className="mode-toggle"
+          label="예상 성능 용도"
+          options={PURPOSES}
+          value={state.csMode}
+          onChange={(csMode) => store.update({ csMode })}
+        />
         {state.csMode === "game" ? (
           <div id="csPanelGame">
             <div className="sec-title">해상도</div>

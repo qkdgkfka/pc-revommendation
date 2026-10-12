@@ -1,0 +1,171 @@
+{
+  "date": "2026-10-11",
+  "catalog": {
+    "summary": {
+      "before": 755.595,
+      "after": 651.619,
+      "reduction_percent": 13.8,
+      "payloads_identical": true
+    },
+    "runs": {
+      "before": [
+        {
+          "cold_ms": 857.314709,
+          "sha256": "26949c9980a0e44dfafee8a0525ea4492ec1ff4f8cb09b1855603619c2c40248"
+        },
+        {
+          "cold_ms": 755.595,
+          "sha256": "26949c9980a0e44dfafee8a0525ea4492ec1ff4f8cb09b1855603619c2c40248"
+        },
+        {
+          "cold_ms": 771.103917,
+          "sha256": "26949c9980a0e44dfafee8a0525ea4492ec1ff4f8cb09b1855603619c2c40248"
+        },
+        {
+          "cold_ms": 749.459958,
+          "sha256": "26949c9980a0e44dfafee8a0525ea4492ec1ff4f8cb09b1855603619c2c40248"
+        },
+        {
+          "cold_ms": 743.0029999999999,
+          "sha256": "26949c9980a0e44dfafee8a0525ea4492ec1ff4f8cb09b1855603619c2c40248"
+        }
+      ],
+      "after": [
+        {
+          "cold_ms": 1007.754833,
+          "sha256": "26949c9980a0e44dfafee8a0525ea4492ec1ff4f8cb09b1855603619c2c40248"
+        },
+        {
+          "cold_ms": 715.7827500000001,
+          "sha256": "26949c9980a0e44dfafee8a0525ea4492ec1ff4f8cb09b1855603619c2c40248"
+        },
+        {
+          "cold_ms": 649.959167,
+          "sha256": "26949c9980a0e44dfafee8a0525ea4492ec1ff4f8cb09b1855603619c2c40248"
+        },
+        {
+          "cold_ms": 651.61925,
+          "sha256": "26949c9980a0e44dfafee8a0525ea4492ec1ff4f8cb09b1855603619c2c40248"
+        },
+        {
+          "cold_ms": 647.8415000000001,
+          "sha256": "26949c9980a0e44dfafee8a0525ea4492ec1ff4f8cb09b1855603619c2c40248"
+        }
+      ]
+    }
+  },
+  "requests": {
+    "summary": {
+      "before": {
+        "recommend_first_ms": 111.422,
+        "recommend_warm_median_ms": 3.701,
+        "fps_first_ms": 17.839,
+        "fps_warm_median_ms": 1.549
+      },
+      "after": {
+        "recommend_first_ms": 63.628,
+        "recommend_warm_median_ms": 3.402,
+        "fps_first_ms": 14.958,
+        "fps_warm_median_ms": 0.728
+      },
+      "repetitions_per_variant": 5,
+      "fixture_outputs_identical": true
+    },
+    "timings": {
+      "before": [
+        {
+          "fixture_provider_latency_ms": 20,
+          "search_first_ms": 28.392,
+          "search_warm_median_ms": 0.067,
+          "recommend_first_ms": 111.549,
+          "recommend_warm_median_ms": 3.647,
+          "fps_first_ms": 17.446,
+          "fps_warm_median_ms": 1.545
+        },
+        {
+          "fixture_provider_latency_ms": 20,
+          "search_first_ms": 23.443,
+          "search_warm_median_ms": 0.066,
+          "recommend_first_ms": 111.422,
+          "recommend_warm_median_ms": 3.738,
+          "fps_first_ms": 17.708,
+          "fps_warm_median_ms": 1.537
+        },
+        {
+          "fixture_provider_latency_ms": 20,
+          "search_first_ms": 28.132,
+          "search_warm_median_ms": 0.065,
+          "recommend_first_ms": 109.638,
+          "recommend_warm_median_ms": 3.701,
+          "fps_first_ms": 17.839,
+          "fps_warm_median_ms": 1.555
+        },
+        {
+          "fixture_provider_latency_ms": 20,
+          "search_first_ms": 28.148,
+          "search_warm_median_ms": 0.066,
+          "recommend_first_ms": 111.334,
+          "recommend_warm_median_ms": 3.67,
+          "fps_first_ms": 18.033,
+          "fps_warm_median_ms": 1.549
+        },
+        {
+          "fixture_provider_latency_ms": 20,
+          "search_first_ms": 28.27,
+          "search_warm_median_ms": 0.068,
+          "recommend_first_ms": 131.236,
+          "recommend_warm_median_ms": 3.931,
+          "fps_first_ms": 18.904,
+          "fps_warm_median_ms": 1.615
+        }
+      ],
+      "after": [
+        {
+          "fixture_provider_latency_ms": 20,
+          "search_first_ms": 27.664,
+          "search_warm_median_ms": 0.066,
+          "recommend_first_ms": 63.628,
+          "recommend_warm_median_ms": 3.402,
+          "fps_first_ms": 14.443,
+          "fps_warm_median_ms": 0.719
+        },
+        {
+          "fixture_provider_latency_ms": 20,
+          "search_first_ms": 28.136,
+          "search_warm_median_ms": 0.065,
+          "recommend_first_ms": 63.245,
+          "recommend_warm_median_ms": 3.383,
+          "fps_first_ms": 15.25,
+          "fps_warm_median_ms": 0.728
+        },
+        {
+          "fixture_provider_latency_ms": 20,
+          "search_first_ms": 28.269,
+          "search_warm_median_ms": 0.067,
+          "recommend_first_ms": 65.875,
+          "recommend_warm_median_ms": 3.419,
+          "fps_first_ms": 14.958,
+          "fps_warm_median_ms": 0.716
+        },
+        {
+          "fixture_provider_latency_ms": 20,
+          "search_first_ms": 28.112,
+          "search_warm_median_ms": 0.066,
+          "recommend_first_ms": 62.841,
+          "recommend_warm_median_ms": 3.385,
+          "fps_first_ms": 14.801,
+          "fps_warm_median_ms": 0.733
+        },
+        {
+          "fixture_provider_latency_ms": 20,
+          "search_first_ms": 27.417,
+          "search_warm_median_ms": 0.068,
+          "recommend_first_ms": 74.812,
+          "recommend_warm_median_ms": 3.533,
+          "fps_first_ms": 15.435,
+          "fps_warm_median_ms": 0.752
+        }
+      ]
+    }
+  }
+}

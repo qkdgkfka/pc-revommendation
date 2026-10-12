@@ -36,7 +36,16 @@ def accepts_gzip(handler):
     return qualities.get('gzip', qualities.get('*', 0)) > 0
 
 
-def _send_bytes(handler, status, raw, content_type, cache_control='no-store', compressed=None, conditional=False, etag=None):
+def send_security_headers(handler):
+    handler.send_header('X-Content-Type-Options', 'nosniff')
+    handler.send_header('Referrer-Policy', 'strict-origin-when-cross-origin')
+    handler.send_header('Content-Security-Policy',
+                        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+                        "img-src 'self' data: https:; font-src 'self'; connect-src 'self'; "
+                        "object-src 'none'; base-uri 'self'; frame-ancestors 'self'")
+
+
+def send_bytes(handler, status, raw, content_type, cache_control='no-store', compressed=None, conditional=False, etag=None):
     zipped = compressed is not None and accepts_gzip(handler)
     data = compressed if zipped else raw
     # Weak validators represent the same document with either content encoding.
@@ -47,9 +56,8 @@ def _send_bytes(handler, status, raw, content_type, cache_control='no-store', co
         matched = any(value.strip() == '*' or value.strip().removeprefix('W/') == etag[2:] for value in candidates)
     handler.send_response(304 if matched and status == 200 else status)
     handler.send_header('Content-Type', content_type)
-    handler.send_header('Access-Control-Allow-Origin', '*')
     handler.send_header('Cache-Control', cache_control)
-    handler.send_header('X-Content-Type-Options', 'nosniff')
+    send_security_headers(handler)
     handler.send_header('Vary', 'Accept-Encoding')
     handler.send_header('Content-Length', str(len(data)))
     if zipped:
@@ -69,7 +77,7 @@ def send_json(handler: BaseHTTPRequestHandler, status: int, payload: Dict[str, A
         raw = json.dumps(payload, ensure_ascii=False).encode('utf-8')
         zipped = gzip.compress(raw, compresslevel=6, mtime=0) if len(raw) >= 512 else None
     catalog = urlparse(str(getattr(handler, 'path', '') or '')).path == '/api/catalog'
-    _send_bytes(handler, status, raw, 'application/json; charset=utf-8',
+    send_bytes(handler, status, raw, 'application/json; charset=utf-8',
                 'private, no-cache' if catalog else 'no-store', zipped, conditional=catalog, etag=etag)
 
 
@@ -77,11 +85,11 @@ def send_static(handler, request_path):
     root = Path(state.STATIC_DIR).resolve()
     requested = unquote(request_path)
     if '\x00' in requested or '\\' in requested or '..' in requested.split('/'):
-        _send_bytes(handler, 404, b'404 Not Found', 'text/plain; charset=utf-8')
+        send_bytes(handler, 404, b'404 Not Found', 'text/plain; charset=utf-8')
         return
     if not root.is_dir() or (requested in {'', '/', '/index.html'} and not (root / 'index.html').is_file()):
         guidance = b'Frontend build missing. Run npm ci and npm run build, then start the server again.'
-        _send_bytes(handler, 503, guidance, 'text/plain; charset=utf-8')
+        send_bytes(handler, 503, guidance, 'text/plain; charset=utf-8')
         return
     try:
         fp = (root / ('index.html' if requested in {'', '/'} else requested.lstrip('/'))).resolve(strict=True)
@@ -89,7 +97,7 @@ def send_static(handler, request_path):
         if not fp.is_file():
             raise ValueError('Not a file')
     except (OSError, ValueError):
-        _send_bytes(handler, 404, b'404 Not Found', 'text/plain; charset=utf-8')
+        send_bytes(handler, 404, b'404 Not Found', 'text/plain; charset=utf-8')
         return
     content_type = utils.guess_mime(fp)
     text = content_type.startswith(('text/', 'application/javascript', 'application/json', 'image/svg+xml'))
@@ -116,9 +124,9 @@ def send_static(handler, request_path):
         raw, zipped, etag = _static_cache.get_or_compute(key, read, ttl=300,
                                                    size=lambda data: len(data[0]) + len(data[1] or b''))
     except OSError:
-        _send_bytes(handler, 404, b'404 Not Found', 'text/plain; charset=utf-8')
+        send_bytes(handler, 404, b'404 Not Found', 'text/plain; charset=utf-8')
         return
     hashed = requested.startswith('/assets/') and re.search(r'-[A-Za-z0-9_-]{8,}\.[A-Za-z0-9.]+$', fp.name)
     cache_control = 'public, max-age=31536000, immutable' if hashed else 'no-cache'
-    _send_bytes(handler, 200, raw, content_type, cache_control, zipped, conditional=True, etag=etag)
+    send_bytes(handler, 200, raw, content_type, cache_control, zipped, conditional=True, etag=etag)
 

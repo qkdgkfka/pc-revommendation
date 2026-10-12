@@ -13,6 +13,8 @@ CATEGORIES = {
     'psu': ('112777', '파워', 'MSI 850W 파워'),
     'hdd': ('1131401', 'HDD', 'Seagate 4TB HDD'),
     'gpu': ('112753', '그래픽카드', 'ASUS GeForce RTX 4070 SUPER'),
+    'case': ('112775', '케이스', 'NZXT H5 Flow'),
+    'software': ('223', '소프트웨어', 'Microsoft Windows 11 Home'),
 }
 
 def html_rows(kind, start, count, names=None):
@@ -150,6 +152,69 @@ class ProductBrowsingTests(unittest.TestCase):
         with patch_backend(s, '_market_fetch_html', return_value=html_rows('cpu', 0, 1, names)):
             result = s.market_products_response('cpu', 'Intel', source='danawa',limit=50)
         self.assertEqual(1,len(result['items']))
+
+    def test_partial_names_find_suffix_variants_and_translated_brands_in_every_category(self):
+        cases = [
+            ('cpu', '14600', ['Intel Core i5-14600', '인텔 코어i5-14세대 14600K', 'Intel Core i5-14600KF'], 'Intel Core i5-14400F'),
+            ('cpu', '인텔', ['Intel Core i5-14600', '인텔 코어i5-14세대 14600K', 'Intel Core i5-14600KF'], 'AMD Ryzen 7 9800X3D'),
+            ('cpu', 'i5-14600', ['인텔 코어i5-14세대 14600KF'], '인텔 코어i5-14세대 14400F'),
+            ('mb', '에이수스 b650', ['ASUS PRIME B650M-A', 'ASUS TUF B650-PLUS'], 'MSI B650M'),
+            ('ram', '삼성 ddr5', ['Samsung DDR5-5600 16GB', '삼성전자 DDR5 32GB'], 'Samsung DDR4 16GB'),
+            ('ram', '삼성전', ['삼성전자 DDR5 32GB'], 'G.SKILL DDR5 32GB'),
+            ('ram', '６０００ DDR5', ['G.SKILL DDR5 6000 32GB'], 'G.SKILL DDR5 5600 32GB'),
+            ('ram', 'DDR5-6000', ['G.SKILL DDR5 6000 32GB', 'TeamGroup DDR5-6000 16GB'], 'Samsung DDR5-5600 16GB'),
+            ('gpu', '4070', ['ASUS GeForce RTX 4070', 'MSI 지포스 RTX 4070 SUPER', 'GIGABYTE RTX 4070 Ti SUPER'], 'ASUS GeForce RTX 4060'),
+            ('gpu', '지포스 RTX4070', ['ASUS GeForce RTX 4070 SUPER'], 'ASUS GeForce RTX 4060'),
+            ('storage', '삼성 990', ['Samsung 990 PRO 1TB SSD', '삼성전자 990 EVO 2TB SSD'], 'Samsung 980 PRO 1TB SSD'),
+            ('hdd', '씨게이트 barra', ['Seagate Barracuda 2TB HDD', '씨게이트 Barracuda 4TB HDD'], 'Seagate IronWolf 4TB HDD'),
+            ('psu', '마이크로닉스 850', ['Micronics Classic II 850W', '마이크로닉스 ASTRO 850W'], 'Micronics Classic II 750W'),
+            ('case', 'h5', ['NZXT H5 Flow Black', 'NZXT H5 Flow White'], 'NZXT H7 Flow'),
+            ('software', '윈도우 11', ['Microsoft Windows 11 Home', '마이크로소프트 Windows 11 Pro'], 'Microsoft Windows 10 Home'),
+        ]
+        for kind, query, expected, other in cases:
+            with self.subTest(kind=kind, query=query):
+                s.MARKET_BROWSE_CACHE.clear()
+                s.MARKET_SEARCH_CACHE.clear()
+                names = expected + [other]
+                with patch_backend(s, '_market_fetch_html', return_value=html_rows(kind, 0, len(names), names)):
+                    result = s.market_products_response(kind, query, source='danawa')
+                self.assertEqual(expected, [item['name'] for item in result['items']])
+
+    def test_saved_search_uses_the_same_partial_name_rules(self):
+        names = ['Intel Core i5-14600', 'Intel Core i5-14600K', 'Intel Core i5-14600KF', 'AMD Ryzen 7 9800X3D']
+        rows = [dict(id=str(i), name=name, price=200000, url=f'https://prod.danawa.com/info/?pcode={i+100}&cate=113973')
+                for i, name in enumerate(names)]
+        with patch_backend(s, 'saved_products', return_value=rows):
+            for query in ['인텔', '14600']:
+                with self.subTest(query=query):
+                    result = s.saved_market_page('cpu', query, 1, 50, 'danawa')
+                    self.assertEqual(names[:3], [item['name'] for item in result['items']])
+
+    def test_partial_browse_search_does_not_weaken_exact_price_identity(self):
+        self.assertFalse(s.compatible_price_name('Intel Core i5-14600', 'Intel Core i5-14600KF'))
+        self.assertFalse(s.compatible_price_name('RTX 4070', 'RTX 4070 Ti SUPER'))
+        self.assertFalse(s.compatible_price_name('Samsung 990 PRO 2TB', 'Samsung 990 PRO 1TB'))
+
+    def test_partial_and_exact_source_queries_keep_independent_caches(self):
+        names = ['Intel Core i5-14600', 'Intel Core i5-14600K', 'Intel Core i5-14600KF']
+        with patch_backend(s, '_market_fetch_html', return_value=html_rows('cpu', 0, len(names), names)) as fetch:
+            partial = s._market_source_page('cpu', '14600', 1, 40, 'danawa')
+            exact = s._market_source_page('cpu', '14600', 1, 40, 'danawa', exact_query=True)
+            cached_partial = s._market_source_page('cpu', '14600', 1, 40, 'danawa')
+        self.assertEqual(names, [row['name'] for row in partial['items']])
+        self.assertEqual(names[:1], [row['name'] for row in exact['items']])
+        self.assertEqual(names, [row['name'] for row in cached_partial['items']])
+        self.assertEqual(2, fetch.call_count)
+
+    def test_compuzone_partial_cpu_query_keeps_suffix_variants(self):
+        names = ['Intel Core i5-14600', '인텔 Core i5-14600K', 'Intel Core i5-14600KF', 'Intel Core i5-14400F']
+        html = '<ul>' + ''.join(
+            f'<li id="li-pno-{code}"><a class="prdTxt" href="../product/product_detail.htm?ProductNo={code}&MediumDivNo=1012">{name}</a><div class="prd_price" data-price="200000"></div></li>'
+            for code, name in enumerate(names, 10000)
+        ) + '</ul>'
+        with patch_backend(s, '_market_fetch_html', return_value=html):
+            result = s.market_products_response('cpu', '14600', source='compuzone')
+        self.assertEqual(names[:3], [row['name'] for row in result['items']])
 
     def test_search_cache_remains_bounded_with_query_and_cursor_keys(self):
         with patch_backend(s, '_market_fetch_html', return_value=html_rows('cpu',0,0)):

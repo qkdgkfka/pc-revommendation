@@ -126,7 +126,7 @@ test("a price lookup endpoint placeholder does not erase a real product photo", 
   );
 });
 
-test("server observation timestamps are visible on confirmed quotes", () => {
+test("confirmed quotes keep internal status without retailer labels", () => {
   const result = context.priceProvenance({
     price: 296980,
     price_status: "verified",
@@ -134,7 +134,7 @@ test("server observation timestamps are visible on confirmed quotes", () => {
     scraped_at: "2026-09-24T14:00:00Z",
   });
   assert.equal(result.status, "verified");
-  assert.match(result.text, /9[.]\s*24/);
+  assert.equal(result.text, "");
 });
 
 test("a successful price refresh clears stale flags and retains the observed time", () => {
@@ -156,5 +156,6 @@ test("a successful price refresh clears stale flags and retains the observed tim
     scraped_at: "2026-09-24T14:00:00Z",
   });
   assert.equal(context.priceProvenance(target).status, "verified");
-  assert.match(context.priceProvenance(target).text, /9[.]\s*24/);
+  assert.equal(context.priceProvenance(target).text, "");
+  assert.equal(target.price_checked_at, "2026-09-24T14:00:00Z");
 });

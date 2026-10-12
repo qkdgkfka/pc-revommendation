@@ -1,6 +1,113 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { setup } from "./frontend-harness.js";
+test("partial names, suffixes and bilingual brands match in every component category", () => {
+  const c = setup();
+  for (const [type, query, name, other] of [
+    ["cpu", "인텔", "Intel Core i5-14600KF", "AMD Ryzen 7 9800X3D"],
+    ["cpu", "14600", "Intel Core i5-14600K", "Intel Core i5-14400F"],
+    [
+      "cpu",
+      "i5-14600",
+      "인텔 코어i5-14세대 14600KF",
+      "인텔 코어i5-14세대 14400F",
+    ],
+    ["mb", "에이수스 b650", "ASUS PRIME B650M-A", "MSI B650M"],
+    ["ram", "삼성 ddr5", "Samsung DDR5 32GB", "Samsung DDR4 16GB"],
+    ["ram", "삼성전", "삼성전자 DDR5 32GB", "G.SKILL DDR5 32GB"],
+    [
+      "ram",
+      "６０００ DDR5",
+      "G.SKILL DDR5 6000 32GB",
+      "G.SKILL DDR5 5600 32GB",
+    ],
+    ["ram", "DDR5-6000", "G.SKILL DDR5 6000 32GB", "Samsung DDR5-5600 16GB"],
+    ["gpu", "4070", "ASUS RTX 4070 Ti SUPER", "ASUS RTX 4060"],
+    [
+      "gpu",
+      "지포스 RTX4070",
+      "ASUS GeForce RTX 4070 SUPER",
+      "ASUS GeForce RTX 4060",
+    ],
+    [
+      "storage",
+      "삼성 990",
+      "Samsung 990 PRO 2TB SSD",
+      "Samsung 980 PRO 1TB SSD",
+    ],
+    [
+      "hdd",
+      "씨게이트 barra",
+      "Seagate Barracuda 4TB HDD",
+      "Seagate IronWolf 4TB HDD",
+    ],
+    [
+      "psu",
+      "마이크로닉스 850",
+      "Micronics Classic II 850W",
+      "Micronics Classic II 750W",
+    ],
+    ["case", "h5", "NZXT H5 Flow", "NZXT H7 Flow"],
+    [
+      "software",
+      "윈도우 11",
+      "Microsoft Windows 11 Home",
+      "Microsoft Windows 10 Home",
+    ],
+  ]) {
+    c.st.productQuery = query;
+    assert.equal(
+      c.productMatchesFilters(type, { name }),
+      true,
+      `${type}: ${query}`,
+    );
+    assert.equal(
+      c.productMatchesFilters(type, { name: other }),
+      false,
+      `${type}: excludes ${other}`,
+    );
+  }
+});
+test("GPU generation search remains broad while a selected model remains exact", () => {
+  const c = setup();
+  c.st.productQuery = "RX9000";
+  assert.equal(
+    c.productMatchesFilters("gpu", { name: "SAPPHIRE RX 9070 XT" }),
+    true,
+  );
+  assert.equal(
+    c.productMatchesFilters("gpu", { name: "SAPPHIRE RX 7900 XTX" }),
+    false,
+  );
+  c.st.productQuery = "4070";
+  c.st.builderFilters.gpu = { model: ["RTX 4070 Super"] };
+  assert.equal(
+    c.productMatchesFilters("gpu", { name: "ASUS RTX 4070 SUPER" }),
+    true,
+  );
+  assert.equal(
+    c.productMatchesFilters("gpu", { name: "ASUS RTX 4070 Ti SUPER" }),
+    false,
+  );
+});
+test("a live search page still rejects unrelated product names", () => {
+  const c = setup();
+  c.st.productQuery = "인텔";
+  c.st.browse.cpu = {
+    loaded: true,
+    status: "live",
+    query: "인텔",
+    requestKey: c.builderSearchKey("cpu"),
+  };
+  assert.equal(
+    c.productMatchesFilters("cpu", { name: "Intel Core i5-14600KF" }),
+    true,
+  );
+  assert.equal(
+    c.productMatchesFilters("cpu", { name: "AMD Ryzen 7 9800X3D" }),
+    false,
+  );
+});
 test("structured chipset and series override marketing name", () => {
   const c = setup();
   assert.equal(

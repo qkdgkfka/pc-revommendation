@@ -127,11 +127,12 @@ def upscale_prediction(native,gpu,game,resolution,technology,bottleneck, *, vers
     samples=selected_pairs("upscale_calibration",technology,gpu,game,resolution,version=version)
     if not samples:return None
     time_ratio=median(r["native_fps"]/r["upscale_fps"] for r in samples)
-    # Preserve CPU-limited work instead of multiplying total FPS by a GPU gain.
-    cpu_fraction=min(1.,max(0.,float(bottleneck.get("cpu_penalty_pct") or 0)/100))
-    frame_ms=1000/native*(cpu_fraction+(1-cpu_fraction)*time_ratio)
-    value=1000/frame_ms
-    cpu_limit=float(bottleneck.get("cpu_fps_ceiling") or value)
+    # A hardware comparison percentage is not a CPU busy-time fraction.
+    # Apply the observed GPU gain, then limit the overlapping pipeline once.
+    value=native/time_ratio
+    # Without an isolated CPU ceiling, stay within the same CPU's best tested
+    # GPU result. This is a conservative interpolation bound, not a CPU limit.
+    cpu_limit=float(bottleneck.get("cpu_fps_ceiling") or bottleneck.get("gpu_reference_fps") or value)
     value=min(value,max(native,cpu_limit))
     return value,samples
 

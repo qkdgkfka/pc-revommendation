@@ -4,13 +4,12 @@ from __future__ import annotations
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlparse
-from urllib.request import Request, urlopen
 import argparse
-from datetime import datetime
+import errno
 from html import escape
 import json
+import logging
 import re
-import traceback
 import copy
 import gzip
 from product_filters import (
@@ -37,6 +36,7 @@ from product_images import (
     fetch_product_page_image,
 )
 from product_import import fetch_product_page, imported_products, supported_product_url
+from url_safety import safe_external_url
 from typing import Any, Dict, Iterable, List
 from server_catalogs import (
     CPU_CATALOG,
@@ -52,20 +52,21 @@ from server_catalogs import (
     GAME_OPTIONS,
     WORK_PROFILES,
 )
-try:
-    from bs4 import BeautifulSoup
-except ImportError:
-    BeautifulSoup = None
 from . import runtime as state
 from . import database
 from . import fps as fps_service
 from . import pricing
 from . import recommendation
 from . import retail
-from .transport import send_json, send_static, weak_etag
+from .transport import send_bytes, send_json, send_security_headers, send_static, weak_etag
 from .cache import MemoryCache
 from .revisions import data_revision, fingerprint, freshness_ttl
+from .requests import (
+    InvalidRequest, MAX_QUERY_FIELDS, MAX_REQUEST_TARGET_LENGTH,
+    decode_json_object, read_json_object, require_same_origin,
+)
 
+logger = logging.getLogger(__name__)
 _catalog_cache = MemoryCache(max_entries=8, max_bytes=16 * 1024 * 1024)
 
 
@@ -133,15 +134,6 @@ def _catalog_response_uncached(compact: bool = False) -> Dict[str, Any]:
     response["reference_catalog_sizes"] = {kind: len(items) for kind, items in CATALOGS.items()}
     return response
 
-
-def safe_external_url(url: Any) -> str:
-    raw = str(url or "").strip()
-    if not raw:
-        return ""
-    parsed = urlparse(raw)
-    if parsed.scheme not in {"http", "https"}:
-        return ""
-    return raw
 
 def saved_part_image_urls(name: Any, part_type: Any, product_url: str = "") -> List[str]:
     ctype = normalize_browse_part_type(part_type)
@@ -254,16 +246,12 @@ def send_part_image(handler: BaseHTTPRequestHandler, params: Dict[str, str]) -> 
         handler.send_header("Location", browser_fallback_url)
         handler.send_header("Cache-Control", "no-store")
         handler.send_header("Content-Length", "0")
+        send_security_headers(handler)
         handler.end_headers()
         return
     data, content_type = result if result else (placeholder_svg(name), "image/svg+xml; charset=utf-8")
-    handler.send_response(200)
-    handler.send_header("Content-Type", content_type)
-    handler.send_header("Cache-Control", "public, max-age=21600" if result else "no-store")
-    handler.send_header("X-Content-Type-Options", "nosniff")
-    handler.send_header("Content-Length", str(len(data)))
-    handler.end_headers()
-    handler.wfile.write(data)
+    send_bytes(handler, 200, data, content_type,
+               "public, max-age=21600" if result else "no-store")
 
 def meta_content_from_soup(soup: Any, names: Iterable[str]) -> str:
     if soup is None:
@@ -276,50 +264,25 @@ def meta_content_from_soup(soup: Any, names: Iterable[str]) -> str:
 
 def page_preview_meta(url: str, fallback_name: str = "", fallback_image: str = "") -> Dict[str, str]:
     target = safe_external_url(url)
-    if not target:
-        return {"url": "", "title": clean_visible_text(fallback_name) or "미리보기", "description": "", "image_url": safe_external_url(fallback_image), "domain": ""}
-    if target in state.PREVIEW_CACHE:
-        cached = state.PREVIEW_CACHE[target]
-        return {**cached, "image_url": cached.get("image_url") or safe_external_url(fallback_image)}
-
-    title = clean_visible_text(fallback_name)
-    description = ""
-    image_url = safe_external_url(fallback_image)
-    try:
-        req = Request(target, headers=state.DANAWA_HEADERS)
-        with urlopen(req, timeout=3.0) as resp:
-            raw = resp.read(250000)
-            charset = resp.headers.get_content_charset() or "utf-8"
-        html = raw.decode(charset, errors="ignore")
-        if BeautifulSoup is not None:
-            soup = BeautifulSoup(html, "html.parser")
-            og_title = meta_content_from_soup(soup, ["og:title", "twitter:title"])
-            if og_title:
-                title = og_title
-            elif soup.title and soup.title.string:
-                title = clean_visible_text(soup.title.string)
-            description = meta_content_from_soup(soup, ["og:description", "description", "twitter:description"])
-            image_url = image_url or retail.absolute_image_url(meta_content_from_soup(soup, ["og:image", "twitter:image"]), target)
-        else:
-            m = re.search(r"<title[^>]*>(.*?)</title>", html, re.I | re.S)
-            if m:
-                title = clean_visible_text(re.sub(r"<[^>]+>", " ", m.group(1)))
-            m = re.search(r"<meta[^>]+(?:property|name)=[\"'](?:og:image|twitter:image)[\"'][^>]+content=[\"']([^\"']+)[\"']", html, re.I)
-            if m:
-                image_url = image_url or retail.absolute_image_url(m.group(1), target)
-    except Exception:
-        pass
-
+    product_url = supported_product_url(target)
+    metadata = {}
+    if product_url:
+        try:
+            # This fetcher restricts both the initial URL and redirects to one SKU.
+            metadata = state.PREVIEW_CACHE.get_or_compute(
+                product_url, lambda: fetch_product_page(product_url, timeout=3),
+                ttl=900, size=lambda value: len(json.dumps(value).encode('utf-8')),
+            )
+        except (OSError, ValueError, LookupError):
+            logger.debug('Product preview unavailable', exc_info=True)
     parsed = urlparse(target)
-    out = {
+    return {
         "url": target,
-        "title": title or clean_visible_text(fallback_name) or parsed.netloc,
-        "description": description,
-        "image_url": image_url,
-        "domain": parsed.netloc.replace("www.", ""),
+        "title": clean_visible_text(metadata.get("name") or fallback_name) or parsed.netloc or "미리보기",
+        "description": clean_visible_text(metadata.get("spec_text"))[:400],
+        "image_url": retailer_image_url(metadata.get("image_url")) or retailer_image_url(fallback_image),
+        "domain": (parsed.hostname or "").removeprefix("www."),
     }
-    state.PREVIEW_CACHE[target] = out
-    return out
 
 def send_page_preview(handler: BaseHTTPRequestHandler, params: Dict[str, str]) -> None:
     meta = page_preview_meta(params.get("url") or "", params.get("name") or "", params.get("image") or "")
@@ -349,28 +312,53 @@ def send_page_preview(handler: BaseHTTPRequestHandler, params: Dict[str, str]) -
 <a class="open" href="{link}" target="_blank" rel="noopener noreferrer">상품 페이지 열기</a>
 </div></div></div></body></html>"""
     data = html.encode("utf-8")
-    handler.send_response(200)
-    handler.send_header("Content-Type", "text/html; charset=utf-8")
-    handler.send_header("Cache-Control", "public, max-age=900")
-    handler.send_header("Content-Length", str(len(data)))
-    handler.end_headers()
-    handler.wfile.write(data)
+    send_bytes(handler, 200, data, "text/html; charset=utf-8")
 
 class Handler(BaseHTTPRequestHandler):
+    timeout = 10
+
     def log_message(self, format, *args):  # noqa: A003
         return
 
+    def _serve(self, action):
+        try:
+            action()
+        except InvalidRequest as error:
+            self.close_connection = True
+            send_json(self, error.status, {"error": str(error)})
+        except (BrokenPipeError, ConnectionResetError):
+            self.close_connection = True
+        except TimeoutError:
+            self.close_connection = True
+            send_json(self, 408, {"error": "request timed out"})
+        except ValueError:
+            send_json(self, 400, {"error": "invalid request"})
+        except Exception:
+            logger.exception('HTTP request failed')
+            send_json(self, 500, {"error": "internal server error"})
+
     def do_OPTIONS(self) -> None:
+        self._serve(self._options)
+
+    def _options(self):
+        require_same_origin(self.headers)
         self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Allow", "GET, POST, OPTIONS")
+        self.send_header("Content-Length", "0")
+        send_security_headers(self)
         self.end_headers()
 
     def do_GET(self) -> None:
+        self._serve(self._get)
+
+    def _get(self):
+        if len(self.path) > MAX_REQUEST_TARGET_LENGTH:
+            raise InvalidRequest(414, 'request target too long')
         parsed = urlparse(self.path)
         path = parsed.path
-        params = {k: v for k, v in parse_qsl(parsed.query, keep_blank_values=True)}
+        params = dict(parse_qsl(parsed.query, keep_blank_values=True, max_num_fields=MAX_QUERY_FIELDS))
+        if path.startswith('/api/') or path == '/health':
+            require_same_origin(self.headers)
 
         if path == "/health":
             payload = {
@@ -390,8 +378,7 @@ class Handler(BaseHTTPRequestHandler):
 
         if path in {"/api/products", "/api/danawa-products"}:
             try:
-                spec_filters = json.loads(params.get("filters") or "{}")
-                if not isinstance(spec_filters, dict): raise ValueError()
+                spec_filters = decode_json_object(params.get("filters") or "{}")
             except (ValueError, TypeError):
                 send_json(self, 400, {"ok":False,"error":"필터 형식이 올바르지 않습니다.","items":[]})
                 return
@@ -421,33 +408,24 @@ class Handler(BaseHTTPRequestHandler):
         send_static(self, path)
 
     def do_POST(self) -> None:
+        self._serve(self._post)
+
+    def _post(self):
+        require_same_origin(self.headers)
         path = urlparse(self.path).path
-        if path not in {"/api/recommend", "/api/debug_raw", "/api/price-lookup", "/api/product-search", "/api/estimate-fps"}:
+        routes = {
+            "/api/recommend": recommendation.recommend,
+            "/api/debug_raw": recommendation.recommend,
+            "/api/price-lookup": pricing.price_lookup_response,
+            "/api/product-search": pricing.product_search_response,
+            "/api/estimate-fps": fps_service.fps_estimate_response,
+        }
+        service = routes.get(path)
+        if service is None:
             send_json(self, 404, {"error": "not found"})
             return
-
-        try:
-            length = int(self.headers.get("Content-Length", "0"))
-            raw = self.rfile.read(length) if length > 0 else b"{}"
-            body = json.loads(raw.decode("utf-8"))
-        except Exception:
-            send_json(self, 400, {"error": "invalid json"})
-            return
-
-        try:
-            if path == "/api/estimate-fps":
-                send_json(self, 200, fps_service.fps_estimate_response(body))
-                return
-            if path == "/api/price-lookup":
-                send_json(self, 200, pricing.price_lookup_response(body))
-                return
-            if path == "/api/product-search":
-                send_json(self, 200, pricing.product_search_response(body))
-                return
-            send_json(self, 200, recommendation.recommend(body))
-        except Exception as e:
-            traceback.print_exc()
-            send_json(self, 500, {"error": f"server error: {e}"})
+        body = read_json_object(self)
+        send_json(self, 200, service(body))
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser()
@@ -462,12 +440,24 @@ def main() -> None:
     database.load_config()
     database.load_db_cache()
 
-    print("Server ready.")
-    print(f"  DB loaded: {state.DB_CACHE.get('loaded', False)}")
-    print(f"  Catalog sizes: " + ", ".join(f"{k}={len(v)}" for k, v in CATALOGS.items()))
-    if state.DB_CACHE.get("loaded"):
-        print(f"  DB summary: {state.DB_CACHE.get('summary', {})}")
-    print(f"Serving at http://{args.host}:{args.port}")
+    try:
+        httpd = ThreadingHTTPServer((args.host, args.port), Handler)
+    except OSError as error:
+        if error.errno != errno.EADDRINUSE:
+            raise
+        # Let the OS reserve an available port atomically; leave the existing
+        # listener running rather than terminating an unrelated process.
+        httpd = ThreadingHTTPServer((args.host, 0), Handler)
+        print(f"Port {args.port} is already in use; using port {httpd.server_port} instead.", flush=True)
 
-    httpd = ThreadingHTTPServer((args.host, args.port), Handler)
-    httpd.serve_forever()
+    with httpd:
+        print("Server ready.")
+        print(f"  DB loaded: {state.DB_CACHE.get('loaded', False)}")
+        print(f"  Catalog sizes: " + ", ".join(f"{k}={len(v)}" for k, v in CATALOGS.items()))
+        if state.DB_CACHE.get("loaded"):
+            print(f"  DB summary: {state.DB_CACHE.get('summary', {})}")
+        print(f"Serving at http://{args.host}:{httpd.server_port}", flush=True)
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            print("\nServer stopped.", flush=True)

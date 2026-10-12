@@ -22,8 +22,8 @@ function buildPriceNote(parts) {
     : statuses.includes("estimated")
       ? "참고가가 포함된 예상 합계입니다. 판매처에서 현재 가격을 확인해주세요."
       : statuses.includes("stale")
-        ? "이전 확인가가 포함된 합계입니다. 구매 전 가격을 다시 확인해주세요."
-        : "판매처 확인가 기준 · 배송비 및 조립비 별도";
+        ? "구매 전 최신 가격을 다시 확인해주세요."
+        : "배송비 및 조립비 별도";
 }
 function buildValueText(state) {
   const parts = Object.values(state.selected).filter(Boolean),
@@ -95,7 +95,7 @@ function Cart({ parts }) {
   const unknown = selected.some((p) => effectivePrice(p) == null);
   return h(
     "section",
-    { className: "pc-cart" },
+    { className: "pc-cart ui-panel" },
     h(
       "div",
       { className: "pc-cart-head" },

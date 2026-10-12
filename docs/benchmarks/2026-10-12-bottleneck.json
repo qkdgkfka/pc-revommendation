@@ -1,0 +1,99 @@
+{
+  "source": "https://clockupcore.com/zenlesszonezero/",
+  "validation_kind": "published_comparison_recovery",
+  "snapshot_sha256": "5872673b7189401613b2f1c4a691d1f8754444b78cfa8c42bb80a5fb50b6e2cf",
+  "cases": [
+    {
+      "cpu": "cpu_i5_14400f",
+      "resolution": "1080",
+      "average": 74,
+      "cpu_reference": 157,
+      "gpu_reference": 76,
+      "limiter": "cpu",
+      "cpu_percent": 52.9,
+      "gpu_percent": 2.6,
+      "previous_capacity_gap_formula": {
+        "cpu_percent": 6.8,
+        "gpu_percent": 29.7,
+        "limiting_component": "gpu"
+      }
+    },
+    {
+      "cpu": "cpu_r7_9800x3d",
+      "resolution": "1080",
+      "average": 157,
+      "cpu_reference": 157,
+      "gpu_reference": 163,
+      "limiter": "balanced",
+      "cpu_percent": 0.0,
+      "gpu_percent": 3.7,
+      "previous_capacity_gap_formula": {
+        "cpu_percent": 6.4,
+        "gpu_percent": 30.5,
+        "limiting_component": "gpu"
+      }
+    },
+    {
+      "cpu": "cpu_i5_14400f",
+      "resolution": "1440",
+      "average": 75,
+      "cpu_reference": 133,
+      "gpu_reference": 76,
+      "limiter": "cpu",
+      "cpu_percent": 43.6,
+      "gpu_percent": 1.3,
+      "previous_capacity_gap_formula": {
+        "cpu_percent": 7.2,
+        "gpu_percent": 28.8,
+        "limiting_component": "gpu"
+      }
+    },
+    {
+      "cpu": "cpu_r7_9800x3d",
+      "resolution": "1440",
+      "average": 133,
+      "cpu_reference": 133,
+      "gpu_reference": 151,
+      "limiter": "gpu",
+      "cpu_percent": 0.0,
+      "gpu_percent": 11.9,
+      "previous_capacity_gap_formula": {
+        "cpu_percent": 3.2,
+        "gpu_percent": 41.1,
+        "limiting_component": "gpu"
+      }
+    },
+    {
+      "cpu": "cpu_i5_14400f",
+      "resolution": "2160",
+      "average": 56,
+      "cpu_reference": 68,
+      "gpu_reference": 63,
+      "limiter": "cpu",
+      "cpu_percent": 17.6,
+      "gpu_percent": 11.1,
+      "previous_capacity_gap_formula": {
+        "cpu_percent": 2.1,
+        "gpu_percent": 46.8,
+        "limiting_component": "gpu"
+      }
+    },
+    {
+      "cpu": "cpu_r7_9800x3d",
+      "resolution": "2160",
+      "average": 68,
+      "cpu_reference": 68,
+      "gpu_reference": 89,
+      "limiter": "gpu",
+      "cpu_percent": 0.0,
+      "gpu_percent": 23.6,
+      "previous_capacity_gap_formula": {
+        "cpu_percent": 0.2,
+        "gpu_percent": 69.9,
+        "limiting_component": "gpu"
+      }
+    }
+  ],
+  "controlled_review_rows": 111,
+  "passed": 6
+}

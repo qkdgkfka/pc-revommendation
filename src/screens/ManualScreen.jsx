@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useApp } from "../state/context.jsx";
 import { money, effectivePrice } from "../domain/products.js";
-import { Button } from "../components/Controls.jsx";
+import { Button, PageHeading } from "../components/Controls.jsx";
 import { Compatibility } from "../components/Compatibility.jsx";
 import Categories from "../components/manual/Categories.jsx";
 import Filters from "../components/manual/Filters.jsx";
@@ -26,22 +26,17 @@ export default function ManualScreen() {
     React.Fragment,
     null,
     h(
+      PageHeading,
+      { title: "나만의 PC, 직접 골라보세요" },
+      "원하는 부품을 선택하고, 가격과 예상 성능을 함께 확인하세요.",
+    ),
+    h(
       "div",
       { className: "pc-workspace" },
       h(Categories, { type, parts }),
       h(
-        "main",
+        "section",
         { className: "pc-main" },
-        h(
-          "div",
-          { className: "pc-page-title" },
-          h("h2", null, "나만의 PC, 직접 골라보세요"),
-          h(
-            "p",
-            null,
-            "원하는 부품을 선택하고, 가격과 예상 성능을 함께 확인하세요.",
-          ),
-        ),
         h(
           "div",
           { className: "pc-mobile-warning" },
@@ -49,7 +44,7 @@ export default function ManualScreen() {
         ),
         h(
           "section",
-          { className: "pc-browser" },
+          { className: "pc-browser ui-panel" },
           h(Search, { key: "search-" + type, type }),
           h(Filters, { key: "filters-" + type, type }),
           h(Results, { type, parts }),
@@ -60,7 +55,7 @@ export default function ManualScreen() {
         {
           className: "pc-estimate",
           tabIndex: 0,
-          "aria-label": "내 견적과 예상 성능 · 독립 스크롤",
+          "aria-label": "내 견적과 예상 성능",
         },
         h(Cart, { parts }),
         h(Performance),

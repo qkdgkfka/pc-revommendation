@@ -1,5 +1,6 @@
 // Browser plugin not available. Playwright validates unchanged UI flows with deterministic HTTP fixtures.
 import { chromium, expect } from "@playwright/test";
+import { GAME_OPTIONS } from "../src/domain/options.js";
 const origin = process.env.FRONTEND_URL || "http://127.0.0.1:5173";
 const observed = "2026-09-24T14:00:00Z";
 const product = (id, name, specs = {}, extra = {}) => ({
@@ -169,6 +170,9 @@ const fps = {
   game: "cyberpunk2077",
   target_fps: 144,
   fps_by_option: { low: 160, medium: 120, high: 80 },
+  fps_source_label: "실측 기반 보정 추정",
+  preset_comparison_note:
+    "옵션별 테스트 출처나 환경이 달라 FPS를 직접 비교하기 어려울 수 있습니다.",
   graphics_modes: [
     {
       id: "upscale",
@@ -216,6 +220,11 @@ const recommendation = {
         parts,
         total_price: 600000 + i * 100000,
         budget_overrun: tier === "high" ? 125000 : 0,
+        tier_upgrade: i
+          ? {
+              summary: "실속 구성 대비 GPU 성능 지수 +20% · 예상 평균 FPS +15%",
+            }
+          : null,
         fps,
         work_scores: { video_4k: { score: 72, label: "적합", level: "good" } },
       },
@@ -231,7 +240,8 @@ const context = await browser.newContext({
   requests = [];
 page.on("pageerror", (error) => errors.push(error.message));
 page.on("console", (message) => {
-  if (message.type() === "error") errors.push(message.text());
+  if (message.type() === "error")
+    errors.push(`${message.text()} (${message.location().url})`);
 });
 page.on("request", (request) => requests.push(request.url()));
 let recommendationGate = null;
@@ -332,6 +342,28 @@ try {
     "true",
   );
   await expect(page.locator("#placeholder")).toBeVisible();
+  const gameTrigger = page.locator("#gameSelect");
+  const gameOptions = page.locator('.game-picker-options [role="option"]');
+  await expect(gameOptions).toHaveCount(0);
+  await gameTrigger.focus();
+  await gameTrigger.press("ArrowDown");
+  await expect(
+    page.locator('.game-picker-options [aria-selected="true"]'),
+  ).toBeFocused();
+  await page.keyboard.press("End");
+  await expect(gameOptions.last()).toBeFocused();
+  await page.keyboard.press("Home");
+  await expect(gameOptions.first()).toBeFocused();
+  await page.keyboard.press("ArrowUp");
+  await expect(gameOptions.last()).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(gameOptions).toHaveCount(0);
+  await expect(gameTrigger).toBeFocused();
+  await page.screenshot({
+    path: "/tmp/site2-ui-initial-desktop.png",
+    fullPage: false,
+    animations: "disabled",
+  });
   if (
     requests.some((url) =>
       /\/api\/products\?|\/ManualScreen-[^/]+\.(?:js|css)/.test(url),
@@ -366,12 +398,100 @@ try {
     "true",
   );
   await expect(page.locator("#submitBtn")).toBeDisabled();
-  await expect(page.locator(".ai-skeleton-title")).toHaveCount(3);
+  await expect(page.locator(".analysis-illustration")).toBeVisible();
+  await expect(page.locator(".analysis-heading")).toBeInViewport();
+  await expect(page.locator(".analysis-satellite")).toHaveCount(3);
+  await expect(page.locator(".ai-skeleton-title")).toHaveCount(0);
+  await expect(
+    page.getByRole("progressbar", { name: "견적 분석 중" }),
+  ).not.toHaveAttribute("aria-valuenow");
+  expect(
+    await page
+      .locator(".analysis-heading h4")
+      .evaluate((el) => parseFloat(getComputedStyle(el).fontSize)),
+  ).toBeGreaterThanOrEqual(24);
+  expect(
+    await page
+      .locator(".ai-field legend")
+      .first()
+      .evaluate((el) => parseFloat(getComputedStyle(el).fontSize)),
+  ).toBeGreaterThanOrEqual(16);
+  await expect
+    .poll(() =>
+      page
+        .locator(".analysis-core")
+        .evaluate((el) => getComputedStyle(el).animationName),
+    )
+    .toBe("analysis-float");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect
+    .poll(() =>
+      page
+        .locator(".analysis-core")
+        .evaluate((el) => getComputedStyle(el).animationName),
+    )
+    .toBe("none");
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await expect
+    .poll(() =>
+      requests.some((url) =>
+        /\/RecommendationCard(?:-[^/]+\.js|\.jsx)(?:\?|$)/.test(url),
+      ),
+    )
+    .toBe(true);
   finishFirstAnalysis();
+  await expect(page.locator(".ai-progress")).toHaveCount(0);
   await expect(page.getByText("금액 설정 안함 · 사양 우선 추천")).toHaveCount(
     3,
   );
   await expect(page.getByText(/목표 예산보다/)).toHaveCount(0);
+  await expect(
+    page.getByText("실측 기반 보정 추정", { exact: true }),
+  ).toHaveCount(3);
+  await expect(
+    page.getByText(fps.preset_comparison_note, { exact: true }),
+  ).toHaveCount(3);
+  await expect(
+    page.getByText(/실속 구성 대비 GPU 성능 지수 \+20%/),
+  ).toHaveCount(2);
+  // The same expanded catalog is available in the live API and offline UI.
+  const liveCatalog = await (
+    await context.request.get(origin + "/api/catalog")
+  ).json();
+  expect(liveCatalog.games.map((game) => game.id)).toEqual(
+    GAME_OPTIONS.map((game) => game.id),
+  );
+  expect(liveCatalog.games.length).toBeGreaterThanOrEqual(61);
+  for (const category of ["fps", "openworld", "aaa", "game"]) {
+    await page.locator("#gameCategorySelect").selectOption(category);
+    await page.locator("#gameSelect").click();
+    await expect(
+      page.getByRole("listbox", { name: "게임 목록" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("listbox", { name: "게임 목록" }).getByRole("option"),
+    ).toHaveCount(
+      GAME_OPTIONS.filter((game) => game.category === category).length,
+    );
+    await page.keyboard.press("Escape");
+    await expect(gameOptions).toHaveCount(0);
+    await expect(gameTrigger).toBeFocused();
+  }
+  await page.locator("#gameCategorySelect").selectOption("openworld");
+  await page.locator("#gameSelect").click();
+  await page
+    .getByRole("option", { name: "킹덤 컴: 딜리버런스 II", exact: true })
+    .click();
+  await expect(page.locator("#gameSelect")).toContainText(
+    "킹덤 컴: 딜리버런스 II",
+  );
+  await expect(gameOptions).toHaveCount(0);
+  await expect(gameTrigger).toBeFocused();
+  await page.locator("#gameCategorySelect").selectOption("aaa");
+  await page.locator("#gameSelect").click();
+  await page
+    .getByRole("option", { name: "사이버펑크 2077", exact: true })
+    .click();
   await expect(
     page.getByText(/목표 144fps · 풀옵 추정 기준 목표 미달/),
   ).toHaveCount(3);
@@ -417,6 +537,7 @@ try {
   await page.screenshot({
     path: "/tmp/site2-recommendation-loading-desktop.png",
     fullPage: false,
+    animations: "disabled",
   });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator(".ai-progress").scrollIntoViewIfNeeded();
@@ -464,8 +585,11 @@ try {
     page.locator("#budgetChoices button").filter({ hasText: "100~200만원" }),
   ).toHaveAttribute("aria-pressed", "true");
   await page.locator("#viewCustomBtn").click();
-  await expect(page.locator(".pc-page-title")).toContainText("나만의 PC");
+  await expect(
+    page.getByRole("heading", { name: "나만의 PC, 직접 골라보세요" }),
+  ).toBeVisible();
   await expect(page.locator(".pc-product-row")).toHaveCount(1);
+  await expect(page.locator(".pc-product-row .pc-price-source")).toHaveCount(0);
   await expect(page.locator(".pc-categories >button")).toHaveCount(9);
   if (requests.some((url) => /GraphicsDetails/.test(url)))
     throw new Error("Inactive detail module was loaded eagerly");
@@ -504,6 +628,19 @@ try {
   await expect(page.locator(".pc-product-row")).toHaveCount(1);
   await page.locator(".pc-product-row .pc-add").click();
   await expect(page.locator("#csGameChart")).toContainText("80 fps");
+  await page.locator("#csGameCategorySelect").selectOption("openworld");
+  await page.locator("#csGameSelect").click();
+  await page
+    .getByRole("option", { name: "몬스터 헌터 와일즈", exact: true })
+    .click();
+  await expect(page.locator("#csGameSelect")).toContainText(
+    "몬스터 헌터 와일즈",
+  );
+  await page.locator("#csGameCategorySelect").selectOption("aaa");
+  await page.locator("#csGameSelect").click();
+  await page
+    .getByRole("option", { name: "사이버펑크 2077", exact: true })
+    .click();
   await page.locator("#csGameSelect").focus();
   await page.keyboard.press("ArrowDown");
   await expect(page.locator(".game-picker-options")).toBeVisible();
@@ -614,6 +751,24 @@ try {
   );
   await page.locator("#csModeWork").click();
   await expect(page.locator("#csWorkChart")).toContainText("4K 영상 편집");
+  const overlappingWorkLabels = await page
+    .locator("#csWorkChart .chart-row")
+    .evaluateAll((rows) =>
+      rows.flatMap((row) => {
+        const label = row.querySelector(".chart-lbl");
+        const bar = row.querySelector(".chart-bg");
+        const text = document.createRange();
+        text.selectNodeContents(label);
+        return text.getBoundingClientRect().right >
+          bar.getBoundingClientRect().left
+          ? [label.textContent]
+          : [];
+      }),
+    );
+  expect(
+    overlappingWorkLabels,
+    "Work labels must not overlap their chart bars",
+  ).toEqual([]);
   await page.waitForTimeout(300);
   await page.screenshot({
     path: "/tmp/site2-after-desktop.png",
@@ -641,13 +796,18 @@ try {
   await page.locator("#viewCustomBtn").click();
   await expect(page.locator("#productSearchInput")).toHaveValue("Samsung");
   await expect(page.locator("#productSourceSelect")).toHaveValue("danawa");
-  await expect(page.locator("#csModeWork")).toHaveClass(/active/);
+  await expect(page.locator("#csModeWork")).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await page.locator("#viewAiBtn").click();
   await expect(
     page.locator("#budgetChoices button").filter({ hasText: "200~300만원" }),
   ).toHaveAttribute("aria-pressed", "true");
   await page.locator(".card.low .part-row").first().hover();
   await expect(page.locator(".part-preview-popover")).toBeVisible();
+  await expect(page.locator(".part-preview-popover .preview-source")).toHaveCount(0);
+  await expect(page.locator(".part-row .price-provenance")).toHaveCount(0);
   await page.keyboard.press("Escape");
   await expect(page.locator(".part-preview-popover")).toHaveCount(0);
   await page.locator(".card.mid [data-import-tier]").click();
@@ -693,14 +853,9 @@ try {
   await estimate.scrollIntoViewIfNeeded();
   await estimate.focus();
   await page.keyboard.press("End");
-  await page.waitForTimeout(300);
-  if (
-    await estimate.evaluate(
-      (element) =>
-        element.scrollHeight > element.clientHeight && element.scrollTop === 0,
-    )
-  )
-    throw new Error("Keyboard did not scroll the estimate");
+  await expect(
+    page.locator(".pc-performance .graphics-toggle").last(),
+  ).toBeInViewport();
   await page.keyboard.press("Home");
   await page.waitForTimeout(300);
   await page
@@ -730,7 +885,9 @@ try {
         errors,
         checks: [
           "AI initial and manual navigation",
-          "first analysis skeleton, slow-response guidance, retained results, cancel, failure and retry",
+          "closed game lists stay unmounted; keyboard navigation, category changes and focus restoration",
+          "recommendation result code loads while its API response is pending",
+          "animated analysis, readable type, reduced motion, slow-response guidance, retained results, cancel, failure and retry",
           "unlimited budget payload, 4K 144Hz controls, soft budget overrun, reset, mobile layout",
           "all nine categories",
           "latest product result",
@@ -746,7 +903,7 @@ try {
           "composed filters and deduplicated cursor pagination",
           "rapid search ignores late results",
           "provider retry, deadline and empty result messages",
-          "mobile keyboard scroll, deselection and clear build",
+          "mobile keyboard navigation reaches performance details, deselection and clear build",
           "all remaining storage, power, case and software categories",
         ],
         screenshots: [

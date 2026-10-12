@@ -1,12 +1,10 @@
 import { WORK_PROFILES } from "./options.js";
 import { effectivePrice } from "./products.js";
+import { finiteNumber as numeric } from "./numbers.js";
+export { finiteNumber as numeric } from "./numbers.js";
 const MAX_GPU_PERF = 3000,
   MAX_CPU_PERF = 1720,
   MAX_RAM_PERF = 680;
-export function numeric(v, fallback = null) {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : fallback;
-}
 export function parseGbFromName(name) {
   const m = String(name || "").match(/(\d+)\s*GB/i);
   return m ? Number(m[1]) : null;

@@ -77,7 +77,7 @@ function ProductRow({ part, type, selected }) {
         { className: "pc-specs" },
         badges(part, type).map((b, i) => h("span", { key: i }, b)),
       ),
-      h("p", { className: "pc-price-source" }, provenance.text),
+      provenance.text && h("p", { className: "pc-price-source" }, provenance.text),
     ),
     h(
       "div",

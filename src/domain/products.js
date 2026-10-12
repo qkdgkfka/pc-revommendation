@@ -6,9 +6,10 @@ import {
   builderRange,
 } from "./specs.js";
 import { numeric, storageTbValue } from "./performance.js";
+import { safeExternalUrl } from "./urls.js";
 export function money(v) {
-  const n = Number(v);
-  return (!v && v !== 0) || isNaN(n) ? "-" : "₩" + n.toLocaleString("ko-KR");
+  const n = numeric(v);
+  return n === null ? "-" : "₩" + n.toLocaleString("ko-KR");
 }
 export function escapeHtml(v) {
   return String(v ?? "").replace(
@@ -41,11 +42,9 @@ export function queryString(params) {
 }
 export function partUrl(part) {
   return (
-    part?.source_url ||
-    part?.url ||
-    part?.shop_url ||
-    part?.product_url ||
-    shopSearchUrl(part?.name)
+    [part?.source_url, part?.url, part?.shop_url, part?.product_url]
+      .map(safeExternalUrl)
+      .find(Boolean) || shopSearchUrl(part?.name)
   );
 }
 export function gpuBrand(item) {
@@ -366,19 +365,10 @@ export function priceProvenance(item) {
   if (price == null)
     return { status: "unavailable", text: "가격 미확인 · 판매처 확인 필요" };
   const source = String(item?.price_source || "");
-  const shop = marketName(item?.shop || source);
   const checked =
     item?.price_checked_at || item?.scraped_at || item?.checked_at;
   const date = checked ? new Date(checked) : null;
-  const checkedText =
-    date && Number.isFinite(date.getTime())
-      ? date.toLocaleString("ko-KR", {
-          month: "numeric",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : "";
+  const hasCheckedDate = date && Number.isFinite(date.getTime());
   const status =
     item?.price_status === "stale" || item?.price_stale || item?.stale
       ? "stale"
@@ -388,33 +378,24 @@ export function priceProvenance(item) {
           ? "verified"
           : /(?:danawa|compuzone).*(?:live|browse)/.test(source) &&
               item?.price != null &&
-              checkedText
+              hasCheckedDate
             ? "verified"
             : "estimated";
-  if (status === "verified")
-    return {
-      status,
-      text: `${shop} 확인가${checkedText ? " · " + checkedText : ""}`,
-    };
-  if (status === "cached")
-    return {
-      status,
-      text: `${shop} 저장된 확인가${checkedText ? " · " + checkedText : ""}`,
-    };
+  if (status === "verified" || status === "cached")
+    return { status, text: "" };
   if (status === "stale")
-    return {
-      status,
-      text: `${shop} 이전 확인가${checkedText ? " · " + checkedText : ""} · 재확인 필요`,
-    };
+    return { status, text: "가격 재확인 필요" };
   return { status, text: "참고가 · 현재 판매가 미확인" };
 }
 export function priceProvenanceHtml(item) {
   const provenance = priceProvenance(item);
+  if (!provenance.text) return "";
   return `<span class="price-provenance ${provenance.status}">${escapeHtml(provenance.text)}</span>`;
 }
 export function catalogPriceLabel(item) {
   const price = effectivePrice(item);
-  return `${displayName(item)} — ${price != null ? money(price) : "가격 미확인"} · ${priceProvenance(item).text}`;
+  const note = priceProvenance(item).text;
+  return `${displayName(item)} — ${price != null ? money(price) : "가격 미확인"}${note ? " · " + note : ""}`;
 }
 export function uniqueProducts(items) {
   const seen = new Set();
@@ -577,12 +558,7 @@ export function rangeLabel(value, ranges) {
   const found = ranges.find((r) => n >= r.min && n <= r.max);
   return found ? found.label : "";
 }
-export function normalizeSearchText(value) {
-  return String(value || "")
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .trim();
-}
+export { normalizeSearchText, productMatchesQuery } from "./productSearch.js";
 export function productBadges(part, type) {
   const specs = builderSpecs(part, type);
   const known = (value) => (value && value !== "unknown" ? value : "");

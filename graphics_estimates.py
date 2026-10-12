@@ -3,6 +3,7 @@
 Exact RT/FG rows come from the same reviewed snapshot as native measurements.
 Other scenarios are explicitly wide-range workload estimates, not benchmarks.
 """
+from ray_tracing_estimates import ray_tracing_scenario
 from functools import lru_cache
 import json
 import re
@@ -125,8 +126,9 @@ def graphics_scenarios(gpu, cpu, game, resolution, fps, reference_estimator):
                     source_url=prediction["calibration_sources"][0],
                     support_note=("NVIDIA App 오버라이드가 필요할 수 있음" if nvidia and support and "NV" in support.get("mfg_note" if factor==4 else "fg_note","") else ""),
                     note="FG 전후 실측에서 구한 처리 시간으로 보정 · 다른 구성·장면은 추정"))
-    if not any(row["id"] == "rt" or row["id"].startswith("rt_") for row in rows):
-        rows.append({"id": "rt_unavailable", "label": "RT", "supported": False, "avg_fps": None, "method": "unavailable", "note": "이 게임·GPU의 검증된 RT 측정 자료 없음"})
+    rt = ray_tracing_scenario(gpu, cpu, game, resolution, fps)
+    if rt:
+        rows.append(rt)
     if not upscaler:
         rows.append({"id": "upscale_unavailable", "label": "DLSS / FSR · FG", "supported": False,
                      "avg_fps": None, "method": "unavailable", "unavailable_reason":"support_unconfirmed",

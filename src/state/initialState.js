@@ -5,6 +5,7 @@ import {
   GAME_CATEGORIES,
 } from "../domain/options.js";
 import { seedCatalogItems, withPartType } from "../domain/products.js";
+import { initialFpsCalculator } from "./fpsCalculator.js";
 export const recommendationDefaults = {
   budgetMode: "soft",
   budget: 2000000,
@@ -52,6 +53,7 @@ export function initialState(catalogs = referenceCatalogs) {
     lastRecommendation: null,
     recommendation: { loading: false, error: "", kind: "" },
     fps: { key: "", loading: false, data: null, error: "", kind: "" },
+    fpsCalculator: initialFpsCalculator(),
     catalogError: "",
   };
 }
