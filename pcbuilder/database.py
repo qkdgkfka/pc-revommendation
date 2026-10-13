@@ -185,28 +185,31 @@ def verified_price_info(part: Dict[str, Any]) -> bool:
         and price_is_fresh(part.get("price_checked_at") or part.get("scraped_at") or part.get("checked_at"))
     )
 
-def _best_match_key(query: str, keys: Iterable[str]) -> Optional[str]:
+def _best_match_key(query: str, keys: Iterable[str], eligible=None) -> Optional[str]:
+    """Pick the first best name, validating only candidates that can win."""
     q = canonical_name(query)
     if not q:
         return None
     keys_list = list(keys)
-    if q in keys_list:
+    if q in keys_list and (eligible is None or eligible(q)):
         return q
 
     q_tokens = set(q.split())
     best = None
     best_score = 0.0
     for key in keys_list:
+        if key == q:
+            continue  # An exact candidate was already rejected above.
         k_tokens = set(key.split())
         inter = len(q_tokens & k_tokens)
         denom = max(1, len(q_tokens | k_tokens))
         score = inter / denom
         if q in key or key in q:
             score += 0.6
-        if score > best_score:
+        if score >= 0.25 and score > best_score and (eligible is None or eligible(key)):
             best = key
             best_score = score
-    return best if best_score >= 0.25 else None
+    return best
 
 def load_db_cache() -> None:
     with _db_lock:
@@ -363,7 +366,7 @@ def db_lookup_price_info(part: Dict[str, Any], part_type: str) -> Optional[Dict[
     # Exact catalog models are common; only scan the inventory for fuzzy matches.
     exact = rows.get(key)
     match = key if exact and eligible(exact) else _best_match_key(
-        key, (name for name, row in rows.items() if eligible(row)))
+        key, rows, lambda name: name != key and eligible(rows[name]))
     if not match:
         return None
     row = rows.get(match) or {}

@@ -111,9 +111,6 @@ export default function RecommendationProgress({
       <div className="analysis-waiting">
         <span className="analysis-live-dot" aria-hidden="true" />
         <span>분석 중</span>
-        <span className="ai-progress-time" aria-hidden="true">
-          {elapsed}초 경과
-        </span>
       </div>
       <div
         className="analysis-track"

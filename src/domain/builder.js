@@ -40,10 +40,23 @@ export function createBuilderDomain(state) {
       ...Object.values(state.pinned[type] || {}),
       ...baseCatalogFor(type),
     ]);
-  const findPartById = (type, id) =>
-    allKnownProductsFor(type).find((p) => p.id === id);
-  const findCatalogItemById = (id) =>
-    BUILDER_PARTS.map((p) => findPartById(p.key, id)).find(Boolean);
+  function findPartById(type, id) {
+    if (!id) return undefined;
+    const key = String(id);
+    const matches = (part) => part?.id && String(part.id) === key;
+    const part =
+      activeDanawaProducts(type).find(matches) ||
+      Object.values(state.pinned[type] || {}).find(matches) ||
+      baseCatalogFor(type).find(matches);
+    // Match uniqueProducts' first stringified ID, then the original strict ID.
+    return part?.id === id ? part : undefined;
+  }
+  function findCatalogItemById(id) {
+    for (const { key } of BUILDER_PARTS) {
+      const part = findPartById(key, id);
+      if (part) return part;
+    }
+  }
   const expandedBuilderCatalog = () => false;
   const builderCatalogFor = browseProductsFor;
   const rawCatalogFor = builderCatalogFor;
@@ -637,19 +650,20 @@ export function createBuilderDomain(state) {
       productMatchesFilters(type, part),
     );
     if (state.productSort === "name")
-      products.sort((a, b) =>
-        displayName(a).localeCompare(displayName(b), "ko"),
-      );
+      return products
+        .map((part) => ({ part, name: displayName(part) }))
+        .sort((a, b) => a.name.localeCompare(b.name, "ko"))
+        .map(({ part }) => part);
     if (["price_asc", "price_desc"].includes(state.productSort)) {
-      products.sort((a, b) => {
-        const aPrice = effectivePrice(a),
-          bPrice = effectivePrice(b);
-        if (aPrice == null) return bPrice == null ? 0 : 1;
-        if (bPrice == null) return -1;
-        return state.productSort === "price_asc"
-          ? aPrice - bPrice
-          : bPrice - aPrice;
-      });
+      const direction = state.productSort === "price_asc" ? 1 : -1;
+      return products
+        .map((part) => ({ part, price: effectivePrice(part) }))
+        .sort((a, b) => {
+          if (a.price == null) return b.price == null ? 0 : 1;
+          if (b.price == null) return -1;
+          return direction * (a.price - b.price);
+        })
+        .map(({ part }) => part);
     }
     return products;
   }

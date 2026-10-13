@@ -210,11 +210,6 @@
   background: currentColor;
   animation: analysis-signal 2s ease-in-out infinite;
 }
-.ai-progress-time {
-  color: var(--pc-muted);
-  font-size: 14px;
-  font-variant-numeric: tabular-nums;
-}
 .analysis-track {
   width: min(100%, 260px);
   height: 5px;

@@ -530,9 +530,7 @@ try {
   await expect(page.locator(".ai-progress")).toContainText(
     "판매처 응답에 따라",
   );
-  expect(
-    parseInt(await page.locator(".ai-progress-time").innerText(), 10),
-  ).toBeGreaterThanOrEqual(8);
+  await expect(page.locator(".ai-progress")).not.toContainText(/\d+초 경과/);
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({
     path: "/tmp/site2-recommendation-loading-desktop.png",

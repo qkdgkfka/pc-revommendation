@@ -16,6 +16,13 @@ class RecommendationRefactorTests(unittest.TestCase):
             self.addCleanup(guard.stop)
         self.inventory = copy.deepcopy({k: CATALOGS[k] for k in ("cpu", "gpu", "ram", "mb", "psu", "storage")})
 
+    def budget_inventory(self):
+        # Explicit compatible parts keep budget tests independent of catalog order.
+        ids = {"cpu": "cpu_r5_5500", "gpu": "gpu_rtx4060", "ram": "ram_32_ddr4",
+               "mb": "mb_a520m", "psu": "psu_750", "storage": "ssd_500_sata"}
+        return {kind: [copy.deepcopy(next(p for p in self.inventory[kind] if p["id"] == identifier))]
+                for kind, identifier in ids.items()}
+
     def select(self, payload, inventory=None):
         shared = {}
         candidates = {
@@ -49,7 +56,7 @@ class RecommendationRefactorTests(unittest.TestCase):
         self.assertEqual(request, rec.RecommendationRequest.from_payload(request.as_payload()))
 
     def test_soft_budget_can_return_a_compatible_build_just_above_target(self):
-        inventory = {k: [rows[0]] for k, rows in self.inventory.items()}
+        inventory = self.budget_inventory()
         inventory["gpu"] = [next(p for p in self.inventory["gpu"] if p["id"] == "gpu_rtx4060")]
         inventory["ram"] = [next(p for p in self.inventory["ram"] if p["id"] == "ram_32_ddr4")]
         total = sum(rows[0]["price"] for rows in inventory.values())
@@ -59,7 +66,7 @@ class RecommendationRefactorTests(unittest.TestCase):
         self.assertEqual("over_budget", candidates[0]["budget_status"])
 
     def test_budget_minimum_does_not_force_unnecessary_spending(self):
-        inventory = {k: [rows[0]] for k, rows in self.inventory.items()}
+        inventory = self.budget_inventory()
         inventory["gpu"] = [next(p for p in self.inventory["gpu"] if p["id"] == "gpu_rtx4060")]
         candidates = rec.build_tier_candidates({"budget_min": 2000000, "budget_max": 3000000}, "low", random.Random(1), inventory=inventory)
         self.assertTrue(candidates)
@@ -111,7 +118,7 @@ class RecommendationRefactorTests(unittest.TestCase):
                 self.assertGreaterEqual(norms["gpu"] * 100, 78)
 
     def test_cheaper_sku_of_same_gpu_remains_available_for_soft_budget(self):
-        inventory = {k: [copy.deepcopy(rows[0])] for k, rows in self.inventory.items()}
+        inventory = self.budget_inventory()
         gpu = next(p for p in self.inventory["gpu"] if p["id"] == "gpu_rtx4060")
         inventory["gpu"] = [dict(gpu, id="cheap", price=150000), dict(gpu, id="expensive", price=450000)]
         for kind, rows in inventory.items():

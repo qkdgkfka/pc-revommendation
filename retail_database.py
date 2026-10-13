@@ -53,16 +53,27 @@ def save_products(path, kind, items):
                          (kind,item["id"],int(item["price"]),checked,item["url"]))
     return len(accepted)
 
+def _file_stamp(path):
+    try:
+        stat = path.stat()
+        return stat.st_mtime_ns, stat.st_size, stat.st_ino
+    except FileNotFoundError:
+        return None
+
+
 def read_products(path):
-    path=Path(path)
-    if not path.exists():
-        return _EMPTY
+    path = Path(path).resolve()
     with _lock:
-        stat=path.stat()
-        stamp=(stat.st_mtime_ns,stat.st_size)
+        # Committed writes may live only in WAL; replacing a same-size file can
+        # preserve mtime. Both files and their identities determine the snapshot.
+        stamp = (_file_stamp(path), _file_stamp(Path(str(path) + '-wal')))
+        if stamp[0] is None:
+            _cache.pop(path, None)
+            return _EMPTY
         if path in _cache and _cache[path][0]==stamp:
             return _cache[path][1]
         with closing(sqlite3.connect(path.as_uri()+"?mode=ro",uri=True,timeout=20)) as conn:
+            conn.execute('BEGIN')
             if not conn.execute("SELECT 1 FROM sqlite_master WHERE name='retail_products'").fetchone():
                 products=_EMPTY
             else:

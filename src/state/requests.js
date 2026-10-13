@@ -68,3 +68,36 @@ export function createRequestManager() {
   }
   return { start, cancel, cancelAll: () => [...active.keys()].forEach(cancel) };
 }
+
+export function createJsonClient(fetcher, base = "") {
+  return async function json(url, signal, body) {
+    const response = await fetcher(base + url, {
+      signal,
+      ...(body
+        ? {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          }
+        : {}),
+    });
+    let data;
+    try {
+      data = await response.json();
+      if (!data || typeof data !== "object" || Array.isArray(data))
+        throw new Error("JSON object required");
+    } catch {
+      throw new RequestError(
+        "upstream",
+        "서버 응답 형식을 확인하지 못했습니다.",
+      );
+    }
+    if (!response.ok || data?.ok === false)
+      throw new RequestError(
+        data?.error_kind === "timeout" ? "timeout" : "upstream",
+        data?.error ||
+          `판매처 연결에 실패했습니다 (HTTP ${response.status || "오류"}).`,
+      );
+    return data;
+  };
+}
