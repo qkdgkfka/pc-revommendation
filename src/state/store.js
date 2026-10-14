@@ -11,6 +11,7 @@ import {
   createRequestManager,
   createJsonClient,
   errorMessage,
+  runRequest,
 } from "./requests.js";
 import { createProductBrowser } from "./productBrowser.js";
 import { createBuildSelection } from "./buildSelection.js";
@@ -114,16 +115,10 @@ export function createAppStore(options = {}) {
       (signal) => json("/api/catalog?compact=1", signal),
       5000,
     );
-    if (entry.task) return entry.task;
-    entry.task = entry.promise
-      .then((data) => {
-        if (!entry.current()) return;
-        publish(catalogPatch(data, state));
-      })
-      .catch((error) => {
-        if (entry.current()) publish({ catalogError: errorMessage(error) });
-      });
-    return entry.task;
+    return runRequest(entry, {
+      onSuccess: (data) => publish(catalogPatch(data, state)),
+      onError: (error) => publish({ catalogError: errorMessage(error) }),
+    });
   }
   function chooseGameCategory(category, manual = false) {
     const games = state.games.filter(

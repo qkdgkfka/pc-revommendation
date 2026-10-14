@@ -319,12 +319,26 @@ def ensure_db_cache_loaded() -> None:
             if state.DB_CACHE.get('_file_revision') != stamp:
                 load_db_cache()
 
+def _price_info_from_row(row, part, price, *, matched_by, price_source):
+    return {
+        "price": price,
+        "shop": row.get("shop") or "Danawa",
+        "url": row.get("url") or part.get("url") or retail.danawa_search_url(part.get("name")),
+        "currency": row.get("currency") or "KRW",
+        "scraped_at": row.get("scraped_at"),
+        "stale": not price_is_fresh(row.get("scraped_at")),
+        "matched_by": matched_by,
+        "price_source": price_source,
+        "name": row.get("name"),
+        "type": row.get("type"),
+    }
+
+
 def db_lookup_price_info(part: Dict[str, Any], part_type: str) -> Optional[Dict[str, Any]]:
     ensure_db_cache_loaded()
     part_name = part.get("name")
     part_type_key = normalize_text(part_type)
     part_url = normalize_product_url(part.get("url") or part.get("shop_url") or part.get("product_url") or part.get("source_url"))
-    catalog_price = safe_int(part.get("base_price"), 0) or safe_int(part.get("price"), 0)
 
     # 1) Prefer an exact product URL match when the crawler captured one.
     if part_url:
@@ -343,18 +357,7 @@ def db_lookup_price_info(part: Dict[str, Any], part_type: str) -> Optional[Dict[
                 and market_product_url(row.get("url") or part_url)
                 and not retail.danawa_url_rejected(part_type, row.get("url") or part_url)
             ):
-                return {
-                    "price": price,
-                    "shop": row.get("shop") or "Danawa",
-                    "url": row.get("url") or part.get("url") or retail.danawa_search_url(part_name),
-                    "currency": row.get("currency") or "KRW",
-                    "scraped_at": row.get("scraped_at"),
-                    "stale": not price_is_fresh(row.get("scraped_at")),
-                    "matched_by": "url_exact",
-                    "price_source": "db_url_exact",
-                    "name": row.get("name"),
-                    "type": row.get("type"),
-                }
+                return _price_info_from_row(row, part, price, matched_by="url_exact", price_source="db_url_exact")
 
     # 2) Fallback to best name match.
     rows = state.DB_CACHE.get("prices_by_name", {}) or {}
@@ -385,18 +388,10 @@ def db_lookup_price_info(part: Dict[str, Any], part_type: str) -> Optional[Dict[
     if not retail.retail_quote_valid(part_type_key, part_name, row):
         return None
 
-    return {
-        "price": price,
-        "shop": row.get("shop") or "Danawa",
-        "url": row.get("url") or part.get("url") or retail.danawa_search_url(part_name),
-        "currency": row.get("currency") or "KRW",
-        "scraped_at": row.get("scraped_at"),
-        "stale": not price_is_fresh(row.get("scraped_at")),
-        "matched_by": "name_match",
-        "price_source": "db_name_exact" if key == canonical_name(row.get("name")) else "db_name_fuzzy",
-        "name": row.get("name"),
-        "type": row.get("type"),
-    }
+    return _price_info_from_row(
+        row, part, price, matched_by="name_match",
+        price_source="db_name_exact" if key == canonical_name(row.get("name")) else "db_name_fuzzy",
+    )
 
 def db_lookup_price(part: Dict[str, Any], part_type: str) -> Optional[int]:
     info = db_lookup_price_info(part, part_type)

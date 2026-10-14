@@ -1,5 +1,5 @@
 import { customFpsKey, fpsRequestPart } from "../domain/performance.js";
-import { RequestError, errorMessage } from "./requests.js";
+import { RequestError, errorMessage, runRequest } from "./requests.js";
 const FPS_CACHE_LIMIT = 64;
 export function createManualFps({
   getState,
@@ -61,11 +61,12 @@ export function createManualFps({
       (signal) => json("/api/estimate-fps", signal, payload),
       timeout ?? 20000,
     );
-    if (entry.task) return entry.task;
-    publish({ fps: { key, data: null, loading: true, error: "", kind: "" } });
-    entry.task = entry.promise
-      .then((data) => {
-        if (!entry.current()) return;
+    return runRequest(entry, {
+      onStart: () =>
+        publish({
+          fps: { key, data: null, loading: true, error: "", kind: "" },
+        }),
+      onSuccess: (data) => {
         if (!data.fps)
           throw new RequestError("empty", "해당 구성의 FPS 자료가 없습니다.");
         fpsCache.delete(key);
@@ -75,20 +76,18 @@ export function createManualFps({
         publish({
           fps: { key, data: data.fps, loading: false, error: "", kind: "" },
         });
-      })
-      .catch((error) => {
-        if (entry.current())
-          publish({
-            fps: {
-              key,
-              data: null,
-              loading: false,
-              error: errorMessage(error),
-              kind: error.kind || "upstream",
-            },
-          });
-      });
-    return entry.task;
+      },
+      onError: (error) =>
+        publish({
+          fps: {
+            key,
+            data: null,
+            loading: false,
+            error: errorMessage(error),
+            kind: error.kind || "upstream",
+          },
+        }),
+    });
   }
   return { estimateFps, cancelFps };
 }

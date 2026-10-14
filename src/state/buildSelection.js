@@ -4,6 +4,7 @@ import {
   effectivePrice,
   applyPriceObservation,
 } from "../domain/products.js";
+import { runRequest } from "./requests.js";
 export function createBuildSelection({
   getState,
   publish,
@@ -69,10 +70,8 @@ export function createBuildSelection({
       (signal) => json("/api/price-lookup", signal, payload),
       timeout ?? 20000,
     );
-    if (entry.task) return entry.task;
-    entry.task = entry.promise
-      .then((data) => {
-        if (!entry.current()) return;
+    return runRequest(entry, {
+      onSuccess: (data) => {
         const selected = { ...getState().selected },
           pinned = { ...getState().pinned };
         for (const result of data.results || []) {
@@ -85,9 +84,8 @@ export function createBuildSelection({
           pinned[type] = { ...(pinned[type] || {}), [part.id]: part };
         }
         publish({ selected, pinned });
-      })
-      .catch(() => {});
-    return entry.task;
+      },
+    });
   }
   return { selectProduct, clearProduct, clearBuild, refreshSelectedPrices };
 }

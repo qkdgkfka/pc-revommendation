@@ -1,6 +1,6 @@
 import { BUILDER_PARTS, withPartType } from "../domain/products.js";
 import { recommendationDefaults, gameCategoryFor } from "./initialState.js";
-import { RequestError, errorMessage } from "./requests.js";
+import { RequestError, errorMessage, runRequest } from "./requests.js";
 export function createRecommendations({
   getState,
   publish,
@@ -33,36 +33,33 @@ export function createRecommendations({
       (signal) => json("/api/recommend", signal, payload),
       timeout ?? 30000,
     );
-    if (entry.task) return entry.task;
-    publish({
-      recommendation: {
-        loading: true,
-        error: "",
-        kind: "",
-        startedAt: Date.now(),
-      },
-    });
-    entry.task = entry.promise
-      .then((data) => {
-        if (!entry.current()) return;
+    return runRequest(entry, {
+      onStart: () =>
+        publish({
+          recommendation: {
+            loading: true,
+            error: "",
+            kind: "",
+            startedAt: Date.now(),
+          },
+        }),
+      onSuccess: (data) => {
         if (!data.results)
           throw new RequestError("empty", "서버 응답에 추천 결과가 없습니다.");
         publish({
           lastRecommendation: { ...data, input: data.input || payload },
           recommendation: { loading: false, error: "", kind: "" },
         });
-      })
-      .catch((error) => {
-        if (entry.current())
-          publish({
-            recommendation: {
-              loading: false,
-              error: errorMessage(error),
-              kind: error.kind || "upstream",
-            },
-          });
-      });
-    return entry.task;
+      },
+      onError: (error) =>
+        publish({
+          recommendation: {
+            loading: false,
+            error: errorMessage(error),
+            kind: error.kind || "upstream",
+          },
+        }),
+    });
   }
   function cancelRecommendation() {
     requests.cancel("recommendation");

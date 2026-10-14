@@ -1,4 +1,4 @@
-import { RequestError, errorMessage } from "./requests.js";
+import { RequestError, errorMessage, runRequest } from "./requests.js";
 
 export function initialFpsCalculator() {
   return {
@@ -84,11 +84,9 @@ export function createFpsCalculator({
       (signal) => json("/api/estimate-fps", signal, payload),
       timeout,
     );
-    if (entry.task) return entry.task;
-    set({ loading: true, error: "", data: null });
-    entry.task = entry.promise
-      .then((response) => {
-        if (!entry.current()) return;
+    return runRequest(entry, {
+      onStart: () => set({ loading: true, error: "", data: null }),
+      onSuccess: (response) => {
         if (!response.fps?.fps_by_option)
           throw new RequestError(
             "empty",
@@ -107,12 +105,10 @@ export function createFpsCalculator({
             ramLabel: `${ram.type} ${ram.gb}GB · ${ram.speed}MT/s`,
           },
         });
-      })
-      .catch((error) => {
-        if (entry.current())
-          set({ loading: false, error: errorMessage(error), data: null });
-      });
-    return entry.task;
+      },
+      onError: (error) =>
+        set({ loading: false, error: errorMessage(error), data: null }),
+    });
   }
   return { updateFpsCalculator, calculateFps, cancelFpsCalculator };
 }

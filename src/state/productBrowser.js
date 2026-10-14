@@ -5,7 +5,7 @@ import {
   gpuSeriesToken,
   marketName,
 } from "../domain/products.js";
-import { RequestError, errorMessage } from "./requests.js";
+import { RequestError, errorMessage, runRequest } from "./requests.js";
 export function createProductBrowser({
   getState,
   publish,
@@ -60,17 +60,16 @@ export function createProductBrowser({
       (signal) => json("/api/products?" + params, signal),
       timeout ?? 30000,
     );
-    if (entry.task) return entry.task;
-    patchBrowse(type, {
-      loading: true,
-      error: "",
-      errorKind: "",
-      pendingKey: requestKey,
-      ...(!append ? { items: [], loaded: false, hasMore: false } : {}),
-    });
-    entry.task = entry.promise
-      .then((data) => {
-        if (!entry.current()) return;
+    return runRequest(entry, {
+      onStart: () =>
+        patchBrowse(type, {
+          loading: true,
+          error: "",
+          errorKind: "",
+          pendingKey: requestKey,
+          ...(!append ? { items: [], loaded: false, hasMore: false } : {}),
+        }),
+      onSuccess: (data) => {
         const items = withPartType(data.items || [], type),
           unavailable = data.status === "unavailable";
         patchBrowse(
@@ -118,24 +117,22 @@ export function createProductBrowser({
               }
             : {},
         );
-      })
-      .catch((error) => {
-        if (entry.current())
-          patchBrowse(type, {
-            loading: false,
-            error: errorMessage(error),
-            errorKind: error.kind || "upstream",
-            ...(!append
-              ? {
-                  items: [],
-                  loaded: false,
-                  status: "unavailable",
-                  hasMore: false,
-                }
-              : {}),
-          });
-      });
-    return entry.task;
+      },
+      onError: (error) =>
+        patchBrowse(type, {
+          loading: false,
+          error: errorMessage(error),
+          errorKind: error.kind || "upstream",
+          ...(!append
+            ? {
+                items: [],
+                loaded: false,
+                status: "unavailable",
+                hasMore: false,
+              }
+            : {}),
+        }),
+    });
   }
   function setPart(type) {
     if (!BUILDER_META[type]) return;

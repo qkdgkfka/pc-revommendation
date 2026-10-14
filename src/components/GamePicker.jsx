@@ -2,25 +2,7 @@ import React, { useEffect, useId, useRef, useState } from "react";
 import { useApp } from "../state/context.jsx";
 import { GAME_CATEGORIES } from "../domain/options.js";
 import { gameCategoryFor } from "../state/initialState.js";
-const fallback =
-  "data:image/svg+xml," +
-  encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="32"><rect width="48" height="32" rx="6" fill="#dbeafe"/><path d="M15 10h18l5 14h-7l-3-4h-8l-3 4h-7z" fill="#2563eb"/></svg>',
-  );
-function GameIcon({ id, lazy = false }) {
-  return (
-    <img
-      src={"/assets/game-icons/" + encodeURIComponent(id) + ".jpg"}
-      width="42"
-      height="28"
-      loading={lazy ? "lazy" : "eager"}
-      alt=""
-      onError={(e) => {
-        if (e.currentTarget.src !== fallback) e.currentTarget.src = fallback;
-      }}
-    />
-  );
-}
+import GameArtwork from "./GameArtwork.jsx";
 export default function GamePicker({ manual = false }) {
   const { state, store } = useApp([
       "games",
@@ -141,7 +123,7 @@ export default function GamePicker({ manual = false }) {
         >
           {selected ? (
             <>
-              <GameIcon id={selected.id} />
+              <GameArtwork id={selected.id} />
               {selected.label}
             </>
           ) : (
@@ -172,7 +154,7 @@ export default function GamePicker({ manual = false }) {
                 trigger.current.focus();
               }}
             >
-              <GameIcon id={game.id} lazy />
+              <GameArtwork id={game.id} lazy />
               {game.label}
             </button>
           ))}

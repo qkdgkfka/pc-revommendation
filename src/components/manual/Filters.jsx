@@ -4,6 +4,17 @@ import { Icon, Button } from "../Controls.jsx";
 import { gpuSeriesGroups } from "../../domain/products.js";
 
 const h = React.createElement;
+function FilterChip({ selected, onClick, children }) {
+  return (
+    <Button
+      className={"pc-chip" + (selected ? " is-active" : "")}
+      aria-pressed={selected}
+      onClick={onClick}
+    >
+      {children}
+    </Button>
+  );
+}
 function FilterGroup({ group, type }) {
   const { store } = useApp(["builderFilters"]);
   const { filterValues } = store.domain();
@@ -24,13 +35,10 @@ function FilterGroup({ group, type }) {
       { className: "pc-filter-options" },
       visible.map(([value, label]) =>
         h(
-          Button,
+          FilterChip,
           {
             key: value,
-            "aria-pressed": selected.includes(String(value)),
-            className:
-              "pc-chip" +
-              (selected.includes(String(value)) ? " is-active" : ""),
+            selected: selected.includes(String(value)),
             onClick: () => store.toggleFilter(type, group.key, String(value)),
           },
           type === "cpu" && group.key === "platform"
@@ -54,17 +62,12 @@ function FilterGroup({ group, type }) {
   );
 }
 function GpuHierarchy() {
-  const { state, store } = useApp([
-    "builderFilters",
-    "browse",
-    "catalogs",
-    "pinned",
-  ]);
+  const { store } = useApp(["builderFilters", "browse", "catalogs", "pinned"]);
   const { filterValues, allKnownProductsFor } = store.domain();
+  const vendors = filterValues("gpu", "vendor");
+  const models = filterValues("gpu", "model");
   const groups = gpuSeriesGroups(allKnownProductsFor("gpu")).filter(
-    (g) =>
-      !filterValues("gpu", "vendor").length ||
-      filterValues("gpu", "vendor").includes(g.vendor.toLowerCase()),
+    (g) => !vendors.length || vendors.includes(g.vendor.toLowerCase()),
   );
   const series = filterValues("gpu", "series")[0];
   const modern = groups.filter((g) =>
@@ -85,11 +88,10 @@ function GpuHierarchy() {
         { className: "pc-filter-options" },
         (legacy ? groups : modern).map((g) =>
           h(
-            Button,
+            FilterChip,
             {
               key: g.label,
-              className: "pc-chip" + (g === active ? " is-active" : ""),
-              "aria-pressed": g === active,
+              selected: g === active,
               onClick: () => store.selectGpuSeries(g.label),
             },
             g.label.replace(" Series", ""),
@@ -117,30 +119,20 @@ function GpuHierarchy() {
             "div",
             { className: "pc-filter-options" },
             h(
-              Button,
+              FilterChip,
               {
-                className:
-                  "pc-chip" +
-                  (!filterValues("gpu", "model").length ? " is-active" : ""),
-                "aria-pressed": !filterValues("gpu", "model").length,
+                selected: !models.length,
                 onClick: () => store.selectGpuSeries(active.label),
               },
               "시리즈 전체",
             ),
             active.models.map((model) =>
               h(
-                Button,
+                FilterChip,
                 {
                   key: model,
-                  className:
-                    "pc-chip" +
-                    (filterValues("gpu", "model").includes(model)
-                      ? " is-active"
-                      : ""),
-                  "aria-pressed": filterValues("gpu", "model").includes(model),
-                  onClick: () => {
-                    store.selectGpuModel(model);
-                  },
+                  selected: models.includes(model),
+                  onClick: () => store.selectGpuModel(model),
                 },
                 model,
               ),

@@ -21,6 +21,19 @@ from . import fps as fps_service
 from . import retail
 
 
+_SUMMARY_FIELDS = {
+    "cpu": ("socket", "vendor", "tdp", "cores", "threads"),
+    "gpu": ("vram", "tdp", "vendor", "perf_1080", "perf_1440", "perf_2160"),
+    "ram": ("brand", "type", "gb", "speed"),
+    "mb": ("socket", "ram_type", "brand"),
+    "psu": ("brand", "recommendedWatt", "watt"),
+    "storage": ("brand", "capacity"),
+    "hdd": ("brand", "capacity", "rpm"),
+    "case": ("brand", "form_factor", "color"),
+    "software": ("brand", "license"),
+}
+
+
 def component_performance_index(part: Dict[str, Any], part_type: str) -> Tuple[float, str]:
     """Return a 0-100 component-type-specific index for direct-build value display."""
     name = normalize_text(part.get("name"))
@@ -81,8 +94,6 @@ def component_performance_index(part: Dict[str, Any], part_type: str) -> Tuple[f
 
 def summarize_part(part: Dict[str, Any], part_type: str) -> Dict[str, Any]:
     raw_price = safe_int(part.get("price"), 0)
-    raw_source = normalize_text(part.get("price_source"))
-    raw_url = part.get("url") or part.get("shop_url") or part.get("product_url")
     verified_gpu_listing = database.verified_price_info(part)
     price_info = {} if verified_gpu_listing else (database.db_lookup_price_info(part, part_type) or {})
     if price_info.get("stale"):
@@ -113,37 +124,9 @@ def summarize_part(part: Dict[str, Any], part_type: str) -> Dict[str, Any]:
         "verified": bool(verified_gpu_listing or price_info),
         "price_status": (part.get("price_status") or "verified") if verified_gpu_listing else "verified" if price_info else ("estimated" if price > 0 else "unavailable"),
     }
-    if part_type == "cpu":
-        out.update({
-            "socket": part.get("socket"),
-            "vendor": part.get("vendor"),
-            "tdp": part.get("tdp"),
-            "cores": part.get("cores"),
-            "threads": part.get("threads"),
-        })
-    elif part_type == "gpu":
-        out.update({
-            "vram": part.get("vram"),
-            "tdp": part.get("tdp"),
-            "vendor": part.get("vendor"),
-            "perf_1080": part.get("perf_1080"),
-            "perf_1440": part.get("perf_1440"),
-            "perf_2160": part.get("perf_2160"),
-        })
-    elif part_type == "ram":
-        out.update({"brand": part.get("brand"), "type": part.get("type"), "gb": part.get("gb"), "speed": part.get("speed")})
-    elif part_type == "mb":
-        out.update({"socket": part.get("socket"), "ram_type": part.get("ram_type"), "brand": part.get("brand")})
-    elif part_type == "psu":
-        out.update({"brand": part.get("brand"), "recommendedWatt": part.get("watt"), "watt": part.get("watt")})
-    elif part_type == "storage":
-        out.update({"brand": part.get("brand"), "capacity": part.get("capacity")})
-    elif part_type == "hdd":
-        out.update({"brand": part.get("brand"), "capacity": part.get("capacity"), "rpm": part.get("rpm")})
-    elif part_type == "case":
-        out.update({"brand": part.get("brand"), "form_factor": part.get("form_factor"), "color": part.get("color")})
-    elif part_type == "software":
-        out.update({"brand": part.get("brand"), "license": part.get("license")})
+    out.update({field: part.get(field) for field in _SUMMARY_FIELDS.get(part_type, ())})
+    if part_type == "psu":
+        out["recommendedWatt"] = part.get("watt")
     return out
 
 def fps_capacity_label(

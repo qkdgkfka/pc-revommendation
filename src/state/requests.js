@@ -11,6 +11,21 @@ export const errorMessage = (error) =>
     : error?.kind === "timeout"
       ? "요청 시간이 초과되었습니다. 다시 확인해주세요."
       : error?.message || "판매처 연결에 실패했습니다. 다시 확인해주세요.";
+
+/** Publish a shared request once, ignoring completions invalidated by cancellation. */
+export function runRequest(entry, { onStart, onSuccess, onError }) {
+  if (entry.task) return entry.task;
+  onStart?.();
+  entry.task = entry.promise
+    .then((data) => {
+      if (entry.current()) return onSuccess?.(data);
+    })
+    .catch((error) => {
+      if (entry.current()) return onError?.(error);
+    });
+  return entry.task;
+}
+
 /** One request per scope; identical work joins, replacement aborts and invalidates. */
 export function createRequestManager() {
   const active = new Map(),
